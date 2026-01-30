@@ -15,15 +15,23 @@ That's it! The script will:
 - Generate application key
 - Run database migrations
 
-## Services
+## Docker Containers
 
-After setup, you'll have:
+After setup, you'll have 6 containers running:
 
-| Service    | URL                      | Description           |
-|------------|--------------------------|----------------------|
-| API        | http://localhost:8000    | REST API             |
-| WebSocket  | ws://localhost:8080      | Laravel Reverb       |
-| PostgreSQL | localhost:5432           | Database             |
+| Container | Purpose | Port |
+|-----------|---------|------|
+| select-app | PHP-FPM application | - |
+| select-nginx | Web server (API) | 8001 |
+| select-db | PostgreSQL database | 5433 |
+| select-reverb | WebSocket server (Laravel Reverb) | 8080 |
+| select-queue | Background job worker | - |
+| select-delectus | Game orchestrator daemon | - |
+
+**URLs:**
+- API: http://localhost:8001/api/v1
+- WebSocket: ws://localhost:8080
+- Debug Console: http://localhost:8001/debug
 
 ## Configuration
 
@@ -145,7 +153,8 @@ app/
 ├── Domain/               # Business logic
 │   ├── Game/            # Game management
 │   ├── Player/          # Authentication
-│   └── Round/           # Gameplay
+│   ├── Round/           # Gameplay
+│   └── Delectus/        # Game orchestrator (auto deadlines, round transitions)
 ├── Application/         # HTTP layer
 │   ├── Broadcasting/    # WebSocket events
 │   ├── Http/Controllers/
@@ -153,3 +162,13 @@ app/
 └── Infrastructure/      # Data layer
     └── Models/          # Eloquent models
 ```
+
+## Delectus - Game Orchestrator
+
+Delectus is a daemon that automatically manages game flow:
+- Monitors all active games every second
+- Transitions rounds when deadlines pass (answering → voting → completed)
+- Starts new rounds or ends games automatically
+- Named after the original IRC bot from #select on EFnet
+
+See `app/Domain/Delectus/README.md` for full documentation.

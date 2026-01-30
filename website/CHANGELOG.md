@@ -22,11 +22,13 @@ All notable changes to the Select backend will be documented in this file.
 - Answer submission with live validation
 - Voting phase with self-vote prevention
 - Scoring system based on votes received
-- Automatic deadline processing jobs
 - WebSocket broadcast events for all game states
 - Database migrations for all entities
 - Unit tests for AcronymGenerator and AcronymValidator
 - Feature tests for Auth, Game, and Round APIs
+- **Delectus** - Game orchestrator daemon (automatic deadline handling, round transitions)
+- Debug console at /debug (WebSocket testing, API testing, Delectus status)
+- GameTestSeeder for development testing
 
 ### API Endpoints
 - POST /api/v1/auth/guest - Create guest player

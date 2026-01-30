@@ -108,7 +108,18 @@ POST   /api/v1/rounds/{id}/answer  Submit answer
 POST   /api/v1/rounds/{id}/vote    Submit vote
 POST   /api/v1/rounds/{id}/voting  Start voting (host)
 POST   /api/v1/rounds/{id}/complete Complete round (host)
+
+GET    /api/v1/debug/delectus      Delectus status (dev only)
 ```
+
+## Debug Console
+
+Access at `http://select.test:8001/debug` (local/development only).
+
+Features:
+- **WebSocket Panel**: Test Reverb connection, subscribe to channels, view events
+- **API Panel**: Create guests, games, test endpoints
+- **Delectus Panel**: Check game orchestrator status
 
 ## WebSocket Events (presence-game.{code})
 
