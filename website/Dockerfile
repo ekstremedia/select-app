@@ -20,18 +20,13 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www
 
-# Copy application files
-COPY . /var/www
+# Copy scripts
+COPY docker/setup.sh /usr/local/bin/setup.sh
+RUN chmod +x /usr/local/bin/setup.sh
 
-# Install PHP dependencies
-RUN composer install --no-interaction --no-dev --optimize-autoloader || true
-
-# Set permissions
-RUN chown -R www-data:www-data /var/www \
-    && chmod -R 755 /var/www/storage \
-    && chmod -R 755 /var/www/bootstrap/cache
-
-USER www-data
+# Set permissions for storage and cache
+RUN mkdir -p /var/www/storage /var/www/bootstrap/cache \
+    && chown -R www-data:www-data /var/www
 
 EXPOSE 9000
 CMD ["php-fpm"]

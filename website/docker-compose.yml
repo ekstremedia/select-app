@@ -1,4 +1,19 @@
 services:
+  setup:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: select-setup
+    working_dir: /var/www
+    command: /usr/local/bin/setup.sh
+    volumes:
+      - .:/var/www
+    networks:
+      - select
+    depends_on:
+      db:
+        condition: service_healthy
+
   app:
     build:
       context: .
@@ -14,6 +29,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      setup:
+        condition: service_completed_successfully
 
   nginx:
     image: nginx:alpine
@@ -64,8 +81,8 @@ services:
     networks:
       - select
     depends_on:
-      db:
-        condition: service_healthy
+      setup:
+        condition: service_completed_successfully
 
   queue:
     build:
@@ -80,8 +97,8 @@ services:
     networks:
       - select
     depends_on:
-      db:
-        condition: service_healthy
+      setup:
+        condition: service_completed_successfully
 
   delectus:
     build:
@@ -96,8 +113,8 @@ services:
     networks:
       - select
     depends_on:
-      db:
-        condition: service_healthy
+      setup:
+        condition: service_completed_successfully
       reverb:
         condition: service_started
 

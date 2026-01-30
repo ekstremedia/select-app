@@ -114,7 +114,7 @@ GET    /api/v1/debug/delectus      Delectus status (dev only)
 
 ## Debug Console
 
-Access at `http://select.test:8001/debug` (local/development only).
+Access at `http://select.test:8000/debug` (local/development only).
 
 Features:
 - **WebSocket Panel**: Test Reverb connection, subscribe to channels, view events
@@ -144,26 +144,78 @@ Features:
 
 ## Development Setup
 
+### Prerequisites
+Add to `/etc/hosts`:
+```
+127.0.0.1   select.test
+```
+
 ### Backend (Docker)
 ```bash
 cd website
-./setup.sh  # One-command setup
+docker compose up -d
 ```
+
+That's it! The first run automatically:
+- Creates `.env` from `.env.example`
+- Installs Composer dependencies
+- Generates application key
+- Runs database migrations
 
 **Docker Containers:**
 | Container | Purpose | Port |
 |-----------|---------|------|
+| select-setup | First-time setup (runs once) | - |
 | select-app | PHP-FPM application | - |
-| select-nginx | Web server | 8001 (configurable) |
-| select-db | PostgreSQL database | 5433 (configurable) |
+| select-nginx | Web server | 8000 (configurable) |
+| select-db | PostgreSQL database | 5432 (configurable) |
 | select-reverb | WebSocket server | 8080 |
 | select-queue | Background job worker | - |
 | select-delectus | Game orchestrator daemon | - |
 
 **Default URLs:**
-- API: http://select.test:8001/api/v1
+- API: http://select.test:8000/api/v1
 - WebSocket: ws://select.test:8080
-- Debug Console: http://select.test:8001/debug
+- Debug Console: http://select.test:8000/debug
+
+### Where to Run Commands
+
+| Command | Where | Example |
+|---------|-------|---------|
+| `composer install` | Inside container | `docker compose exec app composer install` |
+| `php artisan ...` | Inside container | `docker compose exec app php artisan migrate` |
+| `yarn install` | Host machine | `cd website && yarn install` |
+| Edit `.env` | Host machine | Edit `website/.env` directly |
+
+### Useful Docker Commands
+
+```bash
+# Start all containers
+docker compose up -d
+
+# Stop all containers
+docker compose down
+
+# View logs
+docker compose logs -f
+
+# View logs for specific service
+docker compose logs -f app
+
+# Shell into app container
+docker compose exec app bash
+
+# Run artisan commands
+docker compose exec app php artisan migrate
+docker compose exec app php artisan tinker
+
+# Restart a specific service
+docker compose restart app
+
+# Reset everything (start fresh)
+docker compose down -v --rmi local && rm -rf vendor .env
+docker compose up -d
+```
 
 ### Mobile App
 ```bash
