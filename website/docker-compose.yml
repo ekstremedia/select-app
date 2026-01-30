@@ -1,0 +1,109 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: select-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - select
+    depends_on:
+      db:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:alpine
+    container_name: select-nginx
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:80"
+    volumes:
+      - .:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - select
+    depends_on:
+      - app
+
+  db:
+    image: postgres:16-alpine
+    container_name: select-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-select}
+      POSTGRES_USER: ${DB_USERNAME:-select}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+    ports:
+      - "${DB_EXTERNAL_PORT:-5432}:5432"
+    volumes:
+      - select-db:/var/lib/postgresql/data
+    networks:
+      - select
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-select} -d ${DB_DATABASE:-select}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  reverb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: select-reverb
+    restart: unless-stopped
+    working_dir: /var/www
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    ports:
+      - "${REVERB_PORT:-8080}:8080"
+    volumes:
+      - .:/var/www
+    networks:
+      - select
+    depends_on:
+      db:
+        condition: service_healthy
+
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: select-queue
+    restart: unless-stopped
+    working_dir: /var/www
+    command: php artisan queue:work --sleep=3 --tries=3
+    volumes:
+      - .:/var/www
+    networks:
+      - select
+    depends_on:
+      db:
+        condition: service_healthy
+
+  delectus:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: select-delectus
+    restart: unless-stopped
+    working_dir: /var/www
+    command: php artisan delectus:run -v
+    volumes:
+      - .:/var/www
+    networks:
+      - select
+    depends_on:
+      db:
+        condition: service_healthy
+      reverb:
+        condition: service_started
+
+networks:
+  select:
+    driver: bridge
+
+volumes:
+  select-db:
