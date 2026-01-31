@@ -1,5 +1,6 @@
 <?php
 
+use App\Application\Http\Controllers\Api\V1\BroadcastAuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -13,3 +14,6 @@ Route::get('/debug', function () {
     }
     return view('debug');
 })->name('debug');
+
+// Custom broadcast auth that supports guest tokens
+Route::post('/api/broadcasting/auth', [BroadcastAuthController::class, 'authenticate']);

@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Gullkorn",
-    "slug": "gullkorn",
-    "scheme": "gullkorn",
+    "name": "Select",
+    "slug": "select",
+    "scheme": "select",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -21,11 +21,13 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "package": "com.anonymous.select"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }

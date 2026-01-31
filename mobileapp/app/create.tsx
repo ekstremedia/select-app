@@ -8,11 +8,15 @@ import {
   ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../src/stores/gameStore';
 import { useAuthStore } from '../src/stores/authStore';
+import { useTheme } from '../src/theme';
 
 export default function CreateGameScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
+  const { theme } = useTheme();
   const { createGame, isLoading, error, clearError } = useGameStore();
   const player = useAuthStore((state) => state.player);
 
@@ -42,12 +46,14 @@ export default function CreateGameScreen() {
     return null;
   }
 
+  const styles = createStyles(theme);
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Game Settings</Text>
+      <Text style={styles.title}>{t('create.gameSettings')}</Text>
 
       <View style={styles.setting}>
-        <Text style={styles.settingLabel}>Number of Rounds</Text>
+        <Text style={styles.settingLabel}>{t('create.numberOfRounds')}</Text>
         <View style={styles.settingRow}>
           {[3, 5, 7, 10].map((value) => (
             <TouchableOpacity
@@ -72,7 +78,7 @@ export default function CreateGameScreen() {
       </View>
 
       <View style={styles.setting}>
-        <Text style={styles.settingLabel}>Answer Time (seconds)</Text>
+        <Text style={styles.settingLabel}>{t('create.answerTime')}</Text>
         <View style={styles.settingRow}>
           {[30, 45, 60, 90].map((value) => (
             <TouchableOpacity
@@ -97,7 +103,7 @@ export default function CreateGameScreen() {
       </View>
 
       <View style={styles.setting}>
-        <Text style={styles.settingLabel}>Vote Time (seconds)</Text>
+        <Text style={styles.settingLabel}>{t('create.voteTime')}</Text>
         <View style={styles.settingRow}>
           {[15, 20, 30, 45].map((value) => (
             <TouchableOpacity
@@ -131,79 +137,80 @@ export default function CreateGameScreen() {
         {isLoading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.createButtonText}>Create Game</Text>
+          <Text style={styles.createButtonText}>{t('game.createGame')}</Text>
         )}
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
-  content: {
-    padding: 24,
-    gap: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: 8,
-  },
-  setting: {
-    gap: 12,
-  },
-  settingLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
-  },
-  settingRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  optionButton: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
-    padding: 12,
-    alignItems: 'center',
-  },
-  optionButtonActive: {
-    borderColor: '#6366f1',
-    backgroundColor: '#eef2ff',
-  },
-  optionButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#64748b',
-  },
-  optionButtonTextActive: {
-    color: '#6366f1',
-  },
-  createButton: {
-    backgroundColor: '#6366f1',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  createButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  disabledButton: {
-    opacity: 0.7,
-  },
-  errorText: {
-    color: '#ef4444',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-});
+const createStyles = (theme: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.background,
+    },
+    content: {
+      padding: 24,
+      gap: 24,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: theme.text,
+      marginBottom: 8,
+    },
+    setting: {
+      gap: 12,
+    },
+    settingLabel: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.text,
+    },
+    settingRow: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    optionButton: {
+      flex: 1,
+      backgroundColor: theme.surface,
+      borderWidth: 2,
+      borderColor: theme.border,
+      borderRadius: 12,
+      padding: 12,
+      alignItems: 'center',
+    },
+    optionButtonActive: {
+      borderColor: theme.primary,
+      backgroundColor: theme.surfaceSecondary,
+    },
+    optionButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.textSecondary,
+    },
+    optionButtonTextActive: {
+      color: theme.primary,
+    },
+    createButton: {
+      backgroundColor: theme.buttonPrimaryBackground,
+      borderRadius: 12,
+      padding: 16,
+      alignItems: 'center',
+      marginTop: 16,
+    },
+    createButtonText: {
+      color: theme.buttonPrimaryText,
+      fontSize: 18,
+      fontWeight: '600',
+    },
+    disabledButton: {
+      opacity: 0.7,
+    },
+    errorText: {
+      color: theme.error,
+      fontSize: 14,
+      textAlign: 'center',
+    },
+  });

@@ -1,8 +1,51 @@
 # Changelog
 
-All notable changes to the Gullkorn mobile app will be documented in this file.
+All notable changes to the Select mobile app will be documented in this file.
 
 ## [Unreleased]
+
+### Added - 2025-01-31
+
+#### Internationalization (i18n)
+- Added i18next for translations with react-i18next integration
+- Norwegian Bokmål (nb) as default language
+- Norwegian Nynorsk (nn) support
+- English (en) support
+- Translation files in `src/i18n/locales/`
+- Settings persistence for language preference
+
+#### Theming
+- Dark and light theme support with dark as default
+- Theme colors defined in `src/theme/colors.ts`
+- ThemeProvider context in `src/theme/ThemeProvider.tsx`
+- All screens updated to use dynamic theming
+- Settings persistence for theme preference
+
+#### Debug Widget
+- ConnectionStatus component showing real-time connection status
+- API connection status (green/red indicator)
+- WebSocket (Reverb) connection status
+- Delectus game orchestrator status
+- Expandable panel with refresh button
+
+#### Settings Screen
+- Language selection (Bokmål, Nynorsk, English)
+- Theme selection (Dark, Light)
+- Persisted via AsyncStorage through Zustand store
+
+### Changed
+- Renamed app from "Gullkorn" to "Select"
+- Updated app.json with new name, slug, and scheme
+- All hardcoded Norwegian text replaced with translation keys
+
+### Fixed
+- Fixed Expo Go boolean casting bug by using development builds
+- Fixed dependency version mismatches with `npx expo-doctor` and `npx expo install --fix`
+- Removed expo-localization native module dependency (was causing crashes)
+
+---
+
+## [Initial] - 2025-01-30
 
 ### Added
 - Initial Expo React Native project with TypeScript

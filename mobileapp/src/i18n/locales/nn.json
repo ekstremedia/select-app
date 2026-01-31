@@ -1,0 +1,91 @@
+{
+  "common": {
+    "loading": "Lastar...",
+    "error": "Feil",
+    "success": "Suksess",
+    "cancel": "Avbryt",
+    "confirm": "Stadfest",
+    "save": "Lagre",
+    "delete": "Slett",
+    "edit": "Rediger",
+    "close": "Lukk",
+    "back": "Tilbake",
+    "next": "Neste",
+    "refresh": "Oppdater",
+    "connection": "Tilkopling",
+    "game": "Spel",
+    "profile": "Profil"
+  },
+  "home": {
+    "title": "Select",
+    "tagline": "Lag setningar frå akronym med vener!",
+    "welcome": "Velkomen, {{name}}!",
+    "createGame": "Opprett spel",
+    "joinGame": "Bli med i spel"
+  },
+  "create": {
+    "gameSettings": "Spelinnstillingar",
+    "numberOfRounds": "Tal på rundar",
+    "answerTime": "Svartid (sekund)",
+    "voteTime": "Stemmetid (sekund)"
+  },
+  "join": {
+    "enterCode": "Skriv inn spelkode",
+    "askHost": "Spør verten om den 6-teikns spelkoden"
+  },
+  "game": {
+    "createGame": "Opprett spel",
+    "joinGame": "Bli med i spel",
+    "code": "Spelkode",
+    "players": "Spelarar",
+    "round": "Runde",
+    "score": "Poeng",
+    "host": "Vert",
+    "waiting": "Ventar på spelarar...",
+    "startGame": "Start spel",
+    "leaveGame": "Forlat spel",
+    "submitAnswer": "Send svar",
+    "vote": "Stem",
+    "results": "Resultat",
+    "winner": "Vinnar",
+    "timeLeft": "Tid att",
+    "yourAnswer": "Ditt svar",
+    "enterSentence": "Skriv ei setning..."
+  },
+  "settings": {
+    "title": "Innstillingar",
+    "language": "Språk",
+    "theme": "Tema",
+    "darkMode": "Mørk modus",
+    "lightMode": "Lys modus",
+    "norwegian": "Norsk bokmål",
+    "nynorsk": "Norsk nynorsk",
+    "english": "English"
+  },
+  "connection": {
+    "api": "API",
+    "websocket": "WebSocket",
+    "delectus": "Delectus",
+    "connected": "Tilkopla",
+    "disconnected": "Fråkopla",
+    "checking": "Sjekkar...",
+    "running": "Køyrer",
+    "stopped": "Stoppa",
+    "unknown": "Ukjent"
+  },
+  "auth": {
+    "login": "Logg inn",
+    "logout": "Logg ut",
+    "register": "Registrer",
+    "email": "E-post",
+    "password": "Passord",
+    "confirmPassword": "Stadfest passord",
+    "forgotPassword": "Gløymt passord?",
+    "createAccount": "Opprett konto",
+    "convertAccount": "Konverter til konto",
+    "chooseDisplayName": "Vel visingsnamn",
+    "enterName": "Skriv inn namnet ditt",
+    "playAsGuest": "Spel som gjest",
+    "nameTooShort": "Namnet må vere minst 2 teikn"
+  }
+}

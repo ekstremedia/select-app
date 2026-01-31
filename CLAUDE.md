@@ -29,9 +29,12 @@ select-app/
 │   │   │   └── Jobs/
 │   │   └── Infrastructure/   # Eloquent models
 │   │       └── Models/
+│   ├── docker/
+│   │   ├── setup.sh          # Auto-runs on first docker compose up
+│   │   ├── nginx/            # Nginx configuration
+│   │   └── php/              # PHP configuration
 │   ├── docker-compose.yml    # Development environment
-│   ├── Dockerfile
-│   └── setup.sh              # One-command setup script
+│   └── Dockerfile
 │
 └── mobileapp/        # React Native (Expo) mobile app
     ├── app/                  # Expo Router pages
@@ -228,14 +231,22 @@ yarn start
 
 ## Important Files to Know
 
-1. `website/app/Domain/Round/Services/AcronymGenerator.php` - Random acronym generation
-2. `website/app/Domain/Round/Services/AcronymValidator.php` - Answer validation
-3. `website/app/Domain/Game/Services/ScoringService.php` - Vote-based scoring
-4. `website/app/Domain/Delectus/` - Game orchestrator (deadline handling, round transitions)
-5. `website/app/Application/Broadcasting/Events/` - All WebSocket events
-6. `website/resources/views/debug.blade.php` - Debug console (WebSocket testing, API testing)
-7. `mobileapp/src/stores/gameStore.ts` - Central game state with WS handlers
-8. `mobileapp/app/game/[code].tsx` - All game phases (lobby, play, vote, results)
+**Docker & Setup:**
+- `website/docker-compose.yml` - Container orchestration, all services defined here
+- `website/docker/setup.sh` - Auto-setup script (runs on first `docker compose up`)
+- `website/.env.example` - Environment template (copied to `.env` automatically)
+
+**Backend:**
+- `website/app/Domain/Round/Services/AcronymGenerator.php` - Random acronym generation
+- `website/app/Domain/Round/Services/AcronymValidator.php` - Answer validation
+- `website/app/Domain/Game/Services/ScoringService.php` - Vote-based scoring
+- `website/app/Domain/Delectus/` - Game orchestrator (deadline handling, round transitions)
+- `website/app/Application/Broadcasting/Events/` - All WebSocket events
+- `website/resources/views/debug.blade.php` - Debug console (WebSocket testing, API testing)
+
+**Mobile App:**
+- `mobileapp/src/stores/gameStore.ts` - Central game state with WS handlers
+- `mobileapp/app/game/[code].tsx` - All game phases (lobby, play, vote, results)
 
 ## Authentication
 
@@ -257,6 +268,30 @@ yarn start
   "acronym_length_max": 6
 }
 ```
+
+## Broadcasting / Presence Channel Auth
+
+Guest players need special handling for WebSocket presence channel authorization since Laravel's default broadcasting auth assumes authenticated users.
+
+**Custom Auth Endpoint:** `POST /api/broadcasting/auth`
+- Located in: `app/Application/Http/Controllers/Api/V1/BroadcastAuthController.php`
+- Handles guest tokens via `X-Guest-Token` header
+- Generates Pusher auth signatures for presence channels
+
+**Debug Console Auth:**
+- Uses custom fetch handler with CSRF token and guest token
+- Endpoint: `/api/broadcasting/auth` (not Laravel's default `/broadcasting/auth`)
+
+## Laravel Boost
+
+Laravel Boost v2.0 is installed for AI-assisted development.
+
+**Installation:**
+```bash
+docker compose exec -it app php artisan boost:install
+```
+
+Note: Must run with `-it` flag for interactive prompts, or run from host machine with matching PHP version.
 
 ## Future Plans
 

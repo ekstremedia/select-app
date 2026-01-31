@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Select - Debug Console</title>
     <style>
         * { box-sizing: border-box; }
@@ -106,7 +107,7 @@
             <div class="info-box">
                 <strong>Host:</strong> <span id="ws-host-display">-</span><br>
                 <strong>Port:</strong> <span id="ws-port-display">-</span><br>
-                <strong>App Key:</strong> {{ config('reverb.apps.0.key') }}
+                <strong>App Key:</strong> {{ config('reverb.apps.apps.0.key') }}
             </div>
             <div class="config">
                 <label>Channel:</label>
@@ -162,7 +163,7 @@
         const config = {
             wsHost: window.location.hostname,
             wsPort: {{ env('REVERB_PORT', 8080) }},
-            appKey: '{{ config('reverb.apps.0.key') }}',
+            appKey: '{{ config('reverb.apps.apps.0.key') }}',
             apiUrl: window.location.origin + '/api/v1'
         };
 
@@ -205,7 +206,38 @@
                     forceTLS: false,
                     disableStats: true,
                     enabledTransports: ['ws', 'wss'],
-                    cluster: 'mt1'
+                    cluster: 'mt1',
+                    channelAuthorization: {
+                        transport: 'ajax',
+                        endpoint: '/api/broadcasting/auth',
+                        customHandler: (params, callback) => {
+                            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                            const headers = {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken
+                            };
+                            if (guestToken) {
+                                headers['X-Guest-Token'] = guestToken;
+                            }
+                            fetch('/api/broadcasting/auth', {
+                                method: 'POST',
+                                headers: headers,
+                                body: new URLSearchParams({
+                                    socket_id: params.socketId,
+                                    channel_name: params.channelName
+                                })
+                            })
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error(`Auth failed: ${response.status}`);
+                                }
+                                return response.json();
+                            })
+                            .then(data => callback(null, data))
+                            .catch(error => callback(error, null));
+                        }
+                    }
                 });
 
                 pusher.connection.bind('connected', () => {

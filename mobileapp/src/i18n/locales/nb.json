@@ -1,0 +1,91 @@
+{
+  "common": {
+    "loading": "Laster...",
+    "error": "Feil",
+    "success": "Suksess",
+    "cancel": "Avbryt",
+    "confirm": "Bekreft",
+    "save": "Lagre",
+    "delete": "Slett",
+    "edit": "Rediger",
+    "close": "Lukk",
+    "back": "Tilbake",
+    "next": "Neste",
+    "refresh": "Oppdater",
+    "connection": "Tilkobling",
+    "game": "Spill",
+    "profile": "Profil"
+  },
+  "home": {
+    "title": "Select",
+    "tagline": "Lag setninger fra akronymer med venner!",
+    "welcome": "Velkommen, {{name}}!",
+    "createGame": "Opprett spill",
+    "joinGame": "Bli med i spill"
+  },
+  "create": {
+    "gameSettings": "Spillinnstillinger",
+    "numberOfRounds": "Antall runder",
+    "answerTime": "Svartid (sekunder)",
+    "voteTime": "Stemmetid (sekunder)"
+  },
+  "join": {
+    "enterCode": "Skriv inn spillkode",
+    "askHost": "Spør verten om den 6-tegns spillkoden"
+  },
+  "game": {
+    "createGame": "Opprett spill",
+    "joinGame": "Bli med i spill",
+    "code": "Spillkode",
+    "players": "Spillere",
+    "round": "Runde",
+    "score": "Poeng",
+    "host": "Vert",
+    "waiting": "Venter på spillere...",
+    "startGame": "Start spill",
+    "leaveGame": "Forlat spill",
+    "submitAnswer": "Send svar",
+    "vote": "Stem",
+    "results": "Resultater",
+    "winner": "Vinner",
+    "timeLeft": "Tid igjen",
+    "yourAnswer": "Ditt svar",
+    "enterSentence": "Skriv en setning..."
+  },
+  "settings": {
+    "title": "Innstillinger",
+    "language": "Språk",
+    "theme": "Tema",
+    "darkMode": "Mørk modus",
+    "lightMode": "Lys modus",
+    "norwegian": "Norsk bokmål",
+    "nynorsk": "Norsk nynorsk",
+    "english": "English"
+  },
+  "connection": {
+    "api": "API",
+    "websocket": "WebSocket",
+    "delectus": "Delectus",
+    "connected": "Tilkoblet",
+    "disconnected": "Frakoblet",
+    "checking": "Sjekker...",
+    "running": "Kjører",
+    "stopped": "Stoppet",
+    "unknown": "Ukjent"
+  },
+  "auth": {
+    "login": "Logg inn",
+    "logout": "Logg ut",
+    "register": "Registrer",
+    "email": "E-post",
+    "password": "Passord",
+    "confirmPassword": "Bekreft passord",
+    "forgotPassword": "Glemt passord?",
+    "createAccount": "Opprett konto",
+    "convertAccount": "Konverter til konto",
+    "chooseDisplayName": "Velg visningsnavn",
+    "enterName": "Skriv inn navnet ditt",
+    "playAsGuest": "Spill som gjest",
+    "nameTooShort": "Navnet må være minst 2 tegn"
+  }
+}

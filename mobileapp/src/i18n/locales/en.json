@@ -1,0 +1,91 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "refresh": "Refresh",
+    "connection": "Connection",
+    "game": "Game",
+    "profile": "Profile"
+  },
+  "home": {
+    "title": "Select",
+    "tagline": "Create acronym sentences with friends!",
+    "welcome": "Welcome, {{name}}!",
+    "createGame": "Create Game",
+    "joinGame": "Join Game"
+  },
+  "create": {
+    "gameSettings": "Game Settings",
+    "numberOfRounds": "Number of Rounds",
+    "answerTime": "Answer Time (seconds)",
+    "voteTime": "Vote Time (seconds)"
+  },
+  "join": {
+    "enterCode": "Enter Game Code",
+    "askHost": "Ask the host for the 6-character game code"
+  },
+  "game": {
+    "createGame": "Create Game",
+    "joinGame": "Join Game",
+    "code": "Game Code",
+    "players": "Players",
+    "round": "Round",
+    "score": "Score",
+    "host": "Host",
+    "waiting": "Waiting for players...",
+    "startGame": "Start Game",
+    "leaveGame": "Leave Game",
+    "submitAnswer": "Submit Answer",
+    "vote": "Vote",
+    "results": "Results",
+    "winner": "Winner",
+    "timeLeft": "Time left",
+    "yourAnswer": "Your answer",
+    "enterSentence": "Enter a sentence..."
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "darkMode": "Dark mode",
+    "lightMode": "Light mode",
+    "norwegian": "Norsk bokmål",
+    "nynorsk": "Norsk nynorsk",
+    "english": "English"
+  },
+  "connection": {
+    "api": "API",
+    "websocket": "WebSocket",
+    "delectus": "Delectus",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "checking": "Checking...",
+    "running": "Running",
+    "stopped": "Stopped",
+    "unknown": "Unknown"
+  },
+  "auth": {
+    "login": "Log in",
+    "logout": "Log out",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "forgotPassword": "Forgot password?",
+    "createAccount": "Create account",
+    "convertAccount": "Convert to account",
+    "chooseDisplayName": "Choose your display name",
+    "enterName": "Enter your name",
+    "playAsGuest": "Play as Guest",
+    "nameTooShort": "Name must be at least 2 characters"
+  }
+}

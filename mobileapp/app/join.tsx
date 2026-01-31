@@ -8,11 +8,15 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '../src/stores/gameStore';
 import { useAuthStore } from '../src/stores/authStore';
+import { useTheme } from '../src/theme';
 
 export default function JoinGameScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
+  const { theme } = useTheme();
   const { joinGame, isLoading, error, clearError } = useGameStore();
   const player = useAuthStore((state) => state.player);
 
@@ -46,12 +50,12 @@ export default function JoinGameScreen() {
     return null;
   }
 
+  const styles = createStyles(theme);
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Enter Game Code</Text>
-      <Text style={styles.subtitle}>
-        Ask the host for the 6-character game code
-      </Text>
+      <Text style={styles.title}>{t('join.enterCode')}</Text>
+      <Text style={styles.subtitle}>{t('join.askHost')}</Text>
 
       <View style={styles.inputContainer}>
         <TextInput
@@ -59,6 +63,7 @@ export default function JoinGameScreen() {
           value={code}
           onChangeText={handleCodeChange}
           placeholder="ABCDEF"
+          placeholderTextColor={theme.inputPlaceholder}
           maxLength={6}
           autoCapitalize="characters"
           autoCorrect={false}
@@ -78,7 +83,7 @@ export default function JoinGameScreen() {
           {isLoading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.joinButtonText}>Join Game</Text>
+            <Text style={styles.joinButtonText}>{t('game.joinGame')}</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -86,58 +91,59 @@ export default function JoinGameScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-    padding: 24,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#64748b',
-    textAlign: 'center',
-    marginBottom: 32,
-  },
-  inputContainer: {
-    gap: 16,
-  },
-  codeInput: {
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#6366f1',
-    borderRadius: 16,
-    padding: 20,
-    fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    letterSpacing: 8,
-    color: '#1e293b',
-  },
-  joinButton: {
-    backgroundColor: '#6366f1',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  joinButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  errorText: {
-    color: '#ef4444',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-});
+const createStyles = (theme: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.background,
+      padding: 24,
+      justifyContent: 'center',
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: theme.text,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: theme.textSecondary,
+      textAlign: 'center',
+      marginBottom: 32,
+    },
+    inputContainer: {
+      gap: 16,
+    },
+    codeInput: {
+      backgroundColor: theme.surface,
+      borderWidth: 2,
+      borderColor: theme.primary,
+      borderRadius: 16,
+      padding: 20,
+      fontSize: 32,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      letterSpacing: 8,
+      color: theme.text,
+    },
+    joinButton: {
+      backgroundColor: theme.buttonPrimaryBackground,
+      borderRadius: 12,
+      padding: 16,
+      alignItems: 'center',
+    },
+    joinButtonText: {
+      color: theme.buttonPrimaryText,
+      fontSize: 18,
+      fontWeight: '600',
+    },
+    disabledButton: {
+      opacity: 0.5,
+    },
+    errorText: {
+      color: theme.error,
+      fontSize: 14,
+      textAlign: 'center',
+    },
+  });
