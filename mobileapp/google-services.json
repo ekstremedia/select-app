@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "99250055508",
+    "project_id": "select-app-ab79d",
+    "storage_bucket": "select-app-ab79d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:99250055508:android:d402e7523af578c76c00c1",
+        "android_client_info": {
+          "package_name": "no.ekstremedia.select"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAMRxyRqY1iktTi9r7t5LFk12tKgx_4MJ4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
