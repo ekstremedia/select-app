@@ -93,6 +93,20 @@ jobs:
           path: mobileapp/android/app/build/outputs/bundle/release/app-release.aab
           retention-days: 30
 
+      - name: Upload to Internal App Sharing
+        id: internal-app-sharing
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          packageName: no.ekstremedia.select
+          releaseFiles: mobileapp/android/app/build/outputs/bundle/release/app-release.aab
+          track: internalappsharing
+
+      - name: Print Internal App Sharing URL
+        run: |
+          echo "## 📱 Internal App Sharing" >> $GITHUB_STEP_SUMMARY
+          echo "Install via App Tester: ${{ steps.internal-app-sharing.outputs.internalSharingDownloadUrl }}" >> $GITHUB_STEP_SUMMARY
+
       - name: Upload to Google Play
         if: github.event.inputs.submit == 'true' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/testing'
         uses: r0adkll/upload-google-play@v1
