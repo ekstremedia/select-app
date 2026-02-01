@@ -1,0 +1,86 @@
+name: Android Build and Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'mobileapp/**'
+      - '.github/workflows/eas-build.yml'
+  workflow_dispatch:
+    inputs:
+      submit:
+        description: 'Submit to Google Play'
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  build:
+    name: Build Android App
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobileapp
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+          cache-dependency-path: mobileapp/yarn.lock
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Generate native Android project
+        run: npx expo prebuild --platform android --clean
+
+      - name: Decode keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+
+      - name: Build AAB
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          cd android
+          ./gradlew bundleRelease \
+            -Pandroid.injected.signing.store.file=release.keystore \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: mobileapp/android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      - name: Upload to Google Play
+        if: github.event.inputs.submit == 'true'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          packageName: no.ekstremedia.select
+          releaseFiles: mobileapp/android/app/build/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed
