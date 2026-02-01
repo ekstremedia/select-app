@@ -238,13 +238,23 @@ Automated Android builds using GitHub Actions. Builds run on GitHub's free runne
 ### Triggers
 - Push to `main` or `testing` branch (only when `mobileapp/` files change)
 - Manual trigger via GitHub Actions UI
+- Concurrent builds on same branch are cancelled (cancel-in-progress)
 
 ### What It Does
 1. Sets up Node.js, Java 17, Android SDK
-2. Runs `expo prebuild` to generate native Android project
-3. Signs and builds AAB with Gradle
-4. Uploads AAB as downloadable artifact (30-day retention)
-5. Optionally submits to Google Play (manual trigger only)
+2. Auto-increments version code (uses GitHub run number)
+3. Runs `expo prebuild` to generate native Android project
+4. Signs and builds AAB with Gradle
+5. Uploads AAB as downloadable artifact (30-day retention)
+6. Uploads to **Internal App Sharing** (instant link for App Tester)
+7. Uploads to **Internal Testing Track** (Play Store draft release)
+
+### Distribution Channels
+
+| Channel | Purpose | Access |
+|---------|---------|--------|
+| Internal App Sharing | Quick testing via App Tester app | Instant download link in workflow summary |
+| Internal Testing Track | Play Store distribution | Opt-in testers see app in Play Store |
 
 ### GitHub Secrets Required
 
@@ -252,9 +262,15 @@ Automated Android builds using GitHub Actions. Builds run on GitHub's free runne
 |--------|-------------|
 | `ANDROID_KEYSTORE_BASE64` | Release keystore, base64 encoded |
 | `ANDROID_KEYSTORE_PASSWORD` | Keystore password |
-| `ANDROID_KEY_ALIAS` | Key alias (e.g., `select-key`) |
+| `ANDROID_KEY_ALIAS` | Key alias (`select-key`) |
 | `ANDROID_KEY_PASSWORD` | Key password |
-| `GOOGLE_SERVICE_ACCOUNT_JSON` | Play Console service account (for auto-upload) |
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | Play Console service account JSON |
+
+### Google Cloud Setup (Already Done)
+1. Project: `select-app-486116` at https://console.cloud.google.com
+2. API enabled: Google Play Android Developer API
+3. Service account: `play-store-upload@select-app-486116.iam.gserviceaccount.com`
+4. Service account linked to Play Console with release permissions
 
 ### Generate New Keystore (if needed)
 ```bash
@@ -271,19 +287,20 @@ docker run --rm -it -v "$(pwd)":/work -w /work eclipse-temurin:17-jdk \
 base64 -i select-release.keystore | pbcopy
 ```
 
-### Download Build Artifacts
-1. Go to https://github.com/ekstremedia/select-app/actions
-2. Click on a completed workflow run
-3. Download `app-release` artifact (contains AAB file)
+### Testing the App
+**Via App Tester (Internal App Sharing):**
+1. Install "Internal App Sharing" app from Play Store
+2. Check workflow summary for download link after build
+3. Click link to install instantly
 
-### Manual Play Store Upload
-1. Download AAB from GitHub Actions artifacts
-2. Go to Google Play Console → Release → Testing → Internal testing
-3. Create new release and upload AAB
+**Via Play Store (Internal Testing):**
+1. Get opt-in link from Play Console → Internal testing → Testers
+2. Opt in, then find app in Play Store
 
-### Automatic Play Store Upload (TODO)
-Requires `GOOGLE_SERVICE_ACCOUNT_JSON` secret with Play Console API access.
-To enable: trigger workflow manually with "Submit to Google Play" checked.
+### Notes
+- Version code auto-increments with each build (GitHub run number)
+- Releases are created as **draft** (app still in draft state in Play Console)
+- After app is fully published, can change to `status: completed` for auto-rollout
 
 ## Important Files to Know
 
