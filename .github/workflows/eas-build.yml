@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - testing
     paths:
       - 'mobileapp/**'
       - '.github/workflows/eas-build.yml'
@@ -14,6 +15,10 @@ on:
         required: true
         default: false
         type: boolean
+
+concurrency:
+  group: android-build-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -63,7 +68,7 @@ jobs:
         run: |
           cd android
           ./gradlew bundleRelease \
-            -Pandroid.injected.signing.store.file=release.keystore \
+            -Pandroid.injected.signing.store.file=${{ github.workspace }}/mobileapp/android/app/release.keystore \
             -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
             -Pandroid.injected.signing.key.password="$KEY_PASSWORD"

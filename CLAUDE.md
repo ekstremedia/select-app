@@ -229,7 +229,67 @@ yarn install
 yarn start
 ```
 
+## CI/CD - Android Builds
+
+Automated Android builds using GitHub Actions. Builds run on GitHub's free runners (unlimited for public repos).
+
+**Workflow:** `.github/workflows/eas-build.yml`
+
+### Triggers
+- Push to `main` or `testing` branch (only when `mobileapp/` files change)
+- Manual trigger via GitHub Actions UI
+
+### What It Does
+1. Sets up Node.js, Java 17, Android SDK
+2. Runs `expo prebuild` to generate native Android project
+3. Signs and builds AAB with Gradle
+4. Uploads AAB as downloadable artifact (30-day retention)
+5. Optionally submits to Google Play (manual trigger only)
+
+### GitHub Secrets Required
+
+| Secret | Description |
+|--------|-------------|
+| `ANDROID_KEYSTORE_BASE64` | Release keystore, base64 encoded |
+| `ANDROID_KEYSTORE_PASSWORD` | Keystore password |
+| `ANDROID_KEY_ALIAS` | Key alias (e.g., `select-key`) |
+| `ANDROID_KEY_PASSWORD` | Key password |
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | Play Console service account (for auto-upload) |
+
+### Generate New Keystore (if needed)
+```bash
+docker run --rm -it -v "$(pwd)":/work -w /work eclipse-temurin:17-jdk \
+  keytool -genkeypair -v \
+  -storetype PKCS12 \
+  -keystore select-release.keystore \
+  -alias select-key \
+  -keyalg RSA \
+  -keysize 2048 \
+  -validity 10000
+
+# Encode for GitHub secret
+base64 -i select-release.keystore | pbcopy
+```
+
+### Download Build Artifacts
+1. Go to https://github.com/ekstremedia/select-app/actions
+2. Click on a completed workflow run
+3. Download `app-release` artifact (contains AAB file)
+
+### Manual Play Store Upload
+1. Download AAB from GitHub Actions artifacts
+2. Go to Google Play Console → Release → Testing → Internal testing
+3. Create new release and upload AAB
+
+### Automatic Play Store Upload (TODO)
+Requires `GOOGLE_SERVICE_ACCOUNT_JSON` secret with Play Console API access.
+To enable: trigger workflow manually with "Submit to Google Play" checked.
+
 ## Important Files to Know
+
+**CI/CD:**
+- `.github/workflows/eas-build.yml` - Android build and release workflow
+- `mobileapp/eas.json` - EAS Build configuration (for local builds)
 
 **Docker & Setup:**
 - `website/docker-compose.yml` - Container orchestration, all services defined here
