@@ -244,9 +244,17 @@ Automated Android builds using GitHub Actions. Builds run on GitHub's free runne
 1. Sets up Node.js, Java 17, Android SDK
 2. Auto-increments version code (uses GitHub run number)
 3. Runs `expo prebuild` to generate native Android project
-4. Signs and builds AAB with Gradle
-5. Uploads AAB as downloadable artifact (30-day retention)
-6. Uploads to **Internal Testing Track** (Play Store draft release)
+4. Signs and builds both AAB and APK with Gradle
+5. Uploads artifacts (AAB + APK) for download (30-day retention)
+6. Uploads APK to **Firebase App Distribution** (App Tester)
+7. Uploads AAB to **Google Play Internal Testing** (draft release)
+
+### Distribution Channels
+
+| Channel | Format | App | Purpose |
+|---------|--------|-----|---------|
+| Firebase App Distribution | APK | App Tester | Quick testing, instant installs |
+| Google Play Internal Testing | AAB | Play Store | Formal releases, staged rollout |
 
 ### GitHub Secrets Required
 
@@ -257,12 +265,20 @@ Automated Android builds using GitHub Actions. Builds run on GitHub's free runne
 | `ANDROID_KEY_ALIAS` | Key alias (`select-key`) |
 | `ANDROID_KEY_PASSWORD` | Key password |
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | Play Console service account JSON |
+| `FIREBASE_ANDROID_APP_ID` | Firebase app ID (`1:99250055508:android:d402e7523af578c76c00c1`) |
+| `FIREBASE_SERVICE_ACCOUNT` | Firebase service account JSON |
 
-### Google Cloud Setup (Already Done)
-1. Project: `select-app-486116` at https://console.cloud.google.com
-2. API enabled: Google Play Android Developer API
-3. Service account: `play-store-upload@select-app-486116.iam.gserviceaccount.com`
-4. Service account linked to Play Console with release permissions
+### Google Cloud Setup (for Play Store)
+- Project: `select-app-486116` at https://console.cloud.google.com
+- API enabled: Google Play Android Developer API
+- Service account: `play-store-upload@select-app-486116.iam.gserviceaccount.com`
+- Linked to Play Console with release permissions
+
+### Firebase Setup (for App Tester)
+- Project: `select-app-ab79d` at https://console.firebase.google.com
+- App Distribution enabled
+- Tester group: `testers`
+- Service account generated from Project Settings → Service accounts
 
 ### Generate New Keystore (if needed)
 ```bash
@@ -280,6 +296,12 @@ base64 -i select-release.keystore | pbcopy
 ```
 
 ### Testing the App
+
+**Via App Tester (Firebase - Recommended for development):**
+1. Install "App Tester" from Play Store
+2. Sign in with your Google account (must be in `testers` group)
+3. New builds appear automatically after CI completes
+
 **Via Play Store (Internal Testing):**
 1. Get opt-in link from Play Console → Internal testing → Testers
 2. Opt in, then find app in Play Store
@@ -287,14 +309,16 @@ base64 -i select-release.keystore | pbcopy
 
 ### Notes
 - Version code auto-increments with each build (GitHub run number)
-- Releases are created as **draft** (app still in draft state in Play Console)
+- Play Store releases are created as **draft** (app still in draft state)
 - After app is fully published, can change to `status: completed` for auto-rollout
+- Firebase distributions are instant, Play Store may take a few minutes to propagate
 
 ## Important Files to Know
 
 **CI/CD:**
 - `.github/workflows/eas-build.yml` - Android build and release workflow
 - `mobileapp/eas.json` - EAS Build configuration (for local builds)
+- `mobileapp/google-services.json` - Firebase configuration for Android
 
 **Docker & Setup:**
 - `website/docker-compose.yml` - Container orchestration, all services defined here
