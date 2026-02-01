@@ -51,6 +51,19 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      - name: Set version code
+        run: |
+          # Use GitHub run number as version code (auto-increments)
+          VERSION_CODE=${{ github.run_number }}
+          # Update app.json with version code
+          node -e "
+            const fs = require('fs');
+            const app = JSON.parse(fs.readFileSync('app.json'));
+            app.expo.android.versionCode = ${VERSION_CODE};
+            fs.writeFileSync('app.json', JSON.stringify(app, null, 2));
+          "
+          echo "Set versionCode to ${VERSION_CODE}"
+
       - name: Generate native Android project
         run: npx expo prebuild --platform android --clean
 
