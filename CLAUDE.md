@@ -246,15 +246,7 @@ Automated Android builds using GitHub Actions. Builds run on GitHub's free runne
 3. Runs `expo prebuild` to generate native Android project
 4. Signs and builds AAB with Gradle
 5. Uploads AAB as downloadable artifact (30-day retention)
-6. Uploads to **Internal App Sharing** (instant link for App Tester)
-7. Uploads to **Internal Testing Track** (Play Store draft release)
-
-### Distribution Channels
-
-| Channel | Purpose | Access |
-|---------|---------|--------|
-| Internal App Sharing | Quick testing via App Tester app | Instant download link in workflow summary |
-| Internal Testing Track | Play Store distribution | Opt-in testers see app in Play Store |
+6. Uploads to **Internal Testing Track** (Play Store draft release)
 
 ### GitHub Secrets Required
 
@@ -288,14 +280,10 @@ base64 -i select-release.keystore | pbcopy
 ```
 
 ### Testing the App
-**Via App Tester (Internal App Sharing):**
-1. Install "Internal App Sharing" app from Play Store
-2. Check workflow summary for download link after build
-3. Click link to install instantly
-
 **Via Play Store (Internal Testing):**
 1. Get opt-in link from Play Console → Internal testing → Testers
 2. Opt in, then find app in Play Store
+3. Or use direct link: https://play.google.com/store/apps/details?id=no.ekstremedia.select
 
 ### Notes
 - Version code auto-increments with each build (GitHub run number)
