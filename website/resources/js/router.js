@@ -97,6 +97,11 @@ const routes = [
         meta: { requiresAdmin: true },
     },
     {
+        path: '/websocket-test',
+        name: 'websocket-test',
+        component: () => import('./pages/WebSocketTest.vue'),
+    },
+    {
         path: '/:pathMatch(.*)*',
         name: 'not-found',
         component: () => import('./pages/NotFound.vue'),

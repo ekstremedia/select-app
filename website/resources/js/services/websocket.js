@@ -11,16 +11,17 @@ function getEcho() {
     }
 
     const wsHost = window.location.hostname;
-    const wsPort = document.querySelector('meta[name="reverb-port"]')?.content || 8080;
+    const wsPort = parseInt(document.querySelector('meta[name="reverb-port"]')?.content || '8080', 10);
     const appKey = document.querySelector('meta[name="reverb-key"]')?.content || '';
+    const useTLS = window.location.protocol === 'https:';
 
     echoInstance = new Echo({
         broadcaster: 'reverb',
         key: appKey,
         wsHost: wsHost,
-        wsPort: wsPort,
-        wssPort: wsPort,
-        forceTLS: window.location.protocol === 'https:',
+        wsPort: useTLS ? 443 : wsPort,
+        wssPort: useTLS ? wsPort : 443,
+        forceTLS: useTLS,
         disableStats: true,
         enabledTransports: ['ws', 'wss'],
         authorizer: (channel) => ({
