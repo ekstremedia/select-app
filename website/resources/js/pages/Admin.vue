@@ -109,7 +109,7 @@
             <!-- Stats tab -->
             <TabPanel :header="t('admin.stats')">
                 <div v-if="statsLoading" class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <Skeleton v-for="i in 4" :key="i" height="5rem" />
+                    <Skeleton v-for="i in 7" :key="i" height="5rem" />
                 </div>
                 <div v-else class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div
@@ -197,6 +197,9 @@ const statsCards = computed(() => [
     { label: t('admin.games'), value: statsData.value.total_games ?? 0 },
     { label: 'Active today', value: statsData.value.active_today ?? 0 },
     { label: 'Games today', value: statsData.value.games_today ?? 0 },
+    { label: 'Finished', value: statsData.value.games_finished ?? 0 },
+    { label: 'Answers', value: statsData.value.total_answers ?? 0 },
+    { label: 'Banned', value: statsData.value.banned_players ?? 0 },
 ]);
 
 function formatDate(dateStr) {
@@ -236,13 +239,10 @@ async function loadGames() {
 async function loadStats() {
     statsLoading.value = true;
     try {
-        // Stats might be included in players or games response, or separate endpoint
-        statsData.value = {
-            total_players: adminPlayers.value.length,
-            total_games: adminGames.value.length,
-            active_today: 0,
-            games_today: 0,
-        };
+        const { data } = await api.admin.stats();
+        statsData.value = data;
+    } catch {
+        statsData.value = {};
     } finally {
         statsLoading.value = false;
     }
@@ -278,8 +278,7 @@ async function handleUnban(player) {
     }
 }
 
-onMounted(async () => {
-    await Promise.all([loadPlayers(), loadGames()]);
-    await loadStats();
+onMounted(() => {
+    Promise.all([loadPlayers(), loadGames(), loadStats()]);
 });
 </script>

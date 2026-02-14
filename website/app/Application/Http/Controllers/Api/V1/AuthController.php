@@ -8,6 +8,7 @@ use App\Application\Http\Requests\Api\V1\GuestRequest;
 use App\Application\Http\Requests\Api\V1\LoginRequest;
 use App\Application\Http\Requests\Api\V1\RegisterRequest;
 use App\Application\Http\Requests\Api\V1\ResetPasswordRequest;
+use App\Application\Http\Requests\Api\V1\UpdateNicknameRequest;
 use App\Domain\Player\Actions\ConvertGuestToUserAction;
 use App\Domain\Player\Actions\CreateGuestPlayerAction;
 use App\Http\Controllers\Controller;
@@ -277,5 +278,44 @@ class AuthController extends Controller
         throw ValidationException::withMessages([
             'email' => [__($status)],
         ]);
+    }
+
+    public function updateNickname(UpdateNicknameRequest $request): JsonResponse
+    {
+        $player = $request->attributes->get('player');
+        $validated = $request->validated();
+
+        $player->update(['nickname' => $validated['nickname']]);
+
+        // Also update user nickname if registered
+        if ($player->user) {
+            $player->user->update(['nickname' => $validated['nickname']]);
+        }
+
+        return response()->json([
+            'player' => [
+                'id' => $player->id,
+                'nickname' => $player->nickname,
+            ],
+        ]);
+    }
+
+    public function deleteAccount(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $player = $user->player;
+
+        // Delete tokens
+        $user->tokens()->delete();
+
+        // Delete player (cascade will handle game_players, answers, votes)
+        if ($player) {
+            $player->delete();
+        }
+
+        // Delete user
+        $user->delete();
+
+        return response()->json(['message' => 'Account deleted successfully.']);
     }
 }

@@ -138,4 +138,31 @@ class AdminTest extends TestCase
 
         $response->assertStatus(401);
     }
+
+    public function test_admin_stats_returns_counts(): void
+    {
+        $response = $this->withHeaders($this->adminHeaders())
+            ->getJson('/api/v1/admin/stats');
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'total_players',
+                'total_games',
+                'active_today',
+                'games_today',
+                'games_finished',
+                'total_answers',
+                'banned_players',
+            ]);
+
+        // Verify all values are integers
+        $data = $response->json();
+        $this->assertIsInt($data['total_players']);
+        $this->assertIsInt($data['total_games']);
+        $this->assertIsInt($data['active_today']);
+        $this->assertIsInt($data['games_today']);
+        $this->assertIsInt($data['games_finished']);
+        $this->assertIsInt($data['total_answers']);
+        $this->assertIsInt($data['banned_players']);
+    }
 }

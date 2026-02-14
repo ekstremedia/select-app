@@ -39,6 +39,11 @@ Route::prefix('v1')->group(function () {
         Route::post('/convert', [AuthController::class, 'convert']);
     });
 
+    // Profile routes (Sanctum-protected)
+    Route::prefix('profile')->middleware('auth:sanctum')->group(function () {
+        Route::delete('/', [AuthController::class, 'deleteAccount']);
+    });
+
     // Two-factor auth routes (Sanctum-protected)
     Route::prefix('two-factor')->middleware('auth:sanctum')->group(function () {
         Route::post('/enable', [TwoFactorController::class, 'enable']);
@@ -68,6 +73,7 @@ Route::prefix('v1')->group(function () {
     // Player-required + ban-checked routes
     Route::middleware(['player', 'banned'])->group(function () {
         Route::get('/auth/me', [AuthController::class, 'me']);
+        Route::patch('/profile/nickname', [AuthController::class, 'updateNickname']);
 
         // Game routes
         Route::prefix('games')->group(function () {
@@ -95,6 +101,7 @@ Route::prefix('v1')->group(function () {
     Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function () {
         Route::get('/players', [AdminController::class, 'players']);
         Route::get('/games', [AdminController::class, 'games']);
+        Route::get('/stats', [AdminController::class, 'stats']);
         Route::post('/ban', [AdminController::class, 'ban']);
         Route::post('/unban/{playerId}', [AdminController::class, 'unban']);
     });

@@ -6,6 +6,7 @@ use App\Application\Http\Requests\Api\V1\BanPlayerRequest;
 use App\Domain\Player\Actions\BanPlayerAction;
 use App\Domain\Player\Actions\UnbanPlayerAction;
 use App\Http\Controllers\Controller;
+use App\Infrastructure\Models\Answer;
 use App\Infrastructure\Models\Game;
 use App\Infrastructure\Models\Player;
 use Illuminate\Http\JsonResponse;
@@ -63,5 +64,18 @@ class AdminController extends Controller
         $action->execute($player);
 
         return response()->json(['message' => 'Player has been unbanned.']);
+    }
+
+    public function stats(): JsonResponse
+    {
+        return response()->json([
+            'total_players' => Player::count(),
+            'total_games' => Game::count(),
+            'active_today' => Player::where('last_active_at', '>=', now()->startOfDay())->count(),
+            'games_today' => Game::where('created_at', '>=', now()->startOfDay())->count(),
+            'games_finished' => Game::where('status', 'finished')->count(),
+            'total_answers' => Answer::count(),
+            'banned_players' => Player::whereHas('user', fn ($q) => $q->where('is_banned', true))->count(),
+        ]);
     }
 }

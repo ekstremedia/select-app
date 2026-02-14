@@ -160,7 +160,7 @@
                     </p>
                     <div class="flex justify-end gap-2">
                         <Button :label="t('common.cancel')" severity="secondary" variant="text" @click="showDeleteDialog = false" />
-                        <Button :label="t('common.confirm')" severity="danger" />
+                        <Button :label="t('common.confirm')" severity="danger" :loading="deleteLoading" @click="handleDeleteAccount" />
                     </div>
                 </Dialog>
             </section>
@@ -170,6 +170,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
@@ -182,6 +183,7 @@ import { useI18n } from '../composables/useI18n.js';
 import { useDarkMode } from '../composables/useDarkMode.js';
 import { api } from '../services/api.js';
 
+const router = useRouter();
 const authStore = useAuthStore();
 const soundStore = useSoundStore();
 const { t, toggleLocale } = useI18n();
@@ -191,6 +193,7 @@ const { enabled: soundEnabled } = storeToRefs(soundStore);
 
 const successMessage = ref('');
 const showDeleteDialog = ref(false);
+const deleteLoading = ref(false);
 const twoFactorEnabled = ref(false);
 
 const nicknameForm = reactive({
@@ -217,10 +220,11 @@ async function updateNickname() {
     nicknameForm.error = '';
 
     try {
-        await api.auth.me(); // placeholder - update nickname endpoint
+        const { data } = await api.profile.updateNickname(nicknameForm.nickname);
+        authStore.player = { ...authStore.player, nickname: data.player.nickname };
         showSuccess(t('common.save'));
     } catch (err) {
-        nicknameForm.error = err.response?.data?.message || t('common.error');
+        nicknameForm.error = err.response?.data?.message || err.response?.data?.errors?.nickname?.[0] || t('common.error');
     } finally {
         nicknameForm.loading = false;
     }
@@ -256,6 +260,18 @@ async function toggleTwoFactor(value) {
         }
     } catch {
         twoFactorEnabled.value = !value;
+    }
+}
+
+async function handleDeleteAccount() {
+    deleteLoading.value = true;
+    try {
+        await api.profile.deleteAccount();
+        authStore.clearAuth();
+        showDeleteDialog.value = false;
+        router.push('/');
+    } catch {
+        deleteLoading.value = false;
     }
 }
 

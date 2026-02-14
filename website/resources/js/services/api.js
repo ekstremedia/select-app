@@ -62,6 +62,10 @@ export const api = {
             disable: (password) => client.delete('/two-factor/disable', { data: { password } }),
         },
     },
+    profile: {
+        updateNickname: (nickname) => client.patch('/profile/nickname', { nickname }),
+        deleteAccount: () => client.delete('/profile'),
+    },
     games: {
         list: (params) => client.get('/games', { params }),
         create: (data) => client.post('/games', data),
@@ -98,6 +102,7 @@ export const api = {
     admin: {
         players: (params) => client.get('/admin/players', { params }),
         games: (params) => client.get('/admin/games', { params }),
+        stats: () => client.get('/admin/stats'),
         ban: (playerId, reason, banIp) => client.post('/admin/ban', { player_id: playerId, reason, ban_ip: banIp }),
         unban: (playerId) => client.post(`/admin/unban/${playerId}`),
     },
