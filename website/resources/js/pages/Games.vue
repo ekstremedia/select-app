@@ -32,7 +32,7 @@
                             type="submit"
                             :label="t('games.join')"
                             severity="success"
-                            :disabled="joinCode.length !== 6"
+                            :disabled="joinCode.length < 4"
                         />
                     </form>
                     <small v-if="joinError" class="text-red-500 mt-2 block">{{ joinError }}</small>
@@ -106,7 +106,7 @@ const joinError = ref('');
 async function loadGames() {
     loading.value = true;
     try {
-        const { data } = await api.games.list({ status: 'waiting' });
+        const { data } = await api.games.list();
         openGames.value = data.games ?? data.data ?? [];
     } catch {
         openGames.value = [];
@@ -126,7 +126,7 @@ async function handleJoin(code) {
 }
 
 async function handleJoinByCode() {
-    if (joinCode.value.length !== 6) return;
+    if (joinCode.value.length < 4) return;
     await handleJoin(joinCode.value);
 }
 

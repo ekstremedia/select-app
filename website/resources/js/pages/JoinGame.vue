@@ -24,16 +24,12 @@
                 />
             </div>
 
-            <p class="text-sm text-slate-400 dark:text-slate-500">
-                {{ code.length }}/6
-            </p>
-
             <Button
                 type="submit"
                 :label="t('games.join')"
                 severity="success"
                 size="large"
-                :disabled="code.length !== 6"
+                :disabled="code.length < 4"
                 :loading="loading"
                 class="w-full max-w-xs"
             />
@@ -67,13 +63,10 @@ const codeInput = ref(null);
 
 function handleInput() {
     code.value = code.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (code.value.length === 6) {
-        handleJoin();
-    }
 }
 
 async function handleJoin() {
-    if (code.value.length !== 6) return;
+    if (code.value.length < 4) return;
 
     loading.value = true;
     error.value = '';
@@ -91,7 +84,7 @@ async function handleJoin() {
 onMounted(() => {
     // Pre-fill from query params if present
     if (route.query.code) {
-        code.value = String(route.query.code).toUpperCase().slice(0, 6);
+        code.value = String(route.query.code).toUpperCase().slice(0, 6).replace(/[^A-Z0-9]/g, '');
     }
     codeInput.value?.$el?.focus?.();
 });

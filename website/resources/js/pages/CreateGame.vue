@@ -164,15 +164,25 @@ async function handleCreate() {
     error.value = '';
 
     try {
-        const payload = { ...settings };
-        payload.acronym_length_min = payload.acronym_length;
-        payload.acronym_length_max = payload.acronym_length;
-        delete payload.acronym_length;
-        if (!payload.is_private) {
-            delete payload.password;
+        const gameSettings = {
+            rounds: settings.rounds,
+            answer_time: settings.answer_time,
+            vote_time: settings.vote_time,
+            time_between_rounds: settings.time_between_rounds,
+            acronym_length_min: settings.acronym_length,
+            acronym_length_max: settings.acronym_length,
+            max_players: settings.max_players,
+        };
+        if (settings.excluded_letters) {
+            gameSettings.excluded_letters = settings.excluded_letters;
         }
-        if (!payload.excluded_letters) {
-            delete payload.excluded_letters;
+
+        const payload = {
+            settings: gameSettings,
+            is_public: !settings.is_private,
+        };
+        if (settings.is_private && settings.password) {
+            payload.password = settings.password;
         }
 
         const data = await gameStore.createGame(payload);
