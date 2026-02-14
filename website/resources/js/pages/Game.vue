@@ -50,14 +50,21 @@
                                 {{ gameStore.gameCode }}
                             </p>
                             <canvas v-if="qrCanvas" ref="qrTarget" class="mx-auto mt-3 rounded-lg" width="128" height="128"></canvas>
-                            <Button
-                                :label="copied ? t('lobby.copied') : t('lobby.copyCode')"
-                                size="small"
-                                severity="success"
-                                variant="text"
-                                class="mt-2"
-                                @click="copyCode"
-                            />
+                            <div class="flex items-center justify-center gap-2 mt-3">
+                                <Button
+                                    :label="copiedLink ? t('lobby.copied') : t('lobby.shareLink')"
+                                    size="small"
+                                    severity="success"
+                                    @click="copyLink"
+                                />
+                                <Button
+                                    :label="copied ? t('lobby.copied') : t('lobby.copyCode')"
+                                    size="small"
+                                    severity="secondary"
+                                    variant="outlined"
+                                    @click="copyCode"
+                                />
+                            </div>
                         </div>
 
                         <!-- Player list -->
@@ -406,6 +413,7 @@ const answerInput = ref(null);
 const qrTarget = ref(null);
 const qrCanvas = ref(false);
 const copied = ref(false);
+const copiedLink = ref(false);
 const unreadCount = ref(0);
 
 const totalRounds = computed(() => gameStore.currentGame?.settings?.rounds ?? 5);
@@ -549,6 +557,14 @@ function copyCode() {
     navigator.clipboard.writeText(gameStore.gameCode || route.params.code);
     copied.value = true;
     setTimeout(() => { copied.value = false; }, 2000);
+}
+
+function copyLink() {
+    const code = gameStore.gameCode || route.params.code;
+    const url = `${window.location.origin}/games/join?code=${code}`;
+    navigator.clipboard.writeText(url);
+    copiedLink.value = true;
+    setTimeout(() => { copiedLink.value = false; }, 2000);
 }
 
 // Track unread chat messages when chat is closed

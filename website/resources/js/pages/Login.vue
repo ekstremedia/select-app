@@ -81,6 +81,43 @@
                 </router-link>
             </p>
         </div>
+
+        <!-- Guest play section -->
+        <div class="flex items-center gap-4 my-8">
+            <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
+            <span class="text-sm text-slate-400 dark:text-slate-500">{{ t('auth.or') }}</span>
+            <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+            <h2 class="text-lg font-semibold mb-4 text-slate-800 dark:text-slate-200">
+                {{ t('auth.guest.title') }}
+            </h2>
+            <form @submit.prevent="handleGuest" class="space-y-4">
+                <div v-if="guestError" class="p-3 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-sm text-red-700 dark:text-red-300">
+                    {{ guestError }}
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <label for="guestNickname" class="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {{ t('auth.guest.nickname') }}
+                    </label>
+                    <InputText
+                        id="guestNickname"
+                        v-model="guestNickname"
+                        class="w-full"
+                    />
+                </div>
+
+                <Button
+                    type="submit"
+                    :label="t('auth.guest.submit')"
+                    severity="secondary"
+                    :loading="guestLoading"
+                    class="w-full"
+                />
+            </form>
+        </div>
     </div>
 </template>
 
@@ -108,6 +145,28 @@ const loading = ref(false);
 const error = ref('');
 const fieldErrors = reactive({});
 const showTwoFactor = ref(false);
+
+const guestNickname = ref('');
+const guestLoading = ref(false);
+const guestError = ref('');
+
+async function handleGuest() {
+    if (!guestNickname.value.trim()) return;
+
+    guestLoading.value = true;
+    guestError.value = '';
+
+    try {
+        await authStore.createGuest(guestNickname.value.trim());
+        const redirect = route.query.redirect || '/games';
+        router.push(redirect);
+    } catch (err) {
+        const data = err.response?.data;
+        guestError.value = data?.errors?.nickname?.[0] || data?.message || t('common.error');
+    } finally {
+        guestLoading.value = false;
+    }
+}
 
 async function handleLogin() {
     loading.value = true;
