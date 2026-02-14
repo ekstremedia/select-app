@@ -21,7 +21,7 @@
                 <!-- Answer time -->
                 <div>
                     <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
-                        {{ t('create.answerTime') }}: {{ settings.answer_time }}{{ t('create.seconds') }}
+                        {{ t('create.answerTime') }}: {{ settings.answer_time }} {{ t('create.seconds') }}
                     </label>
                     <Slider v-model="settings.answer_time" :min="15" :max="180" :step="5" class="w-full" />
                 </div>
@@ -29,7 +29,7 @@
                 <!-- Vote time -->
                 <div>
                     <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
-                        {{ t('create.voteTime') }}: {{ settings.vote_time }}{{ t('create.seconds') }}
+                        {{ t('create.voteTime') }}: {{ settings.vote_time }} {{ t('create.seconds') }}
                     </label>
                     <Slider v-model="settings.vote_time" :min="10" :max="120" :step="5" class="w-full" />
                 </div>
@@ -37,7 +37,7 @@
                 <!-- Time between rounds -->
                 <div>
                     <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
-                        {{ t('create.timeBetweenRounds') }}: {{ settings.time_between_rounds }}{{ t('create.seconds') }}
+                        {{ t('create.timeBetweenRounds') }}: {{ settings.time_between_rounds }} {{ t('create.seconds') }}
                     </label>
                     <Slider v-model="settings.time_between_rounds" :min="3" :max="30" :step="1" class="w-full" />
                 </div>
@@ -47,9 +47,9 @@
             <div class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-5">
                 <div>
                     <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
-                        {{ t('create.acronymLength') }}: {{ settings.acronym_length_min }} - {{ settings.acronym_length_max }}
+                        {{ t('create.acronymLength') }}: {{ settings.acronym_length }}
                     </label>
-                    <Slider v-model="acronymRange" :range="true" :min="2" :max="10" :step="1" class="w-full" />
+                    <Slider v-model="settings.acronym_length" :min="1" :max="6" :step="1" class="w-full" />
                 </div>
 
                 <!-- Max players -->
@@ -132,7 +132,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
@@ -149,20 +149,11 @@ const settings = reactive({
     answer_time: 60,
     vote_time: 30,
     time_between_rounds: 10,
-    acronym_length_min: 3,
-    acronym_length_max: 6,
+    acronym_length: 4,
     max_players: 8,
     excluded_letters: '',
     is_private: false,
     password: '',
-});
-
-const acronymRange = computed({
-    get: () => [settings.acronym_length_min, settings.acronym_length_max],
-    set: (val) => {
-        settings.acronym_length_min = val[0];
-        settings.acronym_length_max = val[1];
-    },
 });
 
 const loading = ref(false);
@@ -174,6 +165,9 @@ async function handleCreate() {
 
     try {
         const payload = { ...settings };
+        payload.acronym_length_min = payload.acronym_length;
+        payload.acronym_length_max = payload.acronym_length;
+        delete payload.acronym_length;
         if (!payload.is_private) {
             delete payload.password;
         }

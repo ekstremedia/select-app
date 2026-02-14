@@ -37,7 +37,7 @@ class CreateGameAction
     private function generateUniqueCode(): string
     {
         do {
-            $code = strtoupper(Str::random(6));
+            $code = strtoupper(Str::random(4));
             // Avoid confusing characters
             $code = str_replace(['0', 'O', 'I', '1', 'L'], ['A', 'B', 'C', 'D', 'E'], $code);
         } while (Game::where('code', $code)->whereIn('status', [Game::STATUS_LOBBY, Game::STATUS_PLAYING])->exists());

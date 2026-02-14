@@ -125,8 +125,8 @@ class Game extends Model
             'answer_time' => 120,
             'vote_time' => 60,
             'time_between_rounds' => 10,
-            'acronym_length_min' => 3,
-            'acronym_length_max' => 6,
+            'acronym_length_min' => 4,
+            'acronym_length_max' => 4,
             'excluded_letters' => '',
         ];
     }

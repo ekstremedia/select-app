@@ -100,6 +100,22 @@ services:
       setup:
         condition: service_completed_successfully
 
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: select-scheduler
+    restart: unless-stopped
+    working_dir: /var/www
+    command: php artisan schedule:work
+    volumes:
+      - .:/var/www
+    networks:
+      - select
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+
   delectus:
     build:
       context: .
