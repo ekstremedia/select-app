@@ -7,6 +7,7 @@ use App\Infrastructure\Models\Player;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Tests\TestCase;
 
 class ChatTest extends TestCase
@@ -123,5 +124,23 @@ class ChatTest extends TestCase
         ]);
 
         $response->assertStatus(404);
+    }
+
+    public function test_chat_rate_limited_to_one_per_two_seconds(): void
+    {
+        Event::fake();
+        RateLimiter::clear('chat:'.$this->player->id);
+
+        $headers = ['X-Guest-Token' => $this->guestToken];
+
+        // First message should succeed
+        $this->withHeaders($headers)
+            ->postJson("/api/v1/games/{$this->gameCode}/chat", ['message' => 'First'])
+            ->assertStatus(200);
+
+        // Second immediate message should be rate limited
+        $this->withHeaders($headers)
+            ->postJson("/api/v1/games/{$this->gameCode}/chat", ['message' => 'Second'])
+            ->assertStatus(429);
     }
 }

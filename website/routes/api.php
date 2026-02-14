@@ -47,8 +47,16 @@ Route::prefix('v1')->group(function () {
     });
 
     // Public read-only routes (no auth required)
+    Route::get('/stats', function () {
+        return response()->json([
+            'games_played' => \App\Infrastructure\Models\Game::where('status', 'finished')->count(),
+            'total_sentences' => \App\Infrastructure\Models\Answer::count(),
+            'active_players' => \App\Infrastructure\Models\Player::where('last_active_at', '>=', now()->subDay())->count(),
+        ]);
+    });
     Route::get('/archive', [ArchiveController::class, 'index']);
     Route::get('/archive/{code}', [ArchiveController::class, 'show']);
+    Route::get('/archive/{code}/rounds/{roundNumber}', [ArchiveController::class, 'round']);
     Route::get('/leaderboard', [LeaderboardController::class, 'index']);
     Route::get('/hall-of-fame', [HallOfFameController::class, 'index']);
     Route::get('/hall-of-fame/random', [HallOfFameController::class, 'random']);

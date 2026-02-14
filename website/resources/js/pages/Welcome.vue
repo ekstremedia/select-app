@@ -91,6 +91,24 @@
             </div>
         </section>
 
+        <!-- Stats section -->
+        <section v-if="stats" class="px-4 pb-12 sm:pb-16">
+            <div class="max-w-md mx-auto grid grid-cols-3 gap-4 text-center">
+                <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{{ stats.games_played }}</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ t('stats.gamesPlayed') }}</p>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{{ stats.total_sentences }}</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ t('stats.sentences') }}</p>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <p class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{{ stats.active_players }}</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ t('stats.activePlayers') }}</p>
+                </div>
+            </div>
+        </section>
+
         <!-- CTA section -->
         <section class="px-4 pb-16 sm:pb-24 text-center">
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -114,6 +132,7 @@ import { useRouter } from 'vue-router';
 import Button from 'primevue/button';
 import { useI18n } from '../composables/useI18n.js';
 import { useDarkMode } from '../composables/useDarkMode.js';
+import { api } from '../services/api.js';
 
 const router = useRouter();
 
@@ -128,6 +147,7 @@ const gullkornSentence = gullkornWords.join(' ');
 const visibleLetters = ref(0);
 const showSentence = ref(false);
 const currentSentence = ref('');
+const stats = ref(null);
 
 let animationTimer = null;
 
@@ -153,6 +173,7 @@ function animateAcronym() {
 
 onMounted(() => {
     animateAcronym();
+    api.stats().then(res => { stats.value = res.data; }).catch(() => {});
 });
 
 onUnmounted(() => {

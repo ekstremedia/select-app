@@ -49,6 +49,7 @@
                             <p class="text-3xl font-mono font-bold tracking-[0.4em] text-emerald-700 dark:text-emerald-300">
                                 {{ gameStore.gameCode }}
                             </p>
+                            <canvas v-if="qrCanvas" ref="qrTarget" class="mx-auto mt-3 rounded-lg" width="128" height="128"></canvas>
                             <Button
                                 :label="copied ? t('lobby.copied') : t('lobby.copyCode')"
                                 size="small"
@@ -378,6 +379,8 @@ import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import Badge from 'primevue/badge';
 import ProgressBar from 'primevue/progressbar';
+import QRCode from 'qrcode';
+import confetti from 'canvas-confetti';
 import GameLayout from '../layouts/GameLayout.vue';
 import { useGameStore } from '../stores/gameStore.js';
 import { useI18n } from '../composables/useI18n.js';
@@ -400,6 +403,8 @@ const chatOpen = ref(false);
 const chatMessage = ref('');
 const chatContainer = ref(null);
 const answerInput = ref(null);
+const qrTarget = ref(null);
+const qrCanvas = ref(false);
 const copied = ref(false);
 const unreadCount = ref(0);
 
@@ -459,10 +464,24 @@ async function initGame() {
         if (phase.value === 'playing' || phase.value === 'voting') {
             await gameStore.fetchCurrentRound(route.params.code);
         }
+
+        // Generate QR code for lobby
+        if (phase.value === 'lobby') {
+            generateQR();
+        }
     } catch (err) {
         error.value = err.response?.data?.message || t('common.error');
     } finally {
         loading.value = false;
+    }
+}
+
+async function generateQR() {
+    qrCanvas.value = true;
+    await nextTick();
+    if (qrTarget.value) {
+        const url = `${window.location.origin}/games/join?code=${route.params.code}`;
+        QRCode.toCanvas(qrTarget.value, url, { width: 128, margin: 1 });
     }
 }
 
@@ -564,6 +583,9 @@ watch(phase, (newPhase) => {
     }
     if (newPhase === 'voting') {
         selectedVote.value = null;
+    }
+    if (newPhase === 'finished') {
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
     }
 });
 

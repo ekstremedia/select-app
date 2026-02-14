@@ -865,4 +865,34 @@ class ArchiveTest extends TestCase
         // Only the recent TargetPlayer game should match
         $this->assertEquals(1, $response->json('total'));
     }
+
+    public function test_archive_round_detail_returns_single_round(): void
+    {
+        $data = $this->createFinishedGameWithResult('RoundDetail', 2, 3);
+        $game = $data['game'];
+
+        $response = $this->getJson("/api/v1/archive/{$game->code}/rounds/1");
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'round_number',
+                'acronym',
+                'answers' => [
+                    '*' => ['player_name', 'text', 'votes_count', 'voters'],
+                ],
+            ]);
+
+        $this->assertEquals(1, $response->json('round_number'));
+        $this->assertEquals('ABC', $response->json('acronym'));
+    }
+
+    public function test_archive_round_detail_returns_404_for_invalid_round(): void
+    {
+        $data = $this->createFinishedGameWithResult('RoundFour', 2, 2);
+        $game = $data['game'];
+
+        $response = $this->getJson("/api/v1/archive/{$game->code}/rounds/99");
+
+        $response->assertStatus(404);
+    }
 }

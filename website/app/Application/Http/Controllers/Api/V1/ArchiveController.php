@@ -7,6 +7,7 @@ use App\Infrastructure\Models\Game;
 use App\Infrastructure\Models\GameResult;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class ArchiveController extends Controller
 {
@@ -46,16 +47,60 @@ class ArchiveController extends Controller
 
     public function show(string $code): JsonResponse
     {
-        $game = Game::where('code', $code)
-            ->with([
-                'rounds.answers.player',
-                'rounds.answers.votes',
-                'gamePlayers.player',
-                'gameResult',
-            ])
+        $data = Cache::rememberForever("archive:{$code}", function () use ($code) {
+            $game = Game::where('code', $code)
+                ->with([
+                    'rounds.answers.player',
+                    'rounds.answers.votes',
+                    'gamePlayers.player',
+                    'gameResult',
+                ])
+                ->firstOrFail();
+
+            $rounds = $game->rounds->sortBy('round_number')->values()->map(fn ($round) => [
+                'round_number' => $round->round_number,
+                'acronym' => $round->acronym,
+                'answers' => $round->answers->sortByDesc('votes_count')->values()->map(fn ($a) => [
+                    'player_name' => $a->author_nickname ?? $a->player->nickname,
+                    'text' => $a->text,
+                    'votes_count' => $a->votes_count,
+                    'voters' => $a->votes->map(fn ($v) => $v->voter_nickname)->filter()->values(),
+                ]),
+            ]);
+
+            $players = $game->gamePlayers->sortByDesc('score')->values()->map(fn ($gp, $i) => [
+                'nickname' => $gp->player->nickname,
+                'score' => $gp->score,
+                'rank' => $i + 1,
+            ]);
+
+            return [
+                'game' => [
+                    'code' => $game->code,
+                    'status' => $game->status,
+                    'settings' => $game->settings,
+                    'started_at' => $game->started_at?->toIso8601String(),
+                    'finished_at' => $game->finished_at?->toIso8601String(),
+                    'duration_seconds' => $game->duration_seconds,
+                ],
+                'players' => $players,
+                'rounds' => $rounds,
+            ];
+        });
+
+        return response()->json($data);
+    }
+
+    public function round(string $code, int $roundNumber): JsonResponse
+    {
+        $game = Game::where('code', $code)->firstOrFail();
+
+        $round = $game->rounds()
+            ->where('round_number', $roundNumber)
+            ->with(['answers.player', 'answers.votes'])
             ->firstOrFail();
 
-        $rounds = $game->rounds->sortBy('round_number')->values()->map(fn ($round) => [
+        return response()->json([
             'round_number' => $round->round_number,
             'acronym' => $round->acronym,
             'answers' => $round->answers->sortByDesc('votes_count')->values()->map(fn ($a) => [
@@ -64,25 +109,6 @@ class ArchiveController extends Controller
                 'votes_count' => $a->votes_count,
                 'voters' => $a->votes->map(fn ($v) => $v->voter_nickname)->filter()->values(),
             ]),
-        ]);
-
-        $players = $game->gamePlayers->sortByDesc('score')->values()->map(fn ($gp, $i) => [
-            'nickname' => $gp->player->nickname,
-            'score' => $gp->score,
-            'rank' => $i + 1,
-        ]);
-
-        return response()->json([
-            'game' => [
-                'code' => $game->code,
-                'status' => $game->status,
-                'settings' => $game->settings,
-                'started_at' => $game->started_at?->toIso8601String(),
-                'finished_at' => $game->finished_at?->toIso8601String(),
-                'duration_seconds' => $game->duration_seconds,
-            ],
-            'players' => $players,
-            'rounds' => $rounds,
         ]);
     }
 }

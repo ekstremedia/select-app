@@ -47,6 +47,7 @@ client.interceptors.response.use(
 );
 
 export const api = {
+    stats: () => client.get('/stats'),
     auth: {
         guest: (nickname) => client.post('/auth/guest', { nickname }),
         register: (data) => client.post('/auth/register', data),

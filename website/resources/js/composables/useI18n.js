@@ -36,6 +36,9 @@ const translations = {
         'cta.play': 'Spill nå',
         'cta.download': 'Last ned appen',
         'cta.browse': 'Se arkivet',
+        'stats.gamesPlayed': 'Spill spilt',
+        'stats.sentences': 'Setninger',
+        'stats.activePlayers': 'Aktive spillere',
         'footer.tagline': 'Delectus — spillmesteren fra #select på EFnet',
 
         // Auth
@@ -237,6 +240,9 @@ const translations = {
         'cta.play': 'Play now',
         'cta.download': 'Get the app',
         'cta.browse': 'Browse archive',
+        'stats.gamesPlayed': 'Games played',
+        'stats.sentences': 'Sentences',
+        'stats.activePlayers': 'Active players',
         'footer.tagline': 'Delectus — the game master from #select on EFnet',
 
         // Auth

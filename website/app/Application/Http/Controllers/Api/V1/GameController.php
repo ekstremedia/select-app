@@ -18,6 +18,7 @@ use App\Http\Controllers\Controller;
 use App\Infrastructure\Models\Game;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 
 class GameController extends Controller
 {
@@ -231,6 +232,13 @@ class GameController extends Controller
         if (! $game) {
             return response()->json(['error' => 'Game not found'], 404);
         }
+
+        // Rate limit: 1 message per 2 seconds per player
+        $rateLimitKey = 'chat:'.$player->id;
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 1)) {
+            return response()->json(['error' => 'Too many messages. Wait a moment.'], 429);
+        }
+        RateLimiter::hit($rateLimitKey, 2);
 
         $request->validate([
             'message' => 'required|string|max:200',
