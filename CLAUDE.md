@@ -17,7 +17,7 @@ A real-time multiplayer mobile game where players create sentences from random a
 
 ```
 select-app/
-├── website/          # Laravel 12 backend (API + WebSockets + future web game)
+├── website/          # Laravel 12 backend (API + WebSockets + web frontend)
 │   ├── app/
 │   │   ├── Domain/           # Pure business logic (DDD)
 │   │   │   ├── Game/         # Game, GamePlayer, GameSettings
@@ -27,8 +27,26 @@ select-app/
 │   │   │   ├── Http/Controllers/Api/V1/
 │   │   │   ├── Broadcasting/Events/
 │   │   │   └── Jobs/
+│   │   ├── Console/Commands/ # Artisan commands
+│   │   │   ├── DelectusRunCommand.php
+│   │   │   └── ImportGullkornCommand.php
 │   │   └── Infrastructure/   # Eloquent models
 │   │       └── Models/
+│   ├── resources/
+│   │   ├── js/
+│   │   │   ├── app.js              # Vue 3 + PrimeVue entry point
+│   │   │   ├── bootstrap.js        # Axios setup
+│   │   │   ├── composables/        # Vue composables
+│   │   │   │   ├── useDarkMode.js  # Dark/light mode toggle
+│   │   │   │   └── useI18n.js      # NO/EN language switching
+│   │   │   └── pages/
+│   │   │       └── Welcome.vue     # Welcome/landing page
+│   │   ├── css/app.css             # Tailwind v4 + PrimeVue styles
+│   │   └── views/
+│   │       └── welcome.blade.php   # Vue mount shell
+│   ├── sql/                  # Legacy data imports
+│   │   ├── gullkorn.sql
+│   │   └── gullkorn_clean.sql
 │   ├── docker/
 │   │   ├── setup.sh          # Auto-runs on first docker compose up
 │   │   ├── nginx/            # Nginx configuration
@@ -57,6 +75,7 @@ select-app/
 ## Tech Stack
 
 - **Backend**: Laravel 12, PostgreSQL, Laravel Reverb (WebSockets)
+- **Frontend**: Vue 3, PrimeVue v4 (Aura theme), Tailwind CSS v4
 - **Mobile**: React Native (Expo), TypeScript, Zustand
 - **Architecture**: DDD (Domain-Driven Design) for backend
 
@@ -138,12 +157,17 @@ Features:
 
 ## Database Schema
 
+**Game tables:**
 - **players** - id (UUID), user_id?, guest_token?, display_name, stats
 - **games** - id, code (6-char), host_player_id, status, settings (JSON)
 - **game_players** - game_id, player_id, score, is_active
 - **rounds** - id, game_id, round_number, acronym, status, deadlines
 - **answers** - id, round_id, player_id, text, votes_count
 - **votes** - id, answer_id, voter_id
+
+**Legacy data (imported from original IRC game):**
+- **gullkorn** - id, nick, setning, stemmer, tid, hvemstemte (original sentences from #select)
+- **gullkorn_clean** - Same schema, cleaned/curated version
 
 ## Development Setup
 
@@ -185,10 +209,23 @@ That's it! The first run automatically:
 
 | Command | Where | Example |
 |---------|-------|---------|
-| `composer install` | Inside container | `docker compose exec app composer install` |
-| `php artisan ...` | Inside container | `docker compose exec app php artisan migrate` |
+| `composer install` | Inside container | `dc exec select composer install` |
+| `php artisan ...` | Inside container | `dc exec select php artisan migrate` |
 | `yarn install` | Host machine | `cd website && yarn install` |
+| `yarn build` | Host machine | `cd website && yarn build` |
 | Edit `.env` | Host machine | Edit `website/.env` directly |
+
+### Frontend Build
+
+The frontend uses Vue 3 + PrimeVue v4 + Tailwind CSS v4, compiled by Vite:
+
+```bash
+cd website
+yarn build        # Production build → public/build/
+yarn dev          # Dev server with HMR
+```
+
+**Note:** `yarn build` must run on the **host machine** (not in Docker). Built assets are committed/deployed to `public/build/`.
 
 ### Useful Docker Commands
 
@@ -331,7 +368,15 @@ base64 -i select-release.keystore | pbcopy
 - `website/app/Domain/Game/Services/ScoringService.php` - Vote-based scoring
 - `website/app/Domain/Delectus/` - Game orchestrator (deadline handling, round transitions)
 - `website/app/Application/Broadcasting/Events/` - All WebSocket events
+- `website/app/Console/Commands/ImportGullkornCommand.php` - Import legacy gullkorn data
 - `website/resources/views/debug.blade.php` - Debug console (WebSocket testing, API testing)
+
+**Frontend (Vue 3):**
+- `website/vite.config.js` - Vite config with Vue + Tailwind plugins
+- `website/resources/js/app.js` - Vue app entry point with PrimeVue setup
+- `website/resources/js/pages/Welcome.vue` - Welcome/landing page
+- `website/resources/js/composables/useI18n.js` - Norwegian/English i18n
+- `website/resources/js/composables/useDarkMode.js` - Dark/light mode toggle
 
 **Mobile App:**
 - `mobileapp/src/stores/gameStore.ts` - Central game state with WS handlers
@@ -381,6 +426,34 @@ docker compose exec -it app php artisan boost:install
 ```
 
 Note: Must run with `-it` flag for interactive prompts, or run from host machine with matching PHP version.
+
+## Web Frontend (Vue 3 + PrimeVue v4)
+
+The welcome page at `https://select.huske.app` uses Vue 3 with PrimeVue v4 (Aura theme) and Tailwind CSS v4.
+
+**Key setup details:**
+- PrimeVue configured in `resources/js/app.js` with `darkModeSelector: '.dark'` (class-based)
+- Tailwind v4 dark mode override: `@variant dark (&:where(.dark, .dark *))` in `app.css`
+- CSS layer ordering for PrimeVue/Tailwind coexistence
+- i18n: Norwegian (default) / English, persisted to localStorage
+- Dark mode: Respects system preference on first visit, persisted to localStorage
+
+**HTTPS behind reverse proxy:**
+- `AppServiceProvider::boot()` calls `URL::forceScheme('https')` in production
+- `bootstrap/app.php` has `trustProxies(at: '*')` for proxy headers
+
+## Artisan Commands
+
+```bash
+# Run Delectus game orchestrator
+dc exec select php artisan delectus:run
+
+# Import legacy gullkorn data from MySQL dumps
+dc exec select php artisan gullkorn:import              # Both tables
+dc exec select php artisan gullkorn:import --only=gullkorn_clean  # One table
+```
+
+**gullkorn:import** reads MySQL dump files from `website/sql/`, converts to PostgreSQL, and imports. Tables: `gullkorn` and `gullkorn_clean` (sentences from the original IRC #select game).
 
 ## Future Plans
 
