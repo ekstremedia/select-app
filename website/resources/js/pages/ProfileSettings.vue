@@ -235,7 +235,7 @@ async function updatePassword() {
     passwordForm.error = '';
 
     try {
-        await api.auth.resetPassword({
+        await api.profile.updatePassword({
             current_password: passwordForm.current_password,
             password: passwordForm.password,
             password_confirmation: passwordForm.password_confirmation,

@@ -45,6 +45,17 @@ export const useAuthStore = defineStore('auth', () => {
         return data;
     }
 
+    async function convertGuest(formData) {
+        const guestToken = localStorage.getItem('select-guest-token');
+        const { data } = await api.auth.convert({ ...formData, guest_token: guestToken });
+        player.value = data.player;
+        user.value = data.user;
+        token.value = data.token;
+        localStorage.setItem('select-auth-token', data.token);
+        localStorage.removeItem('select-guest-token');
+        return data;
+    }
+
     async function logout() {
         try {
             await api.auth.logout();
@@ -105,6 +116,7 @@ export const useAuthStore = defineStore('auth', () => {
         createGuest,
         login,
         register,
+        convertGuest,
         logout,
         fetchMe,
         loadFromStorage,

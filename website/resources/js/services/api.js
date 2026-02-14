@@ -54,6 +54,7 @@ export const api = {
         login: (data) => client.post('/auth/login', data),
         logout: () => client.post('/auth/logout'),
         me: () => client.get('/auth/me'),
+        convert: (data) => client.post('/auth/convert', data),
         forgotPassword: (email) => client.post('/auth/forgot-password', { email }),
         resetPassword: (data) => client.post('/auth/reset-password', data),
         twoFactor: {
@@ -64,6 +65,7 @@ export const api = {
     },
     profile: {
         updateNickname: (nickname) => client.patch('/profile/nickname', { nickname }),
+        updatePassword: (data) => client.patch('/profile/password', data),
         deleteAccount: () => client.delete('/profile'),
     },
     games: {

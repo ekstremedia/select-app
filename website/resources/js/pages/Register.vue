@@ -4,6 +4,11 @@
             {{ t('auth.register.title') }}
         </h1>
 
+        <!-- Guest conversion notice -->
+        <div v-if="isConvertingGuest" class="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-sm text-emerald-700 dark:text-emerald-300 mb-6">
+            {{ t('auth.register.convertNotice') }}
+        </div>
+
         <!-- Registration form -->
         <form @submit.prevent="handleRegister" class="space-y-5">
             <div v-if="error" class="p-3 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-sm text-red-700 dark:text-red-300">
@@ -92,14 +97,14 @@
         </form>
 
         <!-- Divider -->
-        <div class="flex items-center gap-4 my-8">
+        <div v-if="!isConvertingGuest" class="flex items-center gap-4 my-8">
             <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
             <span class="text-sm text-slate-400 dark:text-slate-500">{{ t('auth.or') }}</span>
             <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
         </div>
 
-        <!-- Guest section -->
-        <div class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+        <!-- Guest section (hide when already a guest) -->
+        <div v-if="!isConvertingGuest" class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
             <h2 class="text-lg font-semibold mb-4 text-slate-800 dark:text-slate-200">
                 {{ t('auth.guest.title') }}
             </h2>
@@ -152,10 +157,12 @@ const route = useRoute();
 const authStore = useAuthStore();
 const { t } = useI18n();
 
+const isConvertingGuest = authStore.isAuthenticated && authStore.isGuest;
+
 const form = reactive({
     name: '',
     email: '',
-    nickname: '',
+    nickname: authStore.nickname || '',
     password: '',
     password_confirmation: '',
 });
@@ -174,7 +181,12 @@ async function handleRegister() {
     Object.keys(fieldErrors).forEach((k) => delete fieldErrors[k]);
 
     try {
-        await authStore.register({ ...form });
+        // If user is a guest, convert their account instead of creating new
+        if (authStore.isAuthenticated && authStore.isGuest) {
+            await authStore.convertGuest({ ...form });
+        } else {
+            await authStore.register({ ...form });
+        }
         const redirect = route.query.redirect || '/games';
         router.push(redirect);
     } catch (err) {

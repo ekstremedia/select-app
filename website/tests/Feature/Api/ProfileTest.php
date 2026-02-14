@@ -142,4 +142,75 @@ class ProfileTest extends TestCase
 
         $response->assertStatus(401);
     }
+
+    public function test_can_update_password(): void
+    {
+        $user = User::factory()->create([
+            'password' => bcrypt('oldpassword'),
+        ]);
+        $token = $user->createToken('api')->plainTextToken;
+
+        $response = $this->patchJson('/api/v1/profile/password', [
+            'current_password' => 'oldpassword',
+            'password' => 'newpassword123',
+            'password_confirmation' => 'newpassword123',
+        ], [
+            'Authorization' => "Bearer {$token}",
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson(['message' => 'Password updated successfully.']);
+
+        // Verify new password works
+        $user->refresh();
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('newpassword123', $user->password));
+    }
+
+    public function test_update_password_validates_current_password(): void
+    {
+        $user = User::factory()->create([
+            'password' => bcrypt('correctpassword'),
+        ]);
+        $token = $user->createToken('api')->plainTextToken;
+
+        $response = $this->patchJson('/api/v1/profile/password', [
+            'current_password' => 'wrongpassword',
+            'password' => 'newpassword123',
+            'password_confirmation' => 'newpassword123',
+        ], [
+            'Authorization' => "Bearer {$token}",
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['current_password']);
+    }
+
+    public function test_update_password_requires_confirmation(): void
+    {
+        $user = User::factory()->create([
+            'password' => bcrypt('oldpassword'),
+        ]);
+        $token = $user->createToken('api')->plainTextToken;
+
+        $response = $this->patchJson('/api/v1/profile/password', [
+            'current_password' => 'oldpassword',
+            'password' => 'newpassword123',
+        ], [
+            'Authorization' => "Bearer {$token}",
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['password']);
+    }
+
+    public function test_update_password_requires_authentication(): void
+    {
+        $response = $this->patchJson('/api/v1/profile/password', [
+            'current_password' => 'old',
+            'password' => 'new12345',
+            'password_confirmation' => 'new12345',
+        ]);
+
+        $response->assertStatus(401);
+    }
 }

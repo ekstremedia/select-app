@@ -9,6 +9,7 @@ use App\Application\Http\Requests\Api\V1\LoginRequest;
 use App\Application\Http\Requests\Api\V1\RegisterRequest;
 use App\Application\Http\Requests\Api\V1\ResetPasswordRequest;
 use App\Application\Http\Requests\Api\V1\UpdateNicknameRequest;
+use App\Application\Http\Requests\Api\V1\UpdatePasswordRequest;
 use App\Domain\Player\Actions\ConvertGuestToUserAction;
 use App\Domain\Player\Actions\CreateGuestPlayerAction;
 use App\Http\Controllers\Controller;
@@ -298,6 +299,15 @@ class AuthController extends Controller
                 'nickname' => $player->nickname,
             ],
         ]);
+    }
+
+    public function updatePassword(UpdatePasswordRequest $request): JsonResponse
+    {
+        $request->user()->update([
+            'password' => Hash::make($request->validated('password')),
+        ]);
+
+        return response()->json(['message' => 'Password updated successfully.']);
     }
 
     public function deleteAccount(Request $request): JsonResponse
