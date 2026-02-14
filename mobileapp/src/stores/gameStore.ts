@@ -256,7 +256,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     const newPlayer: GamePlayer = {
       id: event.player.id,
-      display_name: event.player.display_name,
+      nickname: event.player.nickname,
       score: 0,
       is_host: false,
     };

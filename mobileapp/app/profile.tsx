@@ -235,10 +235,10 @@ export default function ProfileScreen() {
           <View style={styles.profileHeader}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>
-                {player.display_name.charAt(0).toUpperCase()}
+                {player.nickname.charAt(0).toUpperCase()}
               </Text>
             </View>
-            <Text style={styles.displayName}>{player.display_name}</Text>
+            <Text style={styles.displayName}>{player.nickname}</Text>
             {user && <Text style={styles.email}>{user.email}</Text>}
             {player.is_guest && (
               <View style={styles.guestBadge}>

@@ -54,10 +54,10 @@ class ApiClient {
   }
 
   // Auth endpoints
-  async createGuest(displayName: string): Promise<AuthResponse> {
+  async createGuest(nickname: string): Promise<AuthResponse> {
     return this.request('/auth/guest', {
       method: 'POST',
-      body: JSON.stringify({ display_name: displayName }),
+      body: JSON.stringify({ nickname }),
     });
   }
 

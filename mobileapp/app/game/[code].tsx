@@ -69,7 +69,7 @@ function LobbyView() {
         </Text>
         {game.players.map((p) => (
           <View key={p.id} style={styles.playerItem}>
-            <Text style={styles.playerName}>{p.display_name}</Text>
+            <Text style={styles.playerName}>{p.nickname}</Text>
             {p.is_host && <Text style={styles.hostBadge}>Host</Text>}
             {p.id === player?.id && <Text style={styles.youBadge}>You</Text>}
           </View>

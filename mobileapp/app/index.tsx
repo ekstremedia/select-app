@@ -41,7 +41,7 @@ export default function HomeScreen() {
       <View style={styles.container}>
         <ConnectionStatus />
         <Text style={styles.title}>Select</Text>
-        <Text style={styles.subtitle}>{t('home.welcome', { name: player.display_name })}</Text>
+        <Text style={styles.subtitle}>{t('home.welcome', { name: player.nickname })}</Text>
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity

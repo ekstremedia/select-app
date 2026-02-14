@@ -1,6 +1,6 @@
 export interface Player {
   id: string;
-  display_name: string;
+  nickname: string;
   guest_token?: string;
   is_guest: boolean;
   stats?: PlayerStats;
@@ -30,7 +30,7 @@ export interface GameSettings {
 
 export interface GamePlayer {
   id: string;
-  display_name: string;
+  nickname: string;
   score: number;
   is_host: boolean;
 }
@@ -105,7 +105,7 @@ export interface RoundResponse {
 export interface PlayerJoinedEvent {
   player: {
     id: string;
-    display_name: string;
+    nickname: string;
   };
   players_count: number;
 }
