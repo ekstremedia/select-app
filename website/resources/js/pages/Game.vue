@@ -390,11 +390,13 @@ import QRCode from 'qrcode';
 import confetti from 'canvas-confetti';
 import GameLayout from '../layouts/GameLayout.vue';
 import { useGameStore } from '../stores/gameStore.js';
+import { useAuthStore } from '../stores/authStore.js';
 import { useI18n } from '../composables/useI18n.js';
 
 const router = useRouter();
 const route = useRoute();
 const gameStore = useGameStore();
+const authStore = useAuthStore();
 const { t } = useI18n();
 
 const { phase } = storeToRefs(gameStore);
@@ -466,6 +468,14 @@ async function initGame() {
 
     try {
         await gameStore.fetchGame(route.params.code);
+
+        // Auto-join if the player isn't in the game yet
+        const myId = authStore.player?.id;
+        const isInGame = gameStore.players.some((p) => p.id === myId);
+        if (!isInGame && phase.value === 'lobby') {
+            await gameStore.joinGame(route.params.code);
+        }
+
         gameStore.connectWebSocket(route.params.code);
 
         // If the game is already playing, fetch the current round
