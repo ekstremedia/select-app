@@ -29,6 +29,12 @@ if grep -q "^APP_KEY=$" /var/www/.env; then
     php artisan key:generate
 fi
 
+# Fix storage permissions
+echo ""
+echo "==> Setting storage permissions..."
+chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+
 # Run migrations
 echo ""
 echo "==> Running database migrations..."

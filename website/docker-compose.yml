@@ -14,7 +14,7 @@ services:
       db:
         condition: service_healthy
 
-  app:
+  select:
     build:
       context: .
       dockerfile: Dockerfile
@@ -44,7 +44,7 @@ services:
     networks:
       - select
     depends_on:
-      - app
+      - select
 
   db:
     image: postgres:16-alpine
