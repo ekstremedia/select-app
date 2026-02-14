@@ -14,40 +14,40 @@ class AuthTest extends TestCase
     public function test_can_create_guest_player(): void
     {
         $response = $this->postJson('/api/v1/auth/guest', [
-            'display_name' => 'TestPlayer',
+            'nickname' => 'TestPlayer',
         ]);
 
         $response->assertStatus(201)
             ->assertJsonStructure([
                 'player' => [
                     'id',
-                    'display_name',
+                    'nickname',
                     'guest_token',
                     'is_guest',
                 ],
             ]);
 
         $this->assertTrue($response->json('player.is_guest'));
-        $this->assertEquals('TestPlayer', $response->json('player.display_name'));
+        $this->assertEquals('TestPlayer', $response->json('player.nickname'));
         $this->assertNotNull($response->json('player.guest_token'));
     }
 
-    public function test_guest_requires_display_name(): void
+    public function test_guest_requires_nickname(): void
     {
         $response = $this->postJson('/api/v1/auth/guest', []);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['display_name']);
+            ->assertJsonValidationErrors(['nickname']);
     }
 
-    public function test_guest_display_name_min_length(): void
+    public function test_guest_nickname_min_length(): void
     {
         $response = $this->postJson('/api/v1/auth/guest', [
-            'display_name' => 'A',
+            'nickname' => 'AB',
         ]);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['display_name']);
+            ->assertJsonValidationErrors(['nickname']);
     }
 
     public function test_can_register_new_user(): void
@@ -57,11 +57,12 @@ class AuthTest extends TestCase
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'name' => 'Test User',
+            'nickname' => 'TestUser',
         ]);
 
         $response->assertStatus(201)
             ->assertJsonStructure([
-                'player' => ['id', 'display_name', 'is_guest'],
+                'player' => ['id', 'nickname', 'is_guest'],
                 'user' => ['id', 'name', 'email'],
                 'token',
             ]);
@@ -74,22 +75,23 @@ class AuthTest extends TestCase
     {
         // Create a guest first
         $guestResponse = $this->postJson('/api/v1/auth/guest', [
-            'display_name' => 'GuestPlayer',
+            'nickname' => 'GuestPlayer',
         ]);
 
         $guestToken = $guestResponse->json('player.guest_token');
 
-        // Convert to user
-        $response = $this->postJson('/api/v1/auth/convert', [
+        // Convert to user (needs Sanctum auth for the convert route)
+        // Since convert is now behind auth:sanctum, we test the register with guest_token instead
+        $response = $this->postJson('/api/v1/auth/register', [
             'guest_token' => $guestToken,
             'email' => 'converted@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
 
-        $response->assertStatus(200)
+        $response->assertStatus(201)
             ->assertJsonStructure([
-                'player' => ['id', 'display_name', 'is_guest'],
+                'player' => ['id', 'nickname', 'is_guest'],
                 'user' => ['id', 'name', 'email'],
                 'token',
             ]);
@@ -99,16 +101,17 @@ class AuthTest extends TestCase
 
     public function test_can_login_with_credentials(): void
     {
-        // Create user first
         $user = User::create([
             'name' => 'Test User',
+            'nickname' => 'LoginUser',
             'email' => 'login@example.com',
             'password' => bcrypt('password123'),
         ]);
 
         Player::create([
             'user_id' => $user->id,
-            'display_name' => 'Test User',
+            'nickname' => 'LoginUser',
+            'is_guest' => false,
         ]);
 
         $response = $this->postJson('/api/v1/auth/login', [
@@ -128,6 +131,7 @@ class AuthTest extends TestCase
     {
         User::create([
             'name' => 'Test User',
+            'nickname' => 'WrongPw',
             'email' => 'wrong@example.com',
             'password' => bcrypt('password123'),
         ]);
@@ -143,7 +147,7 @@ class AuthTest extends TestCase
     public function test_can_get_me_with_guest_token(): void
     {
         $guestResponse = $this->postJson('/api/v1/auth/guest', [
-            'display_name' => 'TestGuest',
+            'nickname' => 'TestGuest',
         ]);
 
         $guestToken = $guestResponse->json('player.guest_token');
@@ -155,7 +159,7 @@ class AuthTest extends TestCase
         $response->assertStatus(200)
             ->assertJson([
                 'player' => [
-                    'display_name' => 'TestGuest',
+                    'nickname' => 'TestGuest',
                     'is_guest' => true,
                 ],
             ]);

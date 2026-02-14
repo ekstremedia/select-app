@@ -12,7 +12,7 @@ class AcronymGeneratorTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->generator = new AcronymGenerator();
+        $this->generator = new AcronymGenerator;
     }
 
     public function test_generate_returns_string_of_correct_length(): void

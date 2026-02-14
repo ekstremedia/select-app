@@ -5,13 +5,19 @@ namespace App\Domain\Game\Actions;
 use App\Infrastructure\Models\Game;
 use App\Infrastructure\Models\GamePlayer;
 use App\Infrastructure\Models\Player;
+use Illuminate\Support\Facades\Hash;
 
 class JoinGameAction
 {
-    public function execute(Game $game, Player $player): GamePlayer
+    public function execute(Game $game, Player $player, ?string $password = null): GamePlayer
     {
-        if (!$game->isInLobby()) {
+        if (! $game->isInLobby()) {
             throw new \InvalidArgumentException('Cannot join a game that has already started');
+        }
+
+        // Check password for protected games
+        if ($game->password && ! Hash::check($password ?? '', $game->password)) {
+            throw new \InvalidArgumentException('Incorrect game password');
         }
 
         $maxPlayers = $game->settings['max_players'] ?? 8;
@@ -31,6 +37,7 @@ class JoinGameAction
             }
             // Rejoin
             $existing->update(['is_active' => true]);
+
             return $existing;
         }
 

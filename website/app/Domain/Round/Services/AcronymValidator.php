@@ -15,7 +15,7 @@ class AcronymValidator
 
         // Split answer into words (handle multiple spaces)
         $words = preg_split('/\s+/', $answer);
-        $words = array_filter($words, fn($word) => !empty($word));
+        $words = array_filter($words, fn ($word) => ! empty($word));
         $words = array_values($words);
 
         $acronymLetters = str_split($acronym);

@@ -4,13 +4,14 @@ namespace App\Domain\Game\Actions;
 
 use App\Infrastructure\Models\Game;
 use App\Infrastructure\Models\Player;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class CreateGameAction
 {
-    public function execute(Player $host, array $settings = []): Game
+    public function execute(Player $host, array $settings = [], bool $isPublic = false, ?string $password = null): Game
     {
-        $game = new Game();
+        $game = new Game;
         $defaultSettings = $game->getDefaultSettings();
         $mergedSettings = array_merge($defaultSettings, $settings);
 
@@ -20,6 +21,8 @@ class CreateGameAction
             'status' => Game::STATUS_LOBBY,
             'settings' => $mergedSettings,
             'total_rounds' => $mergedSettings['rounds'] ?? 5,
+            'is_public' => $isPublic,
+            'password' => $password ? Hash::make($password) : null,
         ]);
 
         // Add host as first player

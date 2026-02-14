@@ -95,7 +95,7 @@ class ImportGullkornCommand extends Command
         // We need to handle commas inside quoted strings
         $rows = $this->parseRows($valuesStr);
 
-        $this->line("  Parsed " . count($rows) . ' rows, inserting...');
+        $this->line('  Parsed '.count($rows).' rows, inserting...');
 
         $batch = [];
         $batchSize = 500;

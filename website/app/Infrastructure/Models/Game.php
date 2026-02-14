@@ -19,17 +19,33 @@ class Game extends Model
         'settings',
         'current_round',
         'total_rounds',
+        'is_public',
+        'password',
+        'started_at',
+        'finished_at',
+        'duration_seconds',
     ];
 
     protected $casts = [
         'settings' => 'array',
         'current_round' => 'integer',
         'total_rounds' => 'integer',
+        'is_public' => 'boolean',
+        'started_at' => 'datetime',
+        'finished_at' => 'datetime',
+        'duration_seconds' => 'integer',
+    ];
+
+    protected $hidden = [
+        'password',
     ];
 
     public const STATUS_LOBBY = 'lobby';
+
     public const STATUS_PLAYING = 'playing';
+
     public const STATUS_VOTING = 'voting';
+
     public const STATUS_FINISHED = 'finished';
 
     public function host(): BelongsTo
@@ -95,16 +111,34 @@ class Game extends Model
         return $this->status === self::STATUS_FINISHED;
     }
 
+    public function gameResult()
+    {
+        return $this->hasOne(\App\Infrastructure\Models\GameResult::class);
+    }
+
     public function getDefaultSettings(): array
     {
         return [
             'min_players' => 2,
-            'max_players' => 8,
-            'rounds' => 5,
-            'answer_time' => 60,
-            'vote_time' => 30,
+            'max_players' => 10,
+            'rounds' => 8,
+            'answer_time' => 120,
+            'vote_time' => 60,
+            'time_between_rounds' => 10,
             'acronym_length_min' => 3,
             'acronym_length_max' => 6,
+            'excluded_letters' => '',
         ];
+    }
+
+    public function scopePublicLobby($query)
+    {
+        return $query->where('is_public', true)
+            ->where('status', self::STATUS_LOBBY);
+    }
+
+    public function scopeFinished($query)
+    {
+        return $query->where('status', self::STATUS_FINISHED);
     }
 }

@@ -24,7 +24,7 @@ class CompleteRoundAction
      */
     public function execute(Round $round): array
     {
-        if (!$round->isVoting()) {
+        if (! $round->isVoting()) {
             throw new \InvalidArgumentException('Round is not in voting phase');
         }
 

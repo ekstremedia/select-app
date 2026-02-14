@@ -15,7 +15,7 @@ class SubmitAnswerAction
 
     public function execute(Round $round, Player $player, string $text): Answer
     {
-        if (!$round->isAnswering()) {
+        if (! $round->isAnswering()) {
             throw new \InvalidArgumentException('Round is not accepting answers');
         }
 
@@ -28,13 +28,13 @@ class SubmitAnswerAction
             ->where('players.id', $player->id)
             ->exists();
 
-        if (!$isInGame) {
+        if (! $isInGame) {
             throw new \InvalidArgumentException('Player is not in this game');
         }
 
         // Validate answer matches acronym
         $validation = $this->validator->validate($text, $round->acronym);
-        if (!$validation->isValid) {
+        if (! $validation->isValid) {
             throw new \InvalidArgumentException($validation->error);
         }
 
@@ -42,6 +42,7 @@ class SubmitAnswerAction
         $existing = $round->getAnswerByPlayer($player->id);
         if ($existing) {
             $existing->update(['text' => trim($text)]);
+
             return $existing->fresh();
         }
 
@@ -49,6 +50,7 @@ class SubmitAnswerAction
             'round_id' => $round->id,
             'player_id' => $player->id,
             'text' => trim($text),
+            'author_nickname' => $player->nickname,
         ]);
     }
 }

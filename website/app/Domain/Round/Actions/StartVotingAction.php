@@ -17,7 +17,7 @@ class StartVotingAction
      */
     public function execute(Round $round): Round
     {
-        if (!$round->isAnswering()) {
+        if (! $round->isAnswering()) {
             throw new \InvalidArgumentException('Round is not in answering phase');
         }
 

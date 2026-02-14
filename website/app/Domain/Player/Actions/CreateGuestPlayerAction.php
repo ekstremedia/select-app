@@ -7,17 +7,23 @@ use Illuminate\Support\Str;
 
 class CreateGuestPlayerAction
 {
-    public function execute(string $displayName): Player
+    public function execute(string $nickname): Player
     {
-        $displayName = trim($displayName);
+        $nickname = trim($nickname);
 
-        if (strlen($displayName) < 2 || strlen($displayName) > 50) {
-            throw new \InvalidArgumentException('Display name must be between 2 and 50 characters');
+        if (strlen($nickname) < 3 || strlen($nickname) > 20) {
+            throw new \InvalidArgumentException('Nickname must be between 3 and 20 characters');
+        }
+
+        if (! preg_match('/^[a-zA-Z0-9_]+$/', $nickname)) {
+            throw new \InvalidArgumentException('Nickname may only contain letters, numbers, and underscores');
         }
 
         return Player::create([
             'guest_token' => $this->generateGuestToken(),
-            'display_name' => $displayName,
+            'nickname' => $nickname,
+            'is_guest' => true,
+            'last_active_at' => now(),
         ]);
     }
 

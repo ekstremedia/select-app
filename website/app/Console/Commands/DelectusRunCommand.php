@@ -38,7 +38,7 @@ class DelectusRunCommand extends Command
             $processed = $this->delectus->tick();
 
             if ($processed > 0 && $this->output->isVerbose()) {
-                $this->line("  [" . now()->format('H:i:s') . "] Processed {$processed} game(s)");
+                $this->line('  ['.now()->format('H:i:s')."] Processed {$processed} game(s)");
             }
 
             usleep($interval * 1000);

@@ -8,7 +8,6 @@ use App\Domain\Game\Actions\StartGameAction;
 use App\Domain\Player\Actions\CreateGuestPlayerAction;
 use App\Domain\Round\Actions\SubmitAnswerAction;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Seeds test games for development and debugging.
@@ -39,9 +38,9 @@ class GameTestSeeder extends Seeder
         // Create players
         $players = [];
         foreach (['Alice', 'Bob', 'Charlie'] as $name) {
-            $player = $this->createGuest->execute($name . '_' . substr(uniqid(), -4));
+            $player = $this->createGuest->execute($name.'_'.substr(uniqid(), -4));
             $players[] = $player;
-            $this->command->info("  Created player: {$player->display_name}");
+            $this->command->info("  Created player: {$player->nickname}");
         }
 
         // Game 1: Lobby state

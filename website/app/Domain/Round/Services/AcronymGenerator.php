@@ -23,6 +23,15 @@ class AcronymGenerator
         'Z' => 1,
     ];
 
+    private array $excludedLetters = [];
+
+    public function setExcludedLetters(string $excluded): self
+    {
+        $this->excludedLetters = array_map('strtoupper', str_split(preg_replace('/[^a-zA-Z]/', '', $excluded)));
+
+        return $this;
+    }
+
     public function generate(int $minLength = 3, int $maxLength = 6): string
     {
         $length = rand($minLength, $maxLength);
@@ -59,11 +68,20 @@ class AcronymGenerator
 
     private function pickWeightedLetter(): string
     {
-        $totalWeight = array_sum(self::LETTER_WEIGHTS);
+        $weights = self::LETTER_WEIGHTS;
+        foreach ($this->excludedLetters as $excluded) {
+            unset($weights[$excluded]);
+        }
+
+        $totalWeight = array_sum($weights);
+        if ($totalWeight === 0) {
+            return 'S';
+        }
+
         $random = rand(1, $totalWeight);
         $currentSum = 0;
 
-        foreach (self::LETTER_WEIGHTS as $letter => $weight) {
+        foreach ($weights as $letter => $weight) {
             $currentSum += $weight;
             if ($random <= $currentSum) {
                 return $letter;
@@ -75,7 +93,12 @@ class AcronymGenerator
 
     private function pickRandomVowel(): string
     {
-        return self::VOWELS[array_rand(self::VOWELS)];
+        $vowels = array_diff(self::VOWELS, $this->excludedLetters);
+        if (empty($vowels)) {
+            return self::VOWELS[array_rand(self::VOWELS)];
+        }
+
+        return $vowels[array_rand($vowels)];
     }
 
     public function generateBatch(int $count, int $minLength = 3, int $maxLength = 6): array
@@ -86,7 +109,7 @@ class AcronymGenerator
 
         while (count($acronyms) < $count && $attempts < $maxAttempts) {
             $acronym = $this->generate($minLength, $maxLength);
-            if (!in_array($acronym, $acronyms)) {
+            if (! in_array($acronym, $acronyms)) {
                 $acronyms[] = $acronym;
             }
             $attempts++;

@@ -27,19 +27,19 @@ class ScoringService
 
             $results[] = [
                 'player_id' => $answer->player_id,
-                'player_name' => $answer->player->display_name,
+                'player_name' => $answer->player->nickname,
                 'answer' => $answer->text,
                 'votes' => $answer->votes_count,
                 'points_earned' => $points,
-                'voters' => $answer->votes->map(fn($v) => [
+                'voters' => $answer->votes->map(fn ($v) => [
                     'id' => $v->voter_id,
-                    'name' => $v->voter->display_name,
+                    'name' => $v->voter->nickname,
                 ])->toArray(),
             ];
         }
 
         // Sort by votes descending
-        usort($results, fn($a, $b) => $b['votes'] - $a['votes']);
+        usort($results, fn ($a, $b) => $b['votes'] - $a['votes']);
 
         return $results;
     }
@@ -58,7 +58,7 @@ class ScoringService
             $scores[] = [
                 'rank' => $rank,
                 'player_id' => $gp->player_id,
-                'player_name' => $gp->player->display_name,
+                'player_name' => $gp->player->nickname,
                 'score' => $gp->score,
                 'is_winner' => $rank === 1,
             ];

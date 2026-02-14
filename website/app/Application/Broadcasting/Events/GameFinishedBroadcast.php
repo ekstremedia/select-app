@@ -3,7 +3,6 @@
 namespace App\Application\Broadcasting\Events;
 
 use App\Infrastructure\Models\Game;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -22,7 +21,7 @@ class GameFinishedBroadcast implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PresenceChannel('game.' . $this->game->code),
+            new PresenceChannel('game.'.$this->game->code),
         ];
     }
 

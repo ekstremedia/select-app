@@ -2,10 +2,11 @@
 
 namespace Tests\Feature\Api;
 
+use App\Application\Jobs\ProcessAnswerDeadlineJob;
 use App\Infrastructure\Models\Game;
 use App\Infrastructure\Models\Player;
-use App\Infrastructure\Models\Round;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Tests\TestCase;
 
 class RoundTest extends TestCase
@@ -13,22 +14,29 @@ class RoundTest extends TestCase
     use RefreshDatabase;
 
     private Player $host;
+
     private Player $player2;
+
     private string $hostToken;
+
     private string $player2Token;
+
     private Game $game;
 
     protected function setUp(): void
     {
         parent::setUp();
 
+        // Prevent ProcessAnswerDeadlineJob from running synchronously in tests
+        Bus::fake([ProcessAnswerDeadlineJob::class]);
+
         // Create host
-        $hostResponse = $this->postJson('/api/v1/auth/guest', ['display_name' => 'Host']);
+        $hostResponse = $this->postJson('/api/v1/auth/guest', ['nickname' => 'HostPlayer']);
         $this->host = Player::find($hostResponse->json('player.id'));
         $this->hostToken = $hostResponse->json('player.guest_token');
 
         // Create player 2
-        $p2Response = $this->postJson('/api/v1/auth/guest', ['display_name' => 'Player2']);
+        $p2Response = $this->postJson('/api/v1/auth/guest', ['nickname' => 'Player2']);
         $this->player2 = Player::find($p2Response->json('player.id'));
         $this->player2Token = $p2Response->json('player.guest_token');
 
@@ -49,7 +57,8 @@ class RoundTest extends TestCase
 
     public function test_can_get_current_round(): void
     {
-        $response = $this->getJson("/api/v1/games/{$this->game->code}/rounds/current");
+        $response = $this->withHeaders(['X-Guest-Token' => $this->hostToken])
+            ->getJson("/api/v1/games/{$this->game->code}/rounds/current");
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -72,7 +81,7 @@ class RoundTest extends TestCase
         $acronym = $round->acronym;
 
         // Generate a valid answer
-        $words = array_map(fn($letter) => $letter . 'ord', str_split($acronym));
+        $words = array_map(fn ($letter) => $letter.'ord', str_split($acronym));
         $answer = implode(' ', $words);
 
         $response = $this->withHeaders(['X-Guest-Token' => $this->hostToken])
@@ -101,12 +110,12 @@ class RoundTest extends TestCase
     public function test_player_not_in_game_cannot_submit(): void
     {
         // Create a player not in the game
-        $outsiderResponse = $this->postJson('/api/v1/auth/guest', ['display_name' => 'Outsider']);
+        $outsiderResponse = $this->postJson('/api/v1/auth/guest', ['nickname' => 'Outsider']);
         $outsiderToken = $outsiderResponse->json('player.guest_token');
 
         $round = $this->game->currentRoundModel();
         $acronym = $round->acronym;
-        $words = array_map(fn($letter) => $letter . 'ord', str_split($acronym));
+        $words = array_map(fn ($letter) => $letter.'ord', str_split($acronym));
         $answer = implode(' ', $words);
 
         $response = $this->withHeaders(['X-Guest-Token' => $outsiderToken])
@@ -124,13 +133,13 @@ class RoundTest extends TestCase
 
         // Both players submit answers
         $acronym = $round->acronym;
-        $words = array_map(fn($letter) => $letter . 'ord', str_split($acronym));
+        $words = array_map(fn ($letter) => $letter.'ord', str_split($acronym));
         $answer = implode(' ', $words);
 
         $this->withHeaders(['X-Guest-Token' => $this->hostToken])
             ->postJson("/api/v1/rounds/{$round->id}/answer", ['text' => $answer]);
 
-        $words2 = array_map(fn($letter) => $letter . 'est', str_split($acronym));
+        $words2 = array_map(fn ($letter) => $letter.'est', str_split($acronym));
         $answer2 = implode(' ', $words2);
 
         $this->withHeaders(['X-Guest-Token' => $this->player2Token])
@@ -151,11 +160,11 @@ class RoundTest extends TestCase
         $acronym = $round->acronym;
 
         // Both submit answers
-        $words = array_map(fn($letter) => $letter . 'ord', str_split($acronym));
+        $words = array_map(fn ($letter) => $letter.'ord', str_split($acronym));
         $this->withHeaders(['X-Guest-Token' => $this->hostToken])
             ->postJson("/api/v1/rounds/{$round->id}/answer", ['text' => implode(' ', $words)]);
 
-        $words2 = array_map(fn($letter) => $letter . 'est', str_split($acronym));
+        $words2 = array_map(fn ($letter) => $letter.'est', str_split($acronym));
         $this->withHeaders(['X-Guest-Token' => $this->player2Token])
             ->postJson("/api/v1/rounds/{$round->id}/answer", ['text' => implode(' ', $words2)]);
 
@@ -182,11 +191,11 @@ class RoundTest extends TestCase
         $acronym = $round->acronym;
 
         // Submit answers
-        $words = array_map(fn($letter) => $letter . 'ord', str_split($acronym));
+        $words = array_map(fn ($letter) => $letter.'ord', str_split($acronym));
         $this->withHeaders(['X-Guest-Token' => $this->hostToken])
             ->postJson("/api/v1/rounds/{$round->id}/answer", ['text' => implode(' ', $words)]);
 
-        $words2 = array_map(fn($letter) => $letter . 'est', str_split($acronym));
+        $words2 = array_map(fn ($letter) => $letter.'est', str_split($acronym));
         $this->withHeaders(['X-Guest-Token' => $this->player2Token])
             ->postJson("/api/v1/rounds/{$round->id}/answer", ['text' => implode(' ', $words2)]);
 

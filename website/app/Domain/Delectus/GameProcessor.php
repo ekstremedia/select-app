@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Domain\Delectus;
 
+use App\Domain\Game\Actions\EndGameAction;
 use App\Domain\Round\Actions\CompleteRoundAction;
 use App\Domain\Round\Actions\StartRoundAction;
 use App\Domain\Round\Actions\StartVotingAction;
-use App\Domain\Game\Actions\EndGameAction;
 use App\Infrastructure\Models\Game;
 use App\Infrastructure\Models\Round;
 use Illuminate\Support\Facades\Log;
@@ -41,8 +41,9 @@ class GameProcessor
     {
         $round = $game->currentRound;
 
-        if (!$round) {
+        if (! $round) {
             $this->handleNoCurrentRound($game);
+
             return;
         }
 
@@ -66,6 +67,20 @@ class GameProcessor
             Log::info('Delectus: Ending game', ['game_code' => $game->code]);
             $this->endGameAction->execute($game);
         } else {
+            // Check time_between_rounds delay
+            $timeBetweenRounds = $game->settings['time_between_rounds'] ?? 5;
+
+            if ($completedRounds > 0 && $timeBetweenRounds > 0) {
+                $lastCompleted = $game->rounds()
+                    ->where('status', 'completed')
+                    ->latest('updated_at')
+                    ->first();
+
+                if ($lastCompleted && $lastCompleted->updated_at->diffInSeconds(now()) < $timeBetweenRounds) {
+                    return; // Still waiting between rounds
+                }
+            }
+
             // Start new round
             $roundNumber = $completedRounds + 1;
             Log::info('Delectus: Starting round', [

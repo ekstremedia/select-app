@@ -3,11 +3,13 @@
 namespace App\Application\Http\Controllers\Api\V1;
 
 use App\Application\Broadcasting\Events\AnswerSubmittedBroadcast;
+use App\Application\Broadcasting\Events\GameFinishedBroadcast;
 use App\Application\Broadcasting\Events\RoundCompletedBroadcast;
 use App\Application\Broadcasting\Events\RoundStartedBroadcast;
 use App\Application\Broadcasting\Events\VoteSubmittedBroadcast;
 use App\Application\Broadcasting\Events\VotingStartedBroadcast;
-use App\Application\Broadcasting\Events\GameFinishedBroadcast;
+use App\Application\Http\Requests\Api\V1\SubmitAnswerRequest;
+use App\Application\Http\Requests\Api\V1\SubmitVoteRequest;
 use App\Domain\Game\Actions\GetGameByCodeAction;
 use App\Domain\Round\Actions\CompleteRoundAction;
 use App\Domain\Round\Actions\StartVotingAction;
@@ -15,7 +17,6 @@ use App\Domain\Round\Actions\SubmitAnswerAction;
 use App\Domain\Round\Actions\SubmitVoteAction;
 use App\Http\Controllers\Controller;
 use App\Infrastructure\Models\Answer;
-use App\Infrastructure\Models\Player;
 use App\Infrastructure\Models\Round;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -26,13 +27,13 @@ class RoundController extends Controller
     {
         $game = $getGame->execute($code);
 
-        if (!$game) {
+        if (! $game) {
             return response()->json(['error' => 'Game not found'], 404);
         }
 
         $round = $game->currentRoundModel();
 
-        if (!$round) {
+        if (! $round) {
             return response()->json(['error' => 'No active round'], 404);
         }
 
@@ -49,10 +50,10 @@ class RoundController extends Controller
 
         // Include answers if voting or completed
         if ($round->isVoting() || $round->isCompleted()) {
-            $response['answers'] = $round->answers()->with('player')->get()->map(fn($a) => [
+            $response['answers'] = $round->answers()->with('player')->get()->map(fn ($a) => [
                 'id' => $a->id,
                 'player_id' => $a->player_id,
-                'player_name' => $a->player->display_name,
+                'player_name' => $a->author_nickname ?? $a->player->nickname,
                 'text' => $a->text,
                 'votes_count' => $round->isCompleted() ? $a->votes_count : null,
             ]);
@@ -61,17 +62,13 @@ class RoundController extends Controller
         return response()->json($response);
     }
 
-    public function submitAnswer(Request $request, string $roundId, SubmitAnswerAction $action): JsonResponse
+    public function submitAnswer(SubmitAnswerRequest $request, string $roundId, SubmitAnswerAction $action): JsonResponse
     {
-        $player = $this->getPlayer($request);
+        $player = $request->attributes->get('player');
         $round = Round::findOrFail($roundId);
 
-        $request->validate([
-            'text' => 'required|string|max:500',
-        ]);
-
         try {
-            $answer = $action->execute($round, $player, $request->text);
+            $answer = $action->execute($round, $player, $request->validated('text'));
         } catch (\InvalidArgumentException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
         }
@@ -89,16 +86,12 @@ class RoundController extends Controller
         ]);
     }
 
-    public function submitVote(Request $request, string $roundId, SubmitVoteAction $action): JsonResponse
+    public function submitVote(SubmitVoteRequest $request, string $roundId, SubmitVoteAction $action): JsonResponse
     {
-        $player = $this->getPlayer($request);
+        $player = $request->attributes->get('player');
         $round = Round::findOrFail($roundId);
 
-        $request->validate([
-            'answer_id' => 'required|uuid|exists:answers,id',
-        ]);
-
-        $answer = Answer::findOrFail($request->answer_id);
+        $answer = Answer::findOrFail($request->validated('answer_id'));
 
         try {
             $vote = $action->execute($round, $player, $answer);
@@ -122,9 +115,8 @@ class RoundController extends Controller
     public function startVoting(Request $request, string $roundId, StartVotingAction $action): JsonResponse
     {
         $round = Round::findOrFail($roundId);
-        $player = $this->getPlayer($request);
+        $player = $request->attributes->get('player');
 
-        // Only host can manually start voting
         if ($round->game->host_player_id !== $player->id) {
             return response()->json(['error' => 'Only host can start voting'], 403);
         }
@@ -135,10 +127,10 @@ class RoundController extends Controller
             return response()->json(['error' => $e->getMessage()], 422);
         }
 
-        $answers = $round->answers()->with('player')->get()->map(fn($a) => [
+        $answers = $round->answers()->with('player')->get()->map(fn ($a) => [
             'id' => $a->id,
             'player_id' => $a->player_id,
-            'player_name' => $a->player->display_name,
+            'player_name' => $a->author_nickname ?? $a->player->nickname,
             'text' => $a->text,
         ]);
 
@@ -157,9 +149,8 @@ class RoundController extends Controller
     public function complete(Request $request, string $roundId, CompleteRoundAction $action): JsonResponse
     {
         $round = Round::findOrFail($roundId);
-        $player = $this->getPlayer($request);
+        $player = $request->attributes->get('player');
 
-        // Only host can manually complete round
         if ($round->game->host_player_id !== $player->id) {
             return response()->json(['error' => 'Only host can complete round'], 403);
         }
@@ -170,36 +161,14 @@ class RoundController extends Controller
             return response()->json(['error' => $e->getMessage()], 422);
         }
 
-        // Broadcast round completed
         broadcast(new RoundCompletedBroadcast($round->game, $result['round_results']));
 
         if ($result['game_finished']) {
             broadcast(new GameFinishedBroadcast($round->game, $result['final_scores']));
-        } else {
-            // Broadcast new round started
+        } elseif (isset($result['next_round'])) {
             broadcast(new RoundStartedBroadcast($round->game, $result['next_round']));
         }
 
         return response()->json($result);
-    }
-
-    private function getPlayer(Request $request): Player
-    {
-        $guestToken = $request->header('X-Guest-Token');
-        if ($guestToken) {
-            $player = Player::where('guest_token', $guestToken)->first();
-            if ($player) {
-                return $player;
-            }
-        }
-
-        if ($request->user()) {
-            $player = Player::where('user_id', $request->user()->id)->first();
-            if ($player) {
-                return $player;
-            }
-        }
-
-        abort(401, 'Unauthenticated');
     }
 }

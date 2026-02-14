@@ -16,6 +16,7 @@ class Answer extends Model
         'round_id',
         'player_id',
         'text',
+        'author_nickname',
         'votes_count',
     ];
 

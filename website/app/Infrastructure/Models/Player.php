@@ -2,31 +2,45 @@
 
 namespace App\Infrastructure\Models;
 
+use App\Models\User;
+use Database\Factories\PlayerFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\User;
 
 class Player extends Model
 {
+    /** @use HasFactory<PlayerFactory> */
     use HasFactory, HasUuids;
+
+    protected static function newFactory(): PlayerFactory
+    {
+        return PlayerFactory::new();
+    }
 
     protected $fillable = [
         'user_id',
         'guest_token',
-        'display_name',
+        'nickname',
+        'is_guest',
         'games_played',
         'games_won',
         'total_score',
+        'last_active_at',
     ];
 
-    protected $casts = [
-        'games_played' => 'integer',
-        'games_won' => 'integer',
-        'total_score' => 'integer',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'is_guest' => 'boolean',
+            'games_played' => 'integer',
+            'games_won' => 'integer',
+            'total_score' => 'integer',
+            'last_active_at' => 'datetime',
+        ];
+    }
 
     public function user(): BelongsTo
     {
@@ -62,6 +76,11 @@ class Player extends Model
 
     public function isGuest(): bool
     {
-        return $this->user_id === null;
+        return $this->is_guest;
+    }
+
+    public function touchLastActive(): void
+    {
+        $this->update(['last_active_at' => now()]);
     }
 }

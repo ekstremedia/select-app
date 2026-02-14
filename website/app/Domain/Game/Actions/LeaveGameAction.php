@@ -15,7 +15,7 @@ class LeaveGameAction
             ->where('is_active', true)
             ->first();
 
-        if (!$gamePlayer) {
+        if (! $gamePlayer) {
             throw new \InvalidArgumentException('Player is not in this game');
         }
 

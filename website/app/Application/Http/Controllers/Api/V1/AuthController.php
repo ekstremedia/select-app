@@ -2,56 +2,54 @@
 
 namespace App\Application\Http\Controllers\Api\V1;
 
+use App\Application\Http\Requests\Api\V1\ConvertGuestRequest;
+use App\Application\Http\Requests\Api\V1\ForgotPasswordRequest;
+use App\Application\Http\Requests\Api\V1\GuestRequest;
+use App\Application\Http\Requests\Api\V1\LoginRequest;
+use App\Application\Http\Requests\Api\V1\RegisterRequest;
+use App\Application\Http\Requests\Api\V1\ResetPasswordRequest;
 use App\Domain\Player\Actions\ConvertGuestToUserAction;
 use App\Domain\Player\Actions\CreateGuestPlayerAction;
-use App\Domain\Player\Actions\GetPlayerByTokenAction;
 use App\Http\Controllers\Controller;
 use App\Infrastructure\Models\Player;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
+use PragmaRX\Google2FA\Google2FA;
 
 class AuthController extends Controller
 {
-    public function guest(Request $request, CreateGuestPlayerAction $action): JsonResponse
+    public function guest(GuestRequest $request, CreateGuestPlayerAction $action): JsonResponse
     {
-        $request->validate([
-            'display_name' => 'required|string|min:2|max:50',
-        ]);
-
-        $player = $action->execute($request->display_name);
+        $player = $action->execute($request->validated('nickname'));
 
         return response()->json([
             'player' => [
                 'id' => $player->id,
-                'display_name' => $player->display_name,
+                'nickname' => $player->nickname,
                 'guest_token' => $player->guest_token,
                 'is_guest' => true,
             ],
         ], 201);
     }
 
-    public function register(Request $request, ConvertGuestToUserAction $convertAction): JsonResponse
+    public function register(RegisterRequest $request, ConvertGuestToUserAction $convertAction): JsonResponse
     {
-        $request->validate([
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'name' => 'nullable|string|max:255',
-            'guest_token' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         // If guest token provided, convert guest to user
-        if ($request->guest_token) {
-            $player = Player::where('guest_token', $request->guest_token)->first();
+        if (! empty($validated['guest_token'])) {
+            $player = Player::where('guest_token', $validated['guest_token'])->first();
             if ($player) {
                 $player = $convertAction->execute(
                     $player,
-                    $request->email,
-                    $request->password,
-                    $request->name
+                    $validated['email'],
+                    $validated['password'],
+                    $validated['name'] ?? null,
+                    $validated['nickname'] ?? null,
                 );
 
                 $token = $player->user->createToken('api')->plainTextToken;
@@ -59,7 +57,7 @@ class AuthController extends Controller
                 return response()->json([
                     'player' => [
                         'id' => $player->id,
-                        'display_name' => $player->display_name,
+                        'nickname' => $player->nickname,
                         'is_guest' => false,
                     ],
                     'user' => [
@@ -73,15 +71,20 @@ class AuthController extends Controller
         }
 
         // Create new user and player
+        $nickname = $validated['nickname'] ?? explode('@', $validated['email'])[0];
+
         $user = User::create([
-            'name' => $request->name ?? explode('@', $request->email)[0],
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'name' => $validated['name'] ?? $nickname,
+            'nickname' => $nickname,
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
         ]);
 
         $player = Player::create([
             'user_id' => $user->id,
-            'display_name' => $request->name ?? explode('@', $request->email)[0],
+            'nickname' => $nickname,
+            'is_guest' => false,
+            'last_active_at' => now(),
         ]);
 
         $token = $user->createToken('api')->plainTextToken;
@@ -89,7 +92,7 @@ class AuthController extends Controller
         return response()->json([
             'player' => [
                 'id' => $player->id,
-                'display_name' => $player->display_name,
+                'nickname' => $player->nickname,
                 'is_guest' => false,
             ],
             'user' => [
@@ -101,29 +104,52 @@ class AuthController extends Controller
         ], 201);
     }
 
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|string',
-        ]);
+        $validated = $request->validated();
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $validated['email'])->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (! $user || ! Hash::check($validated['password'], $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
         }
 
-        $player = Player::where('user_id', $user->id)->first();
+        // Check if user is banned
+        if ($user->isBanned()) {
+            return response()->json([
+                'error' => 'Your account has been banned.',
+                'reason' => $user->ban_reason,
+            ], 403);
+        }
 
+        // Check 2FA
+        if ($user->hasTwoFactorEnabled()) {
+            if (empty($validated['two_factor_code'])) {
+                return response()->json([
+                    'two_factor_required' => true,
+                    'message' => 'Two-factor authentication code required.',
+                ], 422);
+            }
+
+            $google2fa = new Google2FA;
+            $valid = $google2fa->verifyKey($user->two_factor_secret, $validated['two_factor_code']);
+
+            if (! $valid) {
+                throw ValidationException::withMessages([
+                    'two_factor_code' => ['The two-factor code is invalid.'],
+                ]);
+            }
+        }
+
+        $player = Player::where('user_id', $user->id)->first();
         $token = $user->createToken('api')->plainTextToken;
 
         return response()->json([
             'player' => $player ? [
                 'id' => $player->id,
-                'display_name' => $player->display_name,
+                'nickname' => $player->nickname,
                 'is_guest' => false,
                 'stats' => [
                     'games_played' => $player->games_played,
@@ -140,26 +166,29 @@ class AuthController extends Controller
         ]);
     }
 
-    public function convert(Request $request, ConvertGuestToUserAction $action): JsonResponse
+    public function logout(Request $request): JsonResponse
     {
-        $request->validate([
-            'guest_token' => 'required|string',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'name' => 'nullable|string|max:255',
-        ]);
+        $request->user()->currentAccessToken()->delete();
 
-        $player = Player::where('guest_token', $request->guest_token)->first();
+        return response()->json(['message' => 'Logged out successfully']);
+    }
 
-        if (!$player) {
+    public function convert(ConvertGuestRequest $request, ConvertGuestToUserAction $action): JsonResponse
+    {
+        $validated = $request->validated();
+
+        $player = Player::where('guest_token', $validated['guest_token'])->first();
+
+        if (! $player) {
             return response()->json(['error' => 'Invalid guest token'], 404);
         }
 
         $player = $action->execute(
             $player,
-            $request->email,
-            $request->password,
-            $request->name
+            $validated['email'],
+            $validated['password'],
+            $validated['name'] ?? null,
+            $validated['nickname'] ?? null,
         );
 
         $token = $player->user->createToken('api')->plainTextToken;
@@ -167,7 +196,7 @@ class AuthController extends Controller
         return response()->json([
             'player' => [
                 'id' => $player->id,
-                'display_name' => $player->display_name,
+                'nickname' => $player->nickname,
                 'is_guest' => false,
             ],
             'user' => [
@@ -179,50 +208,74 @@ class AuthController extends Controller
         ]);
     }
 
-    public function me(Request $request, GetPlayerByTokenAction $getPlayerAction): JsonResponse
+    public function me(Request $request): JsonResponse
     {
-        // Check for guest token header
-        $guestToken = $request->header('X-Guest-Token');
-        if ($guestToken) {
-            $player = $getPlayerAction->execute($guestToken);
-            if ($player) {
-                return response()->json([
-                    'player' => [
-                        'id' => $player->id,
-                        'display_name' => $player->display_name,
-                        'is_guest' => true,
-                        'stats' => [
-                            'games_played' => $player->games_played,
-                            'games_won' => $player->games_won,
-                            'total_score' => $player->total_score,
-                        ],
-                    ],
-                ]);
-            }
+        $player = $request->attributes->get('player');
+
+        if (! $player) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
         }
 
-        // Check for authenticated user
-        if ($request->user()) {
-            $player = Player::where('user_id', $request->user()->id)->first();
-            return response()->json([
-                'player' => $player ? [
-                    'id' => $player->id,
-                    'display_name' => $player->display_name,
-                    'is_guest' => false,
-                    'stats' => [
-                        'games_played' => $player->games_played,
-                        'games_won' => $player->games_won,
-                        'total_score' => $player->total_score,
-                    ],
-                ] : null,
-                'user' => [
-                    'id' => $request->user()->id,
-                    'name' => $request->user()->name,
-                    'email' => $request->user()->email,
+        $response = [
+            'player' => [
+                'id' => $player->id,
+                'nickname' => $player->nickname,
+                'is_guest' => $player->isGuest(),
+                'stats' => [
+                    'games_played' => $player->games_played,
+                    'games_won' => $player->games_won,
+                    'total_score' => $player->total_score,
                 ],
-            ]);
+            ],
+        ];
+
+        if ($request->user()) {
+            $response['user'] = [
+                'id' => $request->user()->id,
+                'name' => $request->user()->name,
+                'email' => $request->user()->email,
+            ];
         }
 
-        return response()->json(['error' => 'Unauthenticated'], 401);
+        return response()->json($response);
+    }
+
+    public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
+    {
+        $status = Password::sendResetLink(
+            $request->only('email')
+        );
+
+        if ($status === Password::RESET_LINK_SENT) {
+            return response()->json(['message' => 'Password reset link sent.']);
+        }
+
+        throw ValidationException::withMessages([
+            'email' => [__($status)],
+        ]);
+    }
+
+    public function resetPassword(ResetPasswordRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+
+        $status = Password::reset(
+            $validated,
+            function (User $user, string $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password),
+                ])->save();
+
+                $user->tokens()->delete();
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            return response()->json(['message' => 'Password has been reset.']);
+        }
+
+        throw ValidationException::withMessages([
+            'email' => [__($status)],
+        ]);
     }
 }

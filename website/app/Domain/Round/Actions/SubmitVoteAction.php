@@ -11,7 +11,7 @@ class SubmitVoteAction
 {
     public function execute(Round $round, Player $voter, Answer $answer): Vote
     {
-        if (!$round->isVoting()) {
+        if (! $round->isVoting()) {
             throw new \InvalidArgumentException('Round is not in voting phase');
         }
 
@@ -24,7 +24,7 @@ class SubmitVoteAction
             ->where('players.id', $voter->id)
             ->exists();
 
-        if (!$isInGame) {
+        if (! $isInGame) {
             throw new \InvalidArgumentException('Player is not in this game');
         }
 
@@ -46,15 +46,20 @@ class SubmitVoteAction
         if ($existingVote) {
             // Change vote
             $oldAnswer = $existingVote->answer;
-            $existingVote->update(['answer_id' => $answer->id]);
+            $existingVote->update([
+                'answer_id' => $answer->id,
+                'voter_nickname' => $voter->nickname,
+            ]);
             $oldAnswer->recalculateVotes();
             $answer->recalculateVotes();
+
             return $existingVote->fresh();
         }
 
         $vote = Vote::create([
             'answer_id' => $answer->id,
             'voter_id' => $voter->id,
+            'voter_nickname' => $voter->nickname,
         ]);
 
         $answer->recalculateVotes();

@@ -3,7 +3,6 @@
 namespace App\Application\Broadcasting\Events;
 
 use App\Infrastructure\Models\Game;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -22,7 +21,7 @@ class RoundCompletedBroadcast implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PresenceChannel('game.' . $this->game->code),
+            new PresenceChannel('game.'.$this->game->code),
         ];
     }
 
@@ -37,9 +36,9 @@ class RoundCompletedBroadcast implements ShouldBroadcast
             ->with('player')
             ->orderByDesc('score')
             ->get()
-            ->map(fn($gp) => [
+            ->map(fn ($gp) => [
                 'player_id' => $gp->player_id,
-                'player_name' => $gp->player->display_name,
+                'player_name' => $gp->player->nickname,
                 'score' => $gp->score,
             ]);
 

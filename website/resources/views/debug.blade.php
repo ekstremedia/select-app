@@ -349,9 +349,9 @@
             log('api-log', 'Creating guest player...', 'info');
             try {
                 const name = 'Debug_' + Math.random().toString(36).substr(2, 5);
-                const data = await apiCall('POST', '/auth/guest', { display_name: name });
+                const data = await apiCall('POST', '/auth/guest', { nickname: name });
                 guestToken = data.player.guest_token;
-                log('api-log', `Guest created: ${data.player.display_name}`, 'success');
+                log('api-log', `Guest created: ${data.player.nickname}`, 'success');
                 setStatus('api-status', 'connected');
                 document.getElementById('btn-create-game').disabled = false;
             } catch (err) {

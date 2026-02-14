@@ -1,5 +1,9 @@
 <?php
 
+use App\Application\Http\Middleware\EnsureNotBanned;
+use App\Application\Http\Middleware\RequireAdmin;
+use App\Application\Http\Middleware\RequirePlayer;
+use App\Application\Http\Middleware\ResolvePlayer;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,6 +18,16 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
+
+        $middleware->appendToGroup('api', [
+            ResolvePlayer::class,
+        ]);
+
+        $middleware->alias([
+            'player' => RequirePlayer::class,
+            'banned' => EnsureNotBanned::class,
+            'admin' => RequireAdmin::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

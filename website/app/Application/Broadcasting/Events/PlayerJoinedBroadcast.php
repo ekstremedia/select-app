@@ -4,7 +4,6 @@ namespace App\Application\Broadcasting\Events;
 
 use App\Infrastructure\Models\Game;
 use App\Infrastructure\Models\Player;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -23,7 +22,7 @@ class PlayerJoinedBroadcast implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PresenceChannel('game.' . $this->game->code),
+            new PresenceChannel('game.'.$this->game->code),
         ];
     }
 
@@ -37,7 +36,7 @@ class PlayerJoinedBroadcast implements ShouldBroadcast
         return [
             'player' => [
                 'id' => $this->player->id,
-                'display_name' => $this->player->display_name,
+                'nickname' => $this->player->nickname,
             ],
             'players_count' => $this->game->activePlayers()->count(),
         ];

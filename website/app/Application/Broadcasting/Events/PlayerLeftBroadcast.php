@@ -4,7 +4,6 @@ namespace App\Application\Broadcasting\Events;
 
 use App\Infrastructure\Models\Game;
 use App\Infrastructure\Models\Player;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -23,7 +22,7 @@ class PlayerLeftBroadcast implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PresenceChannel('game.' . $this->game->code),
+            new PresenceChannel('game.'.$this->game->code),
         ];
     }
 
@@ -35,6 +34,7 @@ class PlayerLeftBroadcast implements ShouldBroadcast
     public function broadcastWith(): array
     {
         $game = $this->game->fresh();
+
         return [
             'player_id' => $this->player->id,
             'players_count' => $game->activePlayers()->count(),

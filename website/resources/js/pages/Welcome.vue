@@ -1,7 +1,7 @@
 <template>
     <div class="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
         <!-- Top bar -->
-        <nav class="flex items-center justify-end gap-3 px-4 py-3 sm:px-6">
+        <nav class="flex items-center justify-end gap-3 px-4 py-3 sm:px-6 flex-wrap">
             <button
                 @click="toggleLocale"
                 class="px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -91,33 +91,11 @@
             </div>
         </section>
 
-        <!-- Example section -->
-        <section class="px-4 pb-16 sm:pb-24 max-w-2xl mx-auto text-center">
-            <h2 class="text-2xl sm:text-3xl font-bold mb-8 text-slate-800 dark:text-slate-200">
-                {{ t('example.title') }}
-            </h2>
-            <p class="text-slate-500 dark:text-slate-400 mb-4">
-                {{ t('example.prompt') }}
-            </p>
-            <div class="flex justify-center gap-2 sm:gap-3 mb-6">
-                <span
-                    v-for="(letter, i) in exampleLetters"
-                    :key="i"
-                    class="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl text-xl sm:text-3xl font-bold bg-emerald-500 text-white shadow-lg"
-                >
-                    {{ letter }}
-                </span>
-            </div>
-            <p class="text-lg sm:text-xl italic text-emerald-600 dark:text-emerald-400 font-medium">
-                {{ t('example.answer') }}
-            </p>
-        </section>
-
         <!-- CTA section -->
         <section class="px-4 pb-16 sm:pb-24 text-center">
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button :label="t('cta.play')" severity="success" size="large" raised />
-                <Button :label="t('cta.download')" severity="secondary" size="large" variant="outlined" />
+                <Button :label="t('cta.play')" severity="success" size="large" raised @click="router.push('/games')" />
+                <Button :label="t('cta.download')" severity="secondary" size="large" variant="outlined" @click="router.push('/archive')" />
             </div>
         </section>
 
@@ -132,24 +110,24 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import Button from 'primevue/button';
 import { useI18n } from '../composables/useI18n.js';
 import { useDarkMode } from '../composables/useDarkMode.js';
 
+const router = useRouter();
+
 const { t, toggleLocale, isNorwegian } = useI18n();
 const { isDark, toggleDark } = useDarkMode();
 
-const acronymLetters = ['T', 'I', 'H', 'W', 'P'];
-const exampleLetters = ['S', 'E', 'L', 'E', 'C', 'T'];
+const gullkorn = document.getElementById('app')?.dataset.gullkorn || '';
+const gullkornWords = gullkorn.split(/\s+/).filter(w => w.length > 0);
+const acronymLetters = gullkornWords.map(w => w.replace(/[^a-zA-ZæøåÆØÅ]/, '').charAt(0).toUpperCase());
+const gullkornSentence = gullkornWords.join(' ');
 
 const visibleLetters = ref(0);
 const showSentence = ref(false);
 const currentSentence = ref('');
-
-const sentences = {
-    no: 'Tidlig Innsats Hjelper Workflowen Perfekt',
-    en: 'This Is How We Play',
-};
 
 let animationTimer = null;
 
@@ -164,7 +142,7 @@ function animateAcronym() {
         if (count <= acronymLetters.length) {
             visibleLetters.value = count;
         } else if (count === acronymLetters.length + 2) {
-            currentSentence.value = sentences[isNorwegian.value ? 'no' : 'en'];
+            currentSentence.value = gullkornSentence;
             showSentence.value = true;
         } else if (count > acronymLetters.length + 8) {
             clearInterval(animationTimer);

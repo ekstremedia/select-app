@@ -20,6 +20,11 @@ class StartRoundAction
         $minLength = $settings['acronym_length_min'] ?? 3;
         $maxLength = $settings['acronym_length_max'] ?? 6;
 
+        $excludedLetters = $settings['excluded_letters'] ?? '';
+        if ($excludedLetters) {
+            $this->acronymGenerator->setExcludedLetters($excludedLetters);
+        }
+
         $acronym = $this->acronymGenerator->generate($minLength, $maxLength);
 
         $round = Round::create([

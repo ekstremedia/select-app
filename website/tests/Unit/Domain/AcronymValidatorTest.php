@@ -12,7 +12,7 @@ class AcronymValidatorTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->validator = new AcronymValidator();
+        $this->validator = new AcronymValidator;
     }
 
     public function test_validates_correct_answer(): void

@@ -18,7 +18,7 @@ class StartGameAction
             throw new \InvalidArgumentException('Only the host can start the game');
         }
 
-        if (!$game->isInLobby()) {
+        if (! $game->isInLobby()) {
             throw new \InvalidArgumentException('Game has already started');
         }
 
@@ -32,6 +32,7 @@ class StartGameAction
         $game->update([
             'status' => Game::STATUS_PLAYING,
             'current_round' => 1,
+            'started_at' => now(),
         ]);
 
         // Start the first round

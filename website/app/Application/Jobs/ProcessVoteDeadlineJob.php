@@ -25,7 +25,7 @@ class ProcessVoteDeadlineJob implements ShouldQueue
     {
         $round = Round::find($this->roundId);
 
-        if (!$round || !$round->isVoting()) {
+        if (! $round || ! $round->isVoting()) {
             return;
         }
 

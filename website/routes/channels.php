@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Broadcast;
 Broadcast::channel('game.{code}', function ($user, string $code) {
     $game = Game::where('code', $code)->first();
 
-    if (!$game) {
+    if (! $game) {
         return false;
     }
 
@@ -20,7 +20,7 @@ Broadcast::channel('game.{code}', function ($user, string $code) {
             if ($isInGame) {
                 return [
                     'id' => $player->id,
-                    'name' => $player->display_name,
+                    'name' => $player->nickname,
                 ];
             }
         }
@@ -35,7 +35,7 @@ Broadcast::channel('game.{code}', function ($user, string $code) {
             if ($isInGame) {
                 return [
                     'id' => $player->id,
-                    'name' => $player->display_name,
+                    'name' => $player->nickname,
                 ];
             }
         }

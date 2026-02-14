@@ -8,7 +8,6 @@ use App\Infrastructure\Models\Game;
 use App\Infrastructure\Models\Player;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Broadcast;
 
 class BroadcastAuthController extends Controller
 {
@@ -17,13 +16,13 @@ class BroadcastAuthController extends Controller
         $channelName = $request->input('channel_name');
         $socketId = $request->input('socket_id');
 
-        if (!$channelName || !$socketId) {
+        if (! $channelName || ! $socketId) {
             return response()->json(['error' => 'Missing channel_name or socket_id'], 400);
         }
 
         // Get player from guest token or authenticated user
         $player = $this->getPlayer($request, $getPlayerByToken);
-        if (!$player) {
+        if (! $player) {
             return response()->json(['error' => 'Unauthenticated'], 403);
         }
 
@@ -66,14 +65,14 @@ class BroadcastAuthController extends Controller
     {
         $game = Game::where('code', $gameCode)->first();
 
-        if (!$game) {
+        if (! $game) {
             return null;
         }
 
         // Check if player is in the game
         $isInGame = $game->activePlayers()->where('players.id', $player->id)->exists();
 
-        if (!$isInGame) {
+        if (! $isInGame) {
             return null;
         }
 
@@ -82,15 +81,15 @@ class BroadcastAuthController extends Controller
             'user_id' => $player->id,
             'user_info' => [
                 'id' => $player->id,
-                'name' => $player->display_name,
+                'name' => $player->nickname,
             ],
         ];
 
-        $stringToSign = $socketId . ':' . $channelName . ':' . json_encode($userData);
+        $stringToSign = $socketId.':'.$channelName.':'.json_encode($userData);
         $signature = hash_hmac('sha256', $stringToSign, config('broadcasting.connections.reverb.secret'));
 
         return [
-            'auth' => config('broadcasting.connections.reverb.key') . ':' . $signature,
+            'auth' => config('broadcasting.connections.reverb.key').':'.$signature,
             'channel_data' => json_encode($userData),
         ];
     }

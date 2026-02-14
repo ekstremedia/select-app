@@ -28,7 +28,9 @@ class Round extends Model
     ];
 
     public const STATUS_ANSWERING = 'answering';
+
     public const STATUS_VOTING = 'voting';
+
     public const STATUS_COMPLETED = 'completed';
 
     public function game(): BelongsTo

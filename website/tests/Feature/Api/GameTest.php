@@ -2,9 +2,11 @@
 
 namespace Tests\Feature\Api;
 
+use App\Application\Jobs\ProcessAnswerDeadlineJob;
 use App\Infrastructure\Models\Game;
 use App\Infrastructure\Models\Player;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Tests\TestCase;
 
 class GameTest extends TestCase
@@ -12,15 +14,19 @@ class GameTest extends TestCase
     use RefreshDatabase;
 
     private Player $player;
+
     private string $guestToken;
 
     protected function setUp(): void
     {
         parent::setUp();
 
+        // Prevent ProcessAnswerDeadlineJob from running synchronously in tests
+        Bus::fake([ProcessAnswerDeadlineJob::class]);
+
         // Create a guest player for tests
         $response = $this->postJson('/api/v1/auth/guest', [
-            'display_name' => 'TestPlayer',
+            'nickname' => 'TestPlayer',
         ]);
 
         $this->player = Player::find($response->json('player.id'));
@@ -74,7 +80,9 @@ class GameTest extends TestCase
 
         $code = $createResponse->json('game.code');
 
-        $response = $this->getJson("/api/v1/games/{$code}");
+        $response = $this->withHeaders([
+            'X-Guest-Token' => $this->guestToken,
+        ])->getJson("/api/v1/games/{$code}");
 
         $response->assertStatus(200)
             ->assertJson([
@@ -86,7 +94,9 @@ class GameTest extends TestCase
 
     public function test_returns_404_for_invalid_code(): void
     {
-        $response = $this->getJson('/api/v1/games/INVALID');
+        $response = $this->withHeaders([
+            'X-Guest-Token' => $this->guestToken,
+        ])->getJson('/api/v1/games/INVALID');
 
         $response->assertStatus(404);
     }
@@ -102,7 +112,7 @@ class GameTest extends TestCase
 
         // Create second player
         $player2Response = $this->postJson('/api/v1/auth/guest', [
-            'display_name' => 'Player2',
+            'nickname' => 'Player2',
         ]);
         $player2Token = $player2Response->json('player.guest_token');
 
@@ -127,12 +137,12 @@ class GameTest extends TestCase
         $code = $createResponse->json('game.code');
 
         // Add second player
-        $player2Response = $this->postJson('/api/v1/auth/guest', ['display_name' => 'P2']);
+        $player2Response = $this->postJson('/api/v1/auth/guest', ['nickname' => 'P2Player']);
         $this->withHeaders(['X-Guest-Token' => $player2Response->json('player.guest_token')])
             ->postJson("/api/v1/games/{$code}/join");
 
         // Try to add third player
-        $player3Response = $this->postJson('/api/v1/auth/guest', ['display_name' => 'P3']);
+        $player3Response = $this->postJson('/api/v1/auth/guest', ['nickname' => 'P3Player']);
         $response = $this->withHeaders(['X-Guest-Token' => $player3Response->json('player.guest_token')])
             ->postJson("/api/v1/games/{$code}/join");
 
@@ -150,7 +160,7 @@ class GameTest extends TestCase
         $code = $createResponse->json('game.code');
 
         // Add second player
-        $player2Response = $this->postJson('/api/v1/auth/guest', ['display_name' => 'P2']);
+        $player2Response = $this->postJson('/api/v1/auth/guest', ['nickname' => 'P2Player']);
         $player2Token = $player2Response->json('player.guest_token');
         $this->withHeaders(['X-Guest-Token' => $player2Token])
             ->postJson("/api/v1/games/{$code}/join");
@@ -173,7 +183,7 @@ class GameTest extends TestCase
         $code = $createResponse->json('game.code');
 
         // Add second player
-        $player2Response = $this->postJson('/api/v1/auth/guest', ['display_name' => 'P2']);
+        $player2Response = $this->postJson('/api/v1/auth/guest', ['nickname' => 'P2Player']);
         $this->withHeaders(['X-Guest-Token' => $player2Response->json('player.guest_token')])
             ->postJson("/api/v1/games/{$code}/join");
 
@@ -197,7 +207,7 @@ class GameTest extends TestCase
         $code = $createResponse->json('game.code');
 
         // Add second player
-        $player2Response = $this->postJson('/api/v1/auth/guest', ['display_name' => 'P2']);
+        $player2Response = $this->postJson('/api/v1/auth/guest', ['nickname' => 'P2Player']);
         $player2Token = $player2Response->json('player.guest_token');
         $this->withHeaders(['X-Guest-Token' => $player2Token])
             ->postJson("/api/v1/games/{$code}/join");

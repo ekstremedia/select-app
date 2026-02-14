@@ -23,17 +23,17 @@ class ProcessAnswerDeadlineJob implements ShouldQueue
     {
         $round = Round::find($this->roundId);
 
-        if (!$round || !$round->isAnswering()) {
+        if (! $round || ! $round->isAnswering()) {
             return;
         }
 
         // Start voting phase
         $round = $action->execute($round);
 
-        $answers = $round->answers()->with('player')->get()->map(fn($a) => [
+        $answers = $round->answers()->with('player')->get()->map(fn ($a) => [
             'id' => $a->id,
             'player_id' => $a->player_id,
-            'player_name' => $a->player->display_name,
+            'player_name' => $a->player->nickname,
             'text' => $a->text,
         ]);
 

@@ -69,7 +69,7 @@ class DelectusService
                 $round = $game->currentRound;
 
                 // No current round - need to start one
-                if (!$round) {
+                if (! $round) {
                     return true;
                 }
 
