@@ -74,7 +74,11 @@ class EndGameAction
             'final_scores' => $finalScores,
         ]);
 
-        broadcast(new GameFinishedBroadcast($game, $finalScores));
+        try {
+            broadcast(new GameFinishedBroadcast($game, $finalScores));
+        } catch (\Throwable $e) {
+            Log::error('Broadcast failed: game.finished', ['game' => $game->code, 'error' => $e->getMessage()]);
+        }
 
         return $game->fresh();
     }

@@ -95,4 +95,11 @@ export function getConnectionState() {
     return echoInstance.connector.pusher.connection.state;
 }
 
-export default { joinGame, leaveGame, listenToGame, disconnect, getConnectionState };
+export function getSocketId() {
+    if (!echoInstance) {
+        return null;
+    }
+    return echoInstance.socketId();
+}
+
+export default { joinGame, leaveGame, listenToGame, disconnect, getConnectionState, getSocketId };

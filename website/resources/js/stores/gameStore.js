@@ -99,7 +99,11 @@ export const useGameStore = defineStore('game', () => {
     }
 
     async function sendChatMessage(code, message) {
-        await api.games.chat(code, message);
+        const { data } = await api.games.chat(code, message);
+        // Add own message locally since toOthers() excludes the sender
+        if (data.message) {
+            chatMessages.value.push(data.message);
+        }
     }
 
     async function fetchGameState(code) {

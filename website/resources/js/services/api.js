@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getSocketId } from './websocket.js';
 
 const client = axios.create({
     baseURL: '/api/v1',
@@ -8,7 +9,7 @@ const client = axios.create({
     },
 });
 
-// Request interceptor: attach auth tokens
+// Request interceptor: attach auth tokens and socket ID
 client.interceptors.request.use((config) => {
     const token = localStorage.getItem('select-auth-token');
     if (token) {
@@ -23,6 +24,12 @@ client.interceptors.request.use((config) => {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
     if (csrfToken) {
         config.headers['X-CSRF-TOKEN'] = csrfToken;
+    }
+
+    // Send socket ID so broadcast()->toOthers() can exclude this client
+    const socketId = getSocketId();
+    if (socketId) {
+        config.headers['X-Socket-ID'] = socketId;
     }
 
     return config;

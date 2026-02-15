@@ -53,7 +53,11 @@ class StartVotingAction
         ]);
 
         // Delectus handles deadline - no need for scheduled job
-        broadcast(new VotingStartedBroadcast($game, $round->fresh(), $answers));
+        try {
+            broadcast(new VotingStartedBroadcast($game, $round->fresh(), $answers));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Broadcast failed: voting.started', ['game' => $game->code, 'error' => $e->getMessage()]);
+        }
 
         return $round->fresh();
     }

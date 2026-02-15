@@ -31,12 +31,16 @@ class ProcessVoteDeadlineJob implements ShouldQueue
 
         $result = $action->execute($round);
 
-        broadcast(new RoundCompletedBroadcast($round->game, $result['round_results']));
+        try {
+            broadcast(new RoundCompletedBroadcast($round->game, $result['round_results']));
 
-        if ($result['game_finished']) {
-            broadcast(new GameFinishedBroadcast($round->game, $result['final_scores']));
-        } else {
-            broadcast(new RoundStartedBroadcast($round->game, $result['next_round']));
+            if ($result['game_finished']) {
+                broadcast(new GameFinishedBroadcast($round->game, $result['final_scores']));
+            } else {
+                broadcast(new RoundStartedBroadcast($round->game, $result['next_round']));
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Broadcast failed: round.completed (job)', ['error' => $e->getMessage()]);
         }
     }
 }

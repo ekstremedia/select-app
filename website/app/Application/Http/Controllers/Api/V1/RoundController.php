@@ -20,6 +20,7 @@ use App\Infrastructure\Models\Answer;
 use App\Infrastructure\Models\Round;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class RoundController extends Controller
 {
@@ -76,7 +77,11 @@ class RoundController extends Controller
         // Broadcast answer submitted (just count, not content)
         $answersCount = $round->answers()->count();
         $totalPlayers = $round->game->activePlayers()->count();
-        broadcast(new AnswerSubmittedBroadcast($round->game, $answersCount, $totalPlayers));
+        try {
+            broadcast(new AnswerSubmittedBroadcast($round->game, $answersCount, $totalPlayers));
+        } catch (\Throwable $e) {
+            Log::error('Broadcast failed: answer.submitted', ['error' => $e->getMessage()]);
+        }
 
         return response()->json([
             'answer' => [
@@ -102,7 +107,11 @@ class RoundController extends Controller
         // Broadcast vote submitted (just count)
         $votesCount = $round->answers()->sum('votes_count');
         $totalVoters = $round->game->activePlayers()->count();
-        broadcast(new VoteSubmittedBroadcast($round->game, $votesCount, $totalVoters));
+        try {
+            broadcast(new VoteSubmittedBroadcast($round->game, $votesCount, $totalVoters));
+        } catch (\Throwable $e) {
+            Log::error('Broadcast failed: vote.submitted', ['error' => $e->getMessage()]);
+        }
 
         return response()->json([
             'vote' => [
@@ -134,7 +143,11 @@ class RoundController extends Controller
             'text' => $a->text,
         ]);
 
-        broadcast(new VotingStartedBroadcast($round->game, $round, $answers->toArray()));
+        try {
+            broadcast(new VotingStartedBroadcast($round->game, $round, $answers->toArray()));
+        } catch (\Throwable $e) {
+            Log::error('Broadcast failed: voting.started', ['error' => $e->getMessage()]);
+        }
 
         return response()->json([
             'round' => [
@@ -161,12 +174,16 @@ class RoundController extends Controller
             return response()->json(['error' => $e->getMessage()], 422);
         }
 
-        broadcast(new RoundCompletedBroadcast($round->game, $result['round_results']));
+        try {
+            broadcast(new RoundCompletedBroadcast($round->game, $result['round_results']));
 
-        if ($result['game_finished']) {
-            broadcast(new GameFinishedBroadcast($round->game, $result['final_scores']));
-        } elseif (isset($result['next_round'])) {
-            broadcast(new RoundStartedBroadcast($round->game, $result['next_round']));
+            if ($result['game_finished']) {
+                broadcast(new GameFinishedBroadcast($round->game, $result['final_scores']));
+            } elseif (isset($result['next_round'])) {
+                broadcast(new RoundStartedBroadcast($round->game, $result['next_round']));
+            }
+        } catch (\Throwable $e) {
+            Log::error('Broadcast failed: round.completed', ['error' => $e->getMessage()]);
         }
 
         return response()->json($result);

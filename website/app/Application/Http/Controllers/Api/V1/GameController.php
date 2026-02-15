@@ -18,6 +18,7 @@ use App\Http\Controllers\Controller;
 use App\Infrastructure\Models\Game;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 
 class GameController extends Controller
@@ -88,7 +89,11 @@ class GameController extends Controller
             return response()->json(['error' => $e->getMessage()], 422);
         }
 
-        broadcast(new PlayerJoinedBroadcast($game, $player))->toOthers();
+        try {
+            broadcast(new PlayerJoinedBroadcast($game, $player))->toOthers();
+        } catch (\Throwable $e) {
+            Log::error('Broadcast failed: player.joined', ['game' => $code, 'error' => $e->getMessage()]);
+        }
 
         return response()->json([
             'game' => $this->formatGame($game->fresh()),
@@ -110,7 +115,11 @@ class GameController extends Controller
             return response()->json(['error' => $e->getMessage()], 422);
         }
 
-        broadcast(new PlayerLeftBroadcast($game, $player))->toOthers();
+        try {
+            broadcast(new PlayerLeftBroadcast($game, $player))->toOthers();
+        } catch (\Throwable $e) {
+            Log::error('Broadcast failed: player.left', ['game' => $code, 'error' => $e->getMessage()]);
+        }
 
         return response()->json([
             'success' => true,
@@ -134,8 +143,12 @@ class GameController extends Controller
 
         $round = $game->currentRoundModel();
 
-        broadcast(new GameStartedBroadcast($game));
-        broadcast(new RoundStartedBroadcast($game, $round));
+        try {
+            broadcast(new GameStartedBroadcast($game));
+            broadcast(new RoundStartedBroadcast($game, $round));
+        } catch (\Throwable $e) {
+            Log::error('Broadcast failed: game.started', ['game' => $code, 'error' => $e->getMessage()]);
+        }
 
         return response()->json([
             'game' => $this->formatGame($game),
@@ -244,9 +257,21 @@ class GameController extends Controller
             'message' => 'required|string|max:200',
         ]);
 
-        broadcast(new ChatMessageBroadcast($game, $player->nickname, $request->input('message')))->toOthers();
+        $message = $request->input('message');
 
-        return response()->json(['sent' => true]);
+        try {
+            broadcast(new ChatMessageBroadcast($game, $player->nickname, $message))->toOthers();
+        } catch (\Throwable $e) {
+            Log::error('Broadcast failed: chat.message', ['game' => $code, 'error' => $e->getMessage()]);
+        }
+
+        return response()->json([
+            'sent' => true,
+            'message' => [
+                'nickname' => $player->nickname,
+                'message' => $message,
+            ],
+        ]);
     }
 
     private function formatGame($game): array

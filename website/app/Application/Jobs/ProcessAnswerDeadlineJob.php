@@ -37,6 +37,10 @@ class ProcessAnswerDeadlineJob implements ShouldQueue
             'text' => $a->text,
         ]);
 
-        broadcast(new VotingStartedBroadcast($round->game, $round, $answers->toArray()));
+        try {
+            broadcast(new VotingStartedBroadcast($round->game, $round, $answers->toArray()));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Broadcast failed: voting.started (job)', ['error' => $e->getMessage()]);
+        }
     }
 }

@@ -48,7 +48,11 @@ class CompleteRoundAction
             'results' => $roundResults,
         ]);
 
-        broadcast(new RoundCompletedBroadcast($game, $roundResults));
+        try {
+            broadcast(new RoundCompletedBroadcast($game, $roundResults));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Broadcast failed: round.completed', ['game' => $game->code, 'error' => $e->getMessage()]);
+        }
 
         return [
             'round_results' => $roundResults,
