@@ -8,30 +8,30 @@ use Inertia\Inertia;
 
 // Helper: fetch game preview for invite redirects
 if (! function_exists('getGamePreviewFromRedirect')) {
-function getGamePreviewFromRedirect(?string $redirect): ?array
-{
-    if (! $redirect || ! preg_match('#^/spill/([A-Z0-9]{4,6})$#i', $redirect, $matches)) {
-        return null;
+    function getGamePreviewFromRedirect(?string $redirect): ?array
+    {
+        if (! $redirect || ! preg_match('#^/spill/([A-Z0-9]{4,6})$#i', $redirect, $matches)) {
+            return null;
+        }
+
+        $game = Game::where('code', strtoupper($matches[1]))
+            ->with('host')
+            ->first();
+
+        if (! $game || $game->isFinished()) {
+            return null;
+        }
+
+        $players = $game->activePlayers()->get();
+
+        return [
+            'code' => $game->code,
+            'host_nickname' => $game->host?->nickname,
+            'player_count' => $players->count(),
+            'max_players' => $game->settings['max_players'] ?? 10,
+            'players' => $players->pluck('nickname')->values()->toArray(),
+        ];
     }
-
-    $game = Game::where('code', strtoupper($matches[1]))
-        ->with('host')
-        ->first();
-
-    if (! $game || $game->isFinished()) {
-        return null;
-    }
-
-    $players = $game->activePlayers()->get();
-
-    return [
-        'code' => $game->code,
-        'host_nickname' => $game->host?->nickname,
-        'player_count' => $players->count(),
-        'max_players' => $game->settings['max_players'] ?? 10,
-        'players' => $players->pluck('nickname')->values()->toArray(),
-    ];
-}
 }
 
 // Debug page (only in local/development)
