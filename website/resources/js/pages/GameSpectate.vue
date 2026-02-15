@@ -2,6 +2,7 @@
     <GameLayout
         :game-code="gameStore.gameCode || props.code"
         :player-count="gameStore.players.length"
+        :is-private="gameStore.currentGame?.has_password === true"
         :leave-label="t('common.back')"
         @leave="router.visit('/spill')"
     >
@@ -96,13 +97,13 @@
 
                 <!-- Phase: Playing -->
                 <div v-else-if="phase === 'playing'" class="flex-1 overflow-y-auto">
-                    <div class="max-w-lg mx-auto px-4 py-6 text-center">
+                    <div ref="playingContainerRef" class="max-w-lg mx-auto px-4 py-6 text-center">
                         <!-- Acronym display -->
-                        <div class="flex justify-center gap-2 sm:gap-3 mb-6">
+                        <div ref="acronymContainerRef" class="flex justify-center gap-2 sm:gap-3 mb-6">
                             <span
                                 v-for="(letter, i) in acronymLetters"
                                 :key="i"
-                                class="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl text-xl sm:text-3xl font-bold bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border-2 border-emerald-300 dark:border-emerald-700"
+                                class="acronym-letter inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl text-xl sm:text-3xl font-bold bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border-2 border-emerald-300 dark:border-emerald-700"
                             >
                                 {{ letter }}
                             </span>
@@ -116,7 +117,7 @@
 
                 <!-- Phase: Voting -->
                 <div v-else-if="phase === 'voting'" class="flex-1 overflow-y-auto">
-                    <div class="max-w-lg mx-auto px-4 py-6">
+                    <div ref="votingContainerRef" class="max-w-lg mx-auto px-4 py-6">
                         <h2 class="text-xl font-bold text-center mb-6 text-slate-800 dark:text-slate-200">
                             {{ t('game.voting') }}
                         </h2>
@@ -135,7 +136,7 @@
                             <div
                                 v-for="answer in gameStore.answers"
                                 :key="answer.id"
-                                class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
+                                class="vote-card p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
                             >
                                 <p class="text-slate-800 dark:text-slate-200">{{ answer.text?.toLowerCase() }}</p>
                             </div>
@@ -149,7 +150,7 @@
 
                 <!-- Phase: Results -->
                 <div v-else-if="phase === 'results'" class="flex-1 overflow-y-auto">
-                    <div class="max-w-lg mx-auto px-4 py-6">
+                    <div ref="resultsContainerRef" class="max-w-lg mx-auto px-4 py-6">
                         <h2 class="text-xl font-bold text-center mb-6 text-slate-800 dark:text-slate-200">
                             {{ t('game.results') }}
                         </h2>
@@ -158,7 +159,7 @@
                             <div
                                 v-for="(result, i) in gameStore.roundResults"
                                 :key="result.answer_id || i"
-                                class="p-4 rounded-xl border border-slate-200 dark:border-slate-800"
+                                class="result-card p-4 rounded-xl border border-slate-200 dark:border-slate-800"
                                 :class="i === 0 ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-900' : 'bg-slate-50 dark:bg-slate-900'"
                             >
                                 <div class="flex items-start justify-between gap-3">
@@ -174,7 +175,7 @@
                         <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                             <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">{{ t('game.scoreboard') }}</h3>
                             <div class="space-y-2">
-                                <div v-for="score in gameStore.scores" :key="score.player_id" class="flex items-center justify-between">
+                                <div v-for="score in gameStore.scores" :key="score.player_id" class="score-row flex items-center justify-between">
                                     <span class="text-sm text-slate-700 dark:text-slate-300">{{ score.nickname }}</span>
                                     <span class="text-sm font-bold text-emerald-600 dark:text-emerald-400">{{ score.score }}</span>
                                 </div>
@@ -198,7 +199,7 @@
                         <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 mb-6">
                             <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">{{ t('game.finalScores') }}</h3>
                             <div class="space-y-2">
-                                <div v-for="(score, i) in gameStore.scores" :key="score.player_id" class="flex items-center justify-between p-2 rounded" :class="i === 0 ? 'bg-emerald-50 dark:bg-emerald-950/50' : ''">
+                                <div v-for="(score, i) in gameStore.scores" :key="score.player_id" class="final-score-row flex items-center justify-between p-2 rounded" :class="i === 0 ? 'bg-emerald-50 dark:bg-emerald-950/50' : ''">
                                     <div class="flex items-center gap-2">
                                         <span class="text-sm font-bold text-slate-400 w-5">{{ i + 1 }}.</span>
                                         <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ score.nickname }}</span>
@@ -235,7 +236,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { storeToRefs } from 'pinia';
 import Button from 'primevue/button';
@@ -247,6 +248,7 @@ import GameLayout from '../layouts/GameLayout.vue';
 import { useGameStore } from '../stores/gameStore.js';
 import { useAuthStore } from '../stores/authStore.js';
 import { useI18n } from '../composables/useI18n.js';
+import { useGameAnimations } from '../composables/useGameAnimations.js';
 import { api } from '../services/api.js';
 
 defineOptions({ layout: false });
@@ -256,6 +258,7 @@ const props = defineProps({ code: String });
 const gameStore = useGameStore();
 const authStore = useAuthStore();
 const { t } = useI18n();
+const { animatePhaseIn, staggerLetters, staggerCards, staggerRows } = useGameAnimations();
 
 const { phase } = storeToRefs(gameStore);
 
@@ -265,6 +268,10 @@ const joining = ref(false);
 const joinError = ref('');
 const showPasswordDialog = ref(false);
 const password = ref('');
+const playingContainerRef = ref(null);
+const acronymContainerRef = ref(null);
+const votingContainerRef = ref(null);
+const resultsContainerRef = ref(null);
 
 const totalRounds = computed(() => gameStore.currentGame?.settings?.rounds ?? 5);
 const acronymLetters = computed(() => gameStore.acronym ? gameStore.acronym.split('') : []);
@@ -381,6 +388,26 @@ function stopPolling() {
         pollInterval = null;
     }
 }
+
+// GSAP animations on phase transitions
+watch(phase, (newPhase, oldPhase) => {
+    if (!oldPhase) return;
+    nextTick(() => {
+        if (newPhase === 'playing') {
+            animatePhaseIn(playingContainerRef.value);
+            staggerLetters(acronymContainerRef.value);
+        } else if (newPhase === 'voting') {
+            animatePhaseIn(votingContainerRef.value);
+            staggerCards(votingContainerRef.value, '.vote-card', 0.15);
+        } else if (newPhase === 'results') {
+            animatePhaseIn(resultsContainerRef.value);
+            const cardsDone = staggerCards(resultsContainerRef.value, '.result-card', 0.1);
+            staggerRows(resultsContainerRef.value, '.score-row', cardsDone + 0.1);
+        } else if (newPhase === 'finished') {
+            staggerRows(document.querySelector('.final-score-row')?.parentElement, '.final-score-row', 0.4);
+        }
+    });
+});
 
 onMounted(initSpectate);
 

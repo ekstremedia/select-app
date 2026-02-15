@@ -148,19 +148,6 @@
                 </div>
             </div>
 
-            <!-- Bot players -->
-            <div class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                <div class="flex items-center gap-3">
-                    <Checkbox v-model="settings.add_bots" :binary="true" inputId="addBots" />
-                    <div>
-                        <label for="addBots" class="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-                            {{ t('create.addBots') }}
-                        </label>
-                        <p class="text-xs text-slate-400">{{ t('create.addBotsDesc') }}</p>
-                    </div>
-                </div>
-            </div>
-
             <div class="flex gap-3">
                 <Button
                     :label="t('common.back')"
@@ -187,7 +174,6 @@ import { router } from '@inertiajs/vue3';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import Slider from 'primevue/slider';
-import Checkbox from 'primevue/checkbox';
 import ToggleSwitch from 'primevue/toggleswitch';
 import { useGameStore } from '../stores/gameStore.js';
 import { useAuthStore } from '../stores/authStore.js';
@@ -211,7 +197,6 @@ const settings = reactive({
     allow_ready_check: true,
     max_edits: 0,
     max_vote_changes: 0,
-    add_bots: false,
 });
 
 const loading = ref(false);
@@ -246,10 +231,6 @@ async function handleCreate() {
         if (settings.is_private && settings.password) {
             payload.password = settings.password;
         }
-        if (settings.add_bots) {
-            payload.add_bots = true;
-        }
-
         const data = await gameStore.createGame(payload);
         const code = data.game?.code || gameStore.gameCode;
         router.visit(`/spill/${code}`);

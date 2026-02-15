@@ -70,7 +70,6 @@ export const useGameStore = defineStore('game', () => {
         roundResults.value = null;
         readyCount.value = 0;
         totalPlayersForReady.value = 0;
-        chatMessages.value = [];
         lobbyExpiring.value = false;
         _stopCountdown();
         _stopResultsCountdown();
@@ -131,6 +130,11 @@ export const useGameStore = defineStore('game', () => {
         const { data } = await api.rounds.submitVote(roundId, answerId);
         myVote.value = data.vote;
         return data;
+    }
+
+    async function retractVote(roundId) {
+        await api.rounds.retractVote(roundId);
+        myVote.value = null;
     }
 
     async function markReady(roundId, ready) {
@@ -625,6 +629,7 @@ export const useGameStore = defineStore('game', () => {
         disconnectWebSocket();
         if (_pollTimer) { clearTimeout(_pollTimer); _pollTimer = null; }
         _resetRoundState();
+        chatMessages.value = [];
         currentGame.value = null;
         players.value = [];
         phase.value = null;
@@ -659,6 +664,7 @@ export const useGameStore = defineStore('game', () => {
         startGame,
         submitAnswer,
         submitVote,
+        retractVote,
         endGame,
         keepalive,
         addBot,

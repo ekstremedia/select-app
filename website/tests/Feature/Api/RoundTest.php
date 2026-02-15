@@ -186,6 +186,73 @@ class RoundTest extends TestCase
             ->assertJsonStructure(['vote' => ['id', 'answer_id']]);
     }
 
+    public function test_can_retract_vote(): void
+    {
+        $round = $this->game->currentRoundModel();
+        $acronym = $round->acronym;
+
+        // Both submit answers
+        $words = array_map(fn ($letter) => $letter.'ord', str_split($acronym));
+        $this->withHeaders(['X-Guest-Token' => $this->hostToken])
+            ->postJson("/api/v1/rounds/{$round->id}/answer", ['text' => implode(' ', $words)]);
+
+        $words2 = array_map(fn ($letter) => $letter.'est', str_split($acronym));
+        $this->withHeaders(['X-Guest-Token' => $this->player2Token])
+            ->postJson("/api/v1/rounds/{$round->id}/answer", ['text' => implode(' ', $words2)]);
+
+        // Start voting
+        $votingResponse = $this->withHeaders(['X-Guest-Token' => $this->hostToken])
+            ->postJson("/api/v1/rounds/{$round->id}/voting");
+
+        $answers = $votingResponse->json('answers');
+        $player2AnswerText = mb_strtolower(implode(' ', $words2));
+        $player2Answer = collect($answers)->firstWhere('text', $player2AnswerText);
+
+        // Host votes for player2's answer
+        $this->withHeaders(['X-Guest-Token' => $this->hostToken])
+            ->postJson("/api/v1/rounds/{$round->id}/vote", [
+                'answer_id' => $player2Answer['id'],
+            ])
+            ->assertStatus(200);
+
+        // Host retracts vote
+        $response = $this->withHeaders(['X-Guest-Token' => $this->hostToken])
+            ->deleteJson("/api/v1/rounds/{$round->id}/vote");
+
+        $response->assertStatus(200)
+            ->assertJson(['vote' => null]);
+
+        // Verify vote count is 0 on the answer
+        $this->assertDatabaseMissing('votes', [
+            'voter_id' => $this->host->id,
+        ]);
+    }
+
+    public function test_cannot_retract_vote_when_none_exists(): void
+    {
+        $round = $this->game->currentRoundModel();
+        $acronym = $round->acronym;
+
+        // Both submit answers + start voting
+        $words = array_map(fn ($letter) => $letter.'ord', str_split($acronym));
+        $this->withHeaders(['X-Guest-Token' => $this->hostToken])
+            ->postJson("/api/v1/rounds/{$round->id}/answer", ['text' => implode(' ', $words)]);
+
+        $words2 = array_map(fn ($letter) => $letter.'est', str_split($acronym));
+        $this->withHeaders(['X-Guest-Token' => $this->player2Token])
+            ->postJson("/api/v1/rounds/{$round->id}/answer", ['text' => implode(' ', $words2)]);
+
+        $this->withHeaders(['X-Guest-Token' => $this->hostToken])
+            ->postJson("/api/v1/rounds/{$round->id}/voting");
+
+        // Try to retract without having voted
+        $response = $this->withHeaders(['X-Guest-Token' => $this->hostToken])
+            ->deleteJson("/api/v1/rounds/{$round->id}/vote");
+
+        $response->assertStatus(422)
+            ->assertJson(['error' => 'No vote to retract']);
+    }
+
     public function test_cannot_vote_for_own_answer(): void
     {
         $round = $this->game->currentRoundModel();

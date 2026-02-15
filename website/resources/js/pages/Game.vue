@@ -2,6 +2,7 @@
     <GameLayout
         :game-code="gameStore.gameCode || props.code"
         :player-count="gameStore.players.length"
+        :is-private="gameStore.currentGame?.has_password === true"
         @leave="handleLeave"
     >
         <div class="flex flex-col h-full overflow-hidden">
@@ -24,9 +25,36 @@
                         <span class="text-xs text-slate-500 dark:text-slate-400">
                             {{ t('game.round') }} {{ gameStore.currentRound?.round_number ?? 1 }} {{ t('game.of') }} {{ totalRounds }}
                         </span>
-                        <span class="text-sm font-mono font-bold" :class="gameStore.timeRemaining <= 10 ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'">
-                            {{ gameStore.timeRemaining }}s
-                        </span>
+                        <div class="flex items-center gap-2">
+                            <!-- Host live controls -->
+                            <template v-if="gameStore.isHost">
+                                <button
+                                    @click="handleToggleChat"
+                                    class="text-xs px-1.5 py-0.5 rounded border transition-colors"
+                                    :class="chatEnabled
+                                        ? 'border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50'
+                                        : 'border-slate-300 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'"
+                                    :title="chatEnabled ? t('game.disableChat') : t('game.enableChat')"
+                                >
+                                    {{ t('game.chat') }}
+                                </button>
+                                <button
+                                    @click="handleToggleVisibility"
+                                    class="text-xs px-1.5 py-0.5 rounded border transition-colors"
+                                    :class="gameStore.currentGame?.is_public
+                                        ? 'border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50'
+                                        : 'border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/50'"
+                                    :title="gameStore.currentGame?.is_public ? t('game.makePrivate') : t('game.makePublic')"
+                                >
+                                    <svg v-if="!gameStore.currentGame?.is_public" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3 h-3 inline -mt-0.5"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg>
+                                    <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3 h-3 inline -mt-0.5"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clip-rule="evenodd" /></svg>
+                                    {{ gameStore.currentGame?.is_public ? t('create.public') : t('create.private') }}
+                                </button>
+                            </template>
+                            <span class="text-sm font-mono font-bold" :class="gameStore.timeRemaining <= 10 ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'">
+                                {{ gameStore.timeRemaining }}s
+                            </span>
+                        </div>
                     </div>
                     <ProgressBar
                         :value="timerPercent"
@@ -58,7 +86,13 @@
 
                         <!-- Game code display -->
                         <div class="my-6 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900">
-                            <p class="text-xs text-emerald-600 dark:text-emerald-400 mb-1">{{ t('lobby.gameCode') }}</p>
+                            <p class="text-xs text-emerald-600 dark:text-emerald-400 mb-1 flex items-center justify-center gap-1">
+                                <template v-if="gameStore.currentGame?.has_password">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5 text-amber-500 dark:text-amber-400"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg>
+                                    {{ t('lobby.privateGame') }}
+                                </template>
+                                <template v-else>{{ t('lobby.gameCode') }}</template>
+                            </p>
                             <p class="text-xl font-mono font-bold tracking-[0.4em] text-emerald-700 dark:text-emerald-300">
                                 {{ gameStore.gameCode }}
                             </p>
@@ -257,13 +291,13 @@
 
                 <!-- Phase: Playing (answer input) -->
                 <div v-else-if="phase === 'playing'" class="flex-1 overflow-y-auto">
-                    <div class="max-w-lg mx-auto px-4 py-6 text-center">
+                    <div ref="playingContainerRef" class="max-w-lg mx-auto px-4 py-6 text-center">
                         <!-- Acronym display (reactive — letters change color as you type) -->
-                        <div class="flex justify-center gap-1.5 sm:gap-3 mb-6">
+                        <div ref="acronymContainerRef" class="flex justify-center gap-1.5 sm:gap-3 mb-6">
                             <span
                                 v-for="(match, i) in letterMatches"
                                 :key="i"
-                                class="select-none inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl text-xl sm:text-3xl font-bold border-2 transition-colors duration-150"
+                                class="acronym-letter select-none inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl text-xl sm:text-3xl font-bold border-2 transition-colors duration-150"
                                 :class="match.status === 'correct'
                                     ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border-emerald-400 dark:border-emerald-600'
                                     : match.status === 'wrong'
@@ -275,24 +309,33 @@
                         </div>
 
                         <!-- Submitted + can edit -->
-                        <div v-if="gameStore.hasSubmittedAnswer && !isEditing" class="space-y-4">
-                            <div class="p-6 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900">
+                        <div v-if="gameStore.hasSubmittedAnswer && !isEditing" ref="submittedRef" class="space-y-4">
+                            <div
+                                class="p-6 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900"
+                                :class="!isReady && editsRemaining > 0 ? 'cursor-pointer hover:border-emerald-400 dark:hover:border-emerald-500 transition-colors' : ''"
+                                @click="!isReady && editsRemaining > 0 && startEditing()"
+                            >
                                 <p class="text-emerald-700 dark:text-emerald-300 font-medium mb-2 break-words">{{ gameStore.myAnswer?.text?.toLowerCase() }}</p>
                                 <p v-if="gameStore.currentRound" class="text-xs text-slate-400 mt-2">
                                     {{ gameStore.currentRound.answers_count ?? 0 }}/{{ gameStore.currentRound.total_players ?? gameStore.players.length }} {{ t('game.submitted') }}
                                 </p>
                             </div>
                             <!-- Ready check -->
-                            <div v-if="allowReadyCheck" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                            <div
+                                v-if="allowReadyCheck"
+                                class="flex flex-wrap items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 cursor-pointer select-none"
+                                @click="toggleReady"
+                            >
                                 <div class="flex items-center gap-3">
-                                    <Checkbox v-model="isReady" :binary="true" inputId="readyCheck" @change="handleReadyToggle" />
-                                    <label for="readyCheck" class="text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                                    <Checkbox :modelValue="isReady" :binary="true" @click.stop="toggleReady" />
+                                    <span class="text-sm text-slate-700 dark:text-slate-300">
                                         {{ t('game.readyLabel') }}
-                                    </label>
+                                    </span>
                                 </div>
                                 <span class="text-xs text-slate-400">
                                     {{ gameStore.readyCount }}/{{ gameStore.totalPlayersForReady || gameStore.players.length }} {{ t('game.readyCount') }}
                                 </span>
+                                <p class="text-xs text-slate-400 dark:text-slate-500 text-left basis-full mt-1">{{ t('game.readyHint') }}</p>
                             </div>
                             <Button
                                 v-if="editsRemaining > 0"
@@ -301,12 +344,13 @@
                                 variant="outlined"
                                 size="small"
                                 class="w-full"
+                                :disabled="isReady"
                                 @click="startEditing"
                             />
                         </div>
 
                         <!-- Answer input (initial or editing) -->
-                        <form v-else @submit.prevent="handleSubmitAnswer" class="space-y-4">
+                        <form v-else ref="answerFormRef" @submit.prevent="handleSubmitAnswer" class="space-y-4">
                             <div class="relative">
                                 <textarea
                                     ref="answerInput"
@@ -347,7 +391,7 @@
 
                 <!-- Phase: Voting -->
                 <div v-else-if="phase === 'voting'" class="flex-1 overflow-y-auto">
-                    <div class="max-w-lg mx-auto px-4 py-6">
+                    <div ref="votingContainerRef" class="max-w-lg mx-auto px-4 py-6">
                         <h2 class="text-xl font-bold text-center mb-6 text-slate-800 dark:text-slate-200">
                             {{ t('game.voting') }}
                         </h2>
@@ -362,7 +406,7 @@
                             <div
                                 v-for="answer in gameStore.answers"
                                 :key="answer.id"
-                                class="p-4 rounded-xl border-2 transition-all"
+                                class="vote-card p-4 rounded-xl border-2 transition-colors"
                                 :class="
                                     answer.is_own
                                         ? 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 opacity-50 cursor-not-allowed'
@@ -390,7 +434,7 @@
 
                 <!-- Phase: Results -->
                 <div v-else-if="phase === 'results'" class="flex-1 overflow-y-auto">
-                    <div class="max-w-lg mx-auto px-4 py-6">
+                    <div ref="resultsContainerRef" class="max-w-lg mx-auto px-4 py-6">
                         <h2 class="text-xl font-bold text-center mb-6 text-slate-800 dark:text-slate-200">
                             {{ t('game.results') }}
                         </h2>
@@ -400,7 +444,7 @@
                             <div
                                 v-for="(result, i) in gameStore.roundResults"
                                 :key="result.player_id || i"
-                                class="p-4 rounded-xl border border-slate-200 dark:border-slate-800"
+                                class="result-card p-4 rounded-xl border border-slate-200 dark:border-slate-800"
                                 :class="isRoundWinner(result) ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-900' : 'bg-slate-50 dark:bg-slate-900'"
                             >
                                 <div class="flex items-start justify-between gap-3">
@@ -409,7 +453,7 @@
                                         <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ result.player_name || result.player_nickname }}</p>
                                     </div>
                                     <div class="text-right shrink-0">
-                                        <p class="text-xs text-slate-400">{{ result.votes ?? result.votes_count ?? 0 }} {{ t('game.votes') }}</p>
+                                        <p class="text-sm font-bold text-emerald-600 dark:text-emerald-400">{{ result.votes ?? result.votes_count ?? 0 }} {{ t('game.votes') }}</p>
                                     </div>
                                 </div>
                                 <Badge v-if="isRoundWinner(result) && !roundHasTie" :value="t('game.winner')" severity="success" class="mt-2" />
@@ -424,7 +468,7 @@
                                 <div
                                     v-for="score in gameStore.scores"
                                     :key="score.player_id"
-                                    class="flex items-center justify-between select-none"
+                                    class="score-row flex items-center justify-between select-none"
                                 >
                                     <span class="text-sm text-slate-700 dark:text-slate-300">{{ score.player_name || score.nickname }}</span>
                                     <span class="text-sm font-bold text-emerald-600 dark:text-emerald-400">{{ score.score }} {{ t('game.points') }}</span>
@@ -476,7 +520,7 @@
                                 <div
                                     v-for="(score, i) in gameStore.scores"
                                     :key="score.player_id"
-                                    class="flex items-center justify-between p-2 rounded transition-all"
+                                    class="final-score-row flex items-center justify-between p-2 rounded transition-all"
                                     :class="gameStore.currentGame?.winner && i === 0 ? 'bg-emerald-50 dark:bg-emerald-950/50 ring-1 ring-emerald-200 dark:ring-emerald-800' : ''"
                                     :style="{ animationDelay: `${i * 100}ms` }"
                                 >
@@ -523,11 +567,26 @@
             <div v-if="chatEnabled" class="shrink-0 border-t border-slate-200 dark:border-slate-800">
                 <button
                     @click="chatOpen = !chatOpen"
-                    class="w-full px-4 py-2 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                    class="w-full px-4 py-2 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors gap-3"
                 >
-                    <span>{{ t('game.chat') }}</span>
-                    <div class="flex items-center gap-2">
-                        <Badge v-if="unreadCount > 0" :value="unreadCount" severity="danger" />
+                    <div class="flex items-center gap-2 min-w-0 flex-1">
+                        <span class="shrink-0">{{ t('game.chat') }}</span>
+                        <span v-if="latestChatMsg" ref="chatPreviewRef" class="truncate font-mono text-xs">
+                            <template v-if="latestChatMsg.system">
+                                <span class="text-slate-400 dark:text-slate-500">*** {{ latestChatMsg.message }}</span>
+                            </template>
+                            <template v-else-if="latestChatMsg.action">
+                                <span class="text-slate-400 dark:text-slate-500">* </span><span class="font-medium text-purple-500 dark:text-purple-400">{{ latestChatMsg.nickname }}</span>{{ ' ' }}<span class="text-purple-500 dark:text-purple-400">{{ latestChatMsg.message }}</span>
+                            </template>
+                            <template v-else>
+                                <span class="text-slate-400 dark:text-slate-500">&lt;</span><span class="font-medium text-emerald-600 dark:text-emerald-400">{{ latestChatMsg.nickname }}</span><span class="text-slate-400 dark:text-slate-500">&gt;</span>{{ ' ' }}<span class="text-slate-500 dark:text-slate-400">{{ latestChatMsg.message }}</span>
+                            </template>
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span ref="unreadBadgeRef">
+                            <Badge v-if="unreadCount > 0" :value="unreadCount" severity="danger" />
+                        </span>
                         <svg :class="{ 'rotate-180': chatOpen }" class="w-4 h-4 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
                     </div>
                 </button>
@@ -538,6 +597,7 @@
                         <div
                             v-for="(msg, i) in gameStore.chatMessages"
                             :key="i"
+                            class="chat-line"
                             :class="msg.system ? 'text-slate-400 dark:text-slate-500' : msg.action ? 'text-purple-500 dark:text-purple-400' : ''"
                         >
                             <template v-if="msg.system">
@@ -785,6 +845,7 @@ import GameLayout from '../layouts/GameLayout.vue';
 import { useGameStore } from '../stores/gameStore.js';
 import { useAuthStore } from '../stores/authStore.js';
 import { useI18n } from '../composables/useI18n.js';
+import { useGameAnimations } from '../composables/useGameAnimations.js';
 import { api, getApiError } from '../services/api.js';
 
 defineOptions({ layout: false });
@@ -795,6 +856,7 @@ const gameStore = useGameStore();
 const authStore = useAuthStore();
 const { t } = useI18n();
 const confirm = useConfirm();
+const { animatePhaseIn, staggerLetters, staggerCards, staggerRows, animateSwap, pulse } = useGameAnimations();
 
 const { phase } = storeToRefs(gameStore);
 
@@ -809,6 +871,12 @@ const chatMessage = ref('');
 const chatContainer = ref(null);
 const answerInput = ref(null);
 const chatInputRef = ref(null);
+const submittedRef = ref(null);
+const answerFormRef = ref(null);
+const playingContainerRef = ref(null);
+const acronymContainerRef = ref(null);
+const votingContainerRef = ref(null);
+const resultsContainerRef = ref(null);
 const copied = ref(false);
 const copiedLink = ref(false);
 const unreadCount = ref(0);
@@ -856,6 +924,12 @@ const allowReadyCheck = computed(() => gameStore.currentGame?.settings?.allow_re
 const maxEdits = computed(() => gameStore.currentGame?.settings?.max_edits ?? 0);
 const maxVoteChanges = computed(() => gameStore.currentGame?.settings?.max_vote_changes ?? 0);
 const chatEnabled = computed(() => gameStore.currentGame?.settings?.chat_enabled ?? true);
+const unreadBadgeRef = ref(null);
+const chatPreviewRef = ref(null);
+const latestChatMsg = computed(() => {
+    if (chatOpen.value || !gameStore.chatMessages.length) return null;
+    return gameStore.chatMessages[gameStore.chatMessages.length - 1];
+});
 const editsRemaining = computed(() => maxEdits.value === 0 ? Infinity : Math.max(0, maxEdits.value - Math.max(0, submitCount.value - 1)));
 const voteChangesLeft = computed(() => maxVoteChanges.value === 0 ? Infinity : Math.max(0, maxVoteChanges.value - Math.max(0, voteCount.value - 1)));
 
@@ -1062,6 +1136,11 @@ function handleEndGame() {
     });
 }
 
+function toggleReady() {
+    isReady.value = !isReady.value;
+    handleReadyToggle();
+}
+
 async function handleReadyToggle() {
     if (!gameStore.currentRound) return;
     try {
@@ -1107,20 +1186,38 @@ async function handleSubmitAnswer() {
 }
 
 function onAnswerClick(answer) {
-    if (answer.is_own || voteLoading.value || !canVote(answer.id)) return;
+    if (answer.is_own || voteLoading.value) return;
+
+    // Clicking the voted answer retracts the vote
+    if (gameStore.myVote?.answer_id === answer.id) {
+        handleRetractVote();
+        return;
+    }
+
+    if (!canVote(answer.id)) return;
     handleDirectVote(answer.id);
 }
 
 async function handleDirectVote(answerId) {
     if (!answerId || !gameStore.currentRound || voteLoading.value) return;
 
-    // Clicking the same answer you already voted for is a no-op
-    if (gameStore.myVote?.answer_id === answerId) return;
-
     voteLoading.value = true;
     try {
         await gameStore.submitVote(gameStore.currentRound.id, answerId);
         voteCount.value++;
+    } catch (err) {
+        error.value = err.response?.data?.message || t('common.error');
+    } finally {
+        voteLoading.value = false;
+    }
+}
+
+async function handleRetractVote() {
+    if (!gameStore.currentRound || voteLoading.value) return;
+
+    voteLoading.value = true;
+    try {
+        await gameStore.retractVote(gameStore.currentRound.id);
     } catch (err) {
         error.value = err.response?.data?.message || t('common.error');
     } finally {
@@ -1364,6 +1461,16 @@ async function handleUnbanPlayer(playerId) {
     }
 }
 
+async function handleToggleChat() {
+    try {
+        await gameStore.updateSettings(props.code, {
+            settings: { chat_enabled: !chatEnabled.value },
+        });
+    } catch (err) {
+        error.value = err.response?.data?.error || t('common.error');
+    }
+}
+
 async function handleToggleVisibility() {
     try {
         await gameStore.updateVisibility(props.code, !gameStore.currentGame?.is_public);
@@ -1460,10 +1567,19 @@ function copyLink() {
 watch(() => gameStore.chatMessages.length, (newLen, oldLen) => {
     if (!chatOpen.value) {
         unreadCount.value += Math.max(1, newLen - (oldLen ?? 0));
+        nextTick(() => {
+            pulse(unreadBadgeRef.value);
+            animateSwap(chatPreviewRef.value);
+        });
     } else {
         nextTick(() => {
             if (chatContainer.value) {
                 chatContainer.value.scrollTop = chatContainer.value.scrollHeight;
+                // Animate the latest chat line
+                const lines = chatContainer.value.querySelectorAll('.chat-line');
+                if (lines.length) {
+                    animateSwap(lines[lines.length - 1]);
+                }
             }
         });
     }
@@ -1501,6 +1617,14 @@ watch(() => gameStore.myVote?.change_count, (val) => {
     }
 });
 
+// Animate swap between submitted answer ↔ input form
+const showingSubmitted = computed(() => gameStore.hasSubmittedAnswer && !isEditing.value);
+watch(showingSubmitted, () => {
+    nextTick(() => {
+        animateSwap(showingSubmitted.value ? submittedRef.value : answerFormRef.value);
+    });
+});
+
 // Reset state when phase changes (guard: skip initial hydration from null)
 watch(phase, (newPhase, oldPhase) => {
     if (newPhase === 'playing' && oldPhase) {
@@ -1518,6 +1642,24 @@ watch(phase, (newPhase, oldPhase) => {
             }
         });
     }
+
+    // GSAP animations on phase entrance
+    if (!oldPhase) return; // skip initial hydration
+    nextTick(() => {
+        if (newPhase === 'playing') {
+            animatePhaseIn(playingContainerRef.value);
+            staggerLetters(acronymContainerRef.value);
+        } else if (newPhase === 'voting') {
+            animatePhaseIn(votingContainerRef.value);
+            staggerCards(votingContainerRef.value, '.vote-card', 0.15);
+        } else if (newPhase === 'results') {
+            animatePhaseIn(resultsContainerRef.value);
+            const cardsDone = staggerCards(resultsContainerRef.value, '.result-card', 0.1);
+            staggerRows(resultsContainerRef.value, '.score-row', cardsDone + 0.1);
+        } else if (newPhase === 'finished') {
+            staggerRows(document.querySelector('.final-score-row')?.parentElement, '.final-score-row', 0.4);
+        }
+    });
 });
 
 onMounted(async () => {

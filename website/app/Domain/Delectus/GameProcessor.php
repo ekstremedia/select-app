@@ -394,9 +394,9 @@ class GameProcessor
     {
         $botPlayers = $game->activePlayers()->where('players.is_bot', true)->get();
         $voteTime = $game->settings['vote_time'] ?? 30;
-        // Bots vote between 15%-70% of vote time, spread out
+        // Bots vote between 15%-70% of vote time, capped to stay within deadline
         $minDelay = max(2, (int) ($voteTime * 0.15));
-        $maxDelay = max(5, (int) ($voteTime * 0.7));
+        $maxDelay = min(max(5, (int) ($voteTime * 0.7)), max(1, $voteTime - 1));
 
         foreach ($botPlayers as $bot) {
             $delay = random_int($minDelay, $maxDelay);

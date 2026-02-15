@@ -38,7 +38,7 @@ class JoinGameAction
                     throw new \InvalidArgumentException('Du er utestengt fra dette spillet');
                 }
 
-                $maxPlayers = $game->settings['max_players'] ?? 10;
+                $maxPlayers = $game->settings['max_players'] ?? 8;
                 $currentCount = $game->gamePlayers()->where('is_active', true)->count();
 
                 if ($existing->isKicked()) {
@@ -62,7 +62,7 @@ class JoinGameAction
                 return $existing;
             }
 
-            $maxPlayers = $game->settings['max_players'] ?? 10;
+            $maxPlayers = $game->settings['max_players'] ?? 8;
             $currentCount = $game->gamePlayers()->where('is_active', true)->count();
 
             if ($currentCount >= $maxPlayers) {

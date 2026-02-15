@@ -52,7 +52,9 @@
                             </span>
                         </div>
                         <div class="flex items-center gap-1.5 shrink-0">
-                            <Badge v-if="game.has_password" value="🔒" severity="warn" />
+                            <span v-if="game.has_password" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3 h-3"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg>
+                            </span>
                             <Badge
                                 v-if="game.status === 'voting'"
                                 :value="t('games.statusVoting')"
@@ -74,7 +76,7 @@
                             />
                             <span class="inline-flex items-center gap-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                {{ game.player_count }}/{{ game.max_players ?? 10 }}
+                                {{ game.player_count }}/{{ game.max_players ?? 8 }}
                             </span>
                         </div>
                     </div>
@@ -113,7 +115,9 @@
                             </span>
                         </div>
                         <div class="flex items-center gap-1.5 shrink-0">
-                            <Badge v-if="game.has_password" value="🔒" severity="warn" />
+                            <span v-if="game.has_password" class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3 h-3"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg>
+                            </span>
                             <Badge
                                 v-if="game.status === 'voting'"
                                 :value="t('games.statusVoting')"
@@ -135,7 +139,7 @@
                             />
                             <span class="inline-flex items-center gap-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                {{ game.player_count }}/{{ game.max_players ?? 10 }}
+                                {{ game.player_count }}/{{ game.max_players ?? 8 }}
                             </span>
                         </div>
                     </div>

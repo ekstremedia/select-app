@@ -118,6 +118,7 @@ const translations = {
         // Lobby
         'lobby.title': 'Lobby',
         'lobby.gameCode': 'Spillkode',
+        'lobby.privateGame': 'Privat spill',
         'lobby.copyCode': 'Kopier kode',
         'lobby.copied': 'Kopiert!',
         'lobby.shareLink': 'Kopier spill-URL',
@@ -144,6 +145,7 @@ const translations = {
         'game.waitingForOthers': 'Venter på andre...',
         'game.submitted': 'innsendt',
         'game.readyLabel': 'Ok, jeg er fornøyd',
+        'game.readyHint': 'Når alle har krysset av, starter avstemmingen automatisk',
         'game.readyCount': 'er klare',
         'game.wordsMatch': 'ord matcher',
         'game.voting': 'Stemming',
@@ -166,6 +168,10 @@ const translations = {
         'game.viewArchive': 'Se i arkivet',
         'game.chat': 'Chat',
         'game.sendMessage': 'Send melding...',
+        'game.disableChat': 'Slå av chat',
+        'game.enableChat': 'Slå på chat',
+        'game.makePrivate': 'Gjør privat',
+        'game.makePublic': 'Gjør offentlig',
 
         // Archive
         'archive.title': 'Spillarkiv',
@@ -280,8 +286,6 @@ const translations = {
         'create.maxVoteChangesShort': 'Maks stemmeendringer',
         'create.maxVoteChangesDesc': 'Antall ganger en spiller kan endre stemmen sin etter at den er avgitt. 0 = ubegrenset.',
         'create.unlimited': 'Ubegrenset',
-        'create.addBots': 'Legg til boter',
-        'create.addBotsDesc': '3-5 AI-spillere med tilfeldige navn',
 
         // Lobby - additional
         'lobby.bot': 'Bot',
@@ -440,6 +444,7 @@ const translations = {
         // Lobby
         'lobby.title': 'Lobby',
         'lobby.gameCode': 'Game code',
+        'lobby.privateGame': 'Private game',
         'lobby.copyCode': 'Copy code',
         'lobby.copied': 'Copied!',
         'lobby.shareLink': 'Copy game URL',
@@ -466,6 +471,7 @@ const translations = {
         'game.waitingForOthers': 'Waiting for others...',
         'game.submitted': 'submitted',
         'game.readyLabel': 'Ok, I\'m satisfied',
+        'game.readyHint': 'When everyone checks off, voting starts automatically',
         'game.readyCount': 'are ready',
         'game.wordsMatch': 'words match',
         'game.voting': 'Voting',
@@ -488,6 +494,10 @@ const translations = {
         'game.viewArchive': 'View in archive',
         'game.chat': 'Chat',
         'game.sendMessage': 'Send message...',
+        'game.disableChat': 'Disable chat',
+        'game.enableChat': 'Enable chat',
+        'game.makePrivate': 'Make private',
+        'game.makePublic': 'Make public',
 
         // Archive
         'archive.title': 'Game Archive',
@@ -602,8 +612,6 @@ const translations = {
         'create.maxVoteChangesShort': 'Max vote changes',
         'create.maxVoteChangesDesc': 'How many times a player can change their vote after casting it. 0 = unlimited.',
         'create.unlimited': 'Unlimited',
-        'create.addBots': 'Add bots',
-        'create.addBotsDesc': '3-5 AI players with random names',
 
         // Lobby - additional
         'lobby.bot': 'Bot',

@@ -45,7 +45,7 @@ class GameController extends Controller
             'code' => $game->code,
             'host_nickname' => $game->host?->nickname,
             'player_count' => $game->player_count,
-            'max_players' => $game->settings['max_players'] ?? 10,
+            'max_players' => $game->settings['max_players'] ?? 8,
             'rounds' => $game->settings['rounds'] ?? 8,
             'has_password' => ! is_null($game->password),
             'status' => $game->status,
@@ -85,7 +85,7 @@ class GameController extends Controller
         ]);
     }
 
-    public function store(CreateGameRequest $request, CreateGameAction $action, CreateBotPlayerAction $createBot, JoinGameAction $joinAction): JsonResponse
+    public function store(CreateGameRequest $request, CreateGameAction $action): JsonResponse
     {
         $player = $request->attributes->get('player');
 
@@ -95,20 +95,6 @@ class GameController extends Controller
             (bool) $request->validated('is_public', false),
             $request->validated('password'),
         );
-
-        // Add bots if requested (admin only)
-        if ($request->validated('add_bots') && $player->user?->isAdmin()) {
-            $botCount = random_int(3, 5);
-            for ($i = 0; $i < $botCount; $i++) {
-                try {
-                    $bot = $createBot->execute();
-                    $joinAction->execute($game, $bot);
-                } catch (\Throwable $e) {
-                    Log::warning('Failed to add bot to game', ['error' => $e->getMessage()]);
-                }
-            }
-            $game = $game->fresh();
-        }
 
         return response()->json([
             'game' => $this->formatGame($game),
@@ -792,13 +778,12 @@ class GameController extends Controller
             return response()->json(['error' => 'Game not found'], 404);
         }
 
-        if (! $game->isInLobby()) {
-            return response()->json(['error' => 'Settings can only be changed in the lobby'], 422);
-        }
-
         if (! $game->isHostOrCoHost($player)) {
             return response()->json(['error' => 'Only host or co-host can change settings'], 403);
         }
+
+        // Settings that can be changed during play
+        $liveSettings = ['chat_enabled'];
 
         $validated = $request->validate([
             'settings' => ['required', 'array'],
@@ -818,8 +803,24 @@ class GameController extends Controller
             'password' => ['nullable', 'string', 'min:4', 'max:50'],
         ]);
 
+        // Outside lobby, only allow live-changeable settings + visibility
+        if (! $game->isInLobby()) {
+            $requestedSettings = array_keys(array_filter($validated['settings'] ?? [], fn ($v) => $v !== null));
+            $lobbyOnly = array_diff($requestedSettings, $liveSettings);
+            if (! empty($lobbyOnly) || ! empty($validated['password'])) {
+                return response()->json(['error' => 'Only chat and visibility can be changed during play'], 422);
+            }
+        }
+
         $currentSettings = $game->settings ?? [];
         $newSettings = array_merge($currentSettings, array_filter($validated['settings'], fn ($v) => $v !== null));
+
+        // Cross-validate acronym length
+        $minLen = $newSettings['acronym_length_min'] ?? 3;
+        $maxLen = $newSettings['acronym_length_max'] ?? 6;
+        if ($minLen > $maxLen) {
+            return response()->json(['error' => 'Acronym min length cannot exceed max length'], 422);
+        }
         $game->settings = $newSettings;
         $game->total_rounds = $newSettings['rounds'] ?? $game->total_rounds;
 

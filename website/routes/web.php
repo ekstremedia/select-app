@@ -29,7 +29,7 @@ if (! function_exists('getGamePreviewFromRedirect')) {
             'code' => $game->code,
             'host_nickname' => $game->host?->nickname,
             'player_count' => $players->count(),
-            'max_players' => $game->settings['max_players'] ?? 10,
+            'max_players' => $game->settings['max_players'] ?? 8,
             'players' => $players->pluck('nickname')->values()->toArray(),
         ];
     }

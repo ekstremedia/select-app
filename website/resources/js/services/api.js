@@ -72,7 +72,7 @@ export function getApiError(err, t) {
         if (status === 500) return t('common.serverError');
         if (status === 429) return t('common.tooManyRequests');
         if (status === 403) return t('common.forbidden');
-        if (status === 404) return t('common.gameNotFound');
+        if (status === 404) return t('common.notFound');
     }
 
     return msg || (t ? t('common.error') : 'Something went wrong');
@@ -127,6 +127,7 @@ export const api = {
     rounds: {
         submitAnswer: (id, text) => client.post(`/rounds/${id}/answer`, { text }),
         submitVote: (id, answerId) => client.post(`/rounds/${id}/vote`, { answer_id: answerId }),
+        retractVote: (id) => client.delete(`/rounds/${id}/vote`),
         markReady: (id, ready) => client.post(`/rounds/${id}/ready`, { ready }),
     },
     players: {

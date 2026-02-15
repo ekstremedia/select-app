@@ -13,6 +13,7 @@ use App\Application\Http\Requests\Api\V1\SubmitVoteRequest;
 use App\Domain\Game\Actions\GetGameByCodeAction;
 use App\Domain\Round\Actions\CompleteRoundAction;
 use App\Domain\Round\Actions\MarkReadyAction;
+use App\Domain\Round\Actions\RetractVoteAction;
 use App\Domain\Round\Actions\StartVotingAction;
 use App\Domain\Round\Actions\SubmitAnswerAction;
 use App\Domain\Round\Actions\SubmitVoteAction;
@@ -132,6 +133,29 @@ class RoundController extends Controller
                 'answer_id' => $vote->answer_id,
             ],
         ]);
+    }
+
+    public function retractVote(Request $request, string $roundId, RetractVoteAction $action): JsonResponse
+    {
+        $player = $request->attributes->get('player');
+        $round = Round::findOrFail($roundId);
+
+        try {
+            $action->execute($round, $player);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+
+        $game = $round->game;
+        $totalVoters = $game->activePlayers()->count();
+        $uniqueVoters = Vote::whereHas('answer', fn ($q) => $q->where('round_id', $round->id))->distinct('voter_id')->count('voter_id');
+        try {
+            broadcast(new VoteSubmittedBroadcast($game, $uniqueVoters, $totalVoters));
+        } catch (\Throwable $e) {
+            Log::error('Broadcast failed: vote.submitted', ['error' => $e->getMessage()]);
+        }
+
+        return response()->json(['vote' => null]);
     }
 
     public function markReady(Request $request, string $roundId, MarkReadyAction $action): JsonResponse

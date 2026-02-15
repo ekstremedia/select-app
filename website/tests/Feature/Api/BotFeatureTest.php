@@ -51,52 +51,60 @@ class BotFeatureTest extends TestCase
         return ['Authorization' => "Bearer {$this->adminBearerToken}"];
     }
 
-    public function test_admin_can_create_game_with_bots(): void
+    public function test_host_can_add_bot_in_lobby(): void
     {
+        // Create a game
+        $createResponse = $this->withHeaders($this->adminHeaders())
+            ->postJson('/api/v1/games', ['is_public' => true]);
+
+        $createResponse->assertStatus(201);
+        $code = $createResponse->json('game.code');
+
+        // Add a bot via lobby endpoint
         $response = $this->withHeaders($this->adminHeaders())
-            ->postJson('/api/v1/games', [
-                'is_public' => true,
-                'add_bots' => true,
-            ]);
+            ->postJson("/api/v1/games/{$code}/add-bot");
 
-        $response->assertStatus(201);
+        $response->assertStatus(200)
+            ->assertJsonStructure(['player' => ['id', 'nickname', 'is_bot']]);
 
-        $players = $response->json('game.players');
-        $botPlayers = collect($players)->where('is_bot', true);
-
-        // Should have 3-5 bots + the admin host
-        $this->assertGreaterThanOrEqual(4, count($players));
-        $this->assertLessThanOrEqual(6, count($players));
-        $this->assertGreaterThanOrEqual(3, $botPlayers->count());
-        $this->assertLessThanOrEqual(5, $botPlayers->count());
+        $this->assertTrue($response->json('player.is_bot'));
     }
 
-    public function test_non_admin_cannot_add_bots(): void
+    public function test_non_host_cannot_add_bots(): void
     {
-        $response = $this->withHeaders([
-            'X-Guest-Token' => $this->guestToken,
-        ])->postJson('/api/v1/games', [
-            'is_public' => true,
-            'add_bots' => true,
-        ]);
+        // Admin creates a game
+        $createResponse = $this->withHeaders($this->adminHeaders())
+            ->postJson('/api/v1/games', ['is_public' => true]);
 
-        $response->assertStatus(201);
+        $code = $createResponse->json('game.code');
 
-        $players = $response->json('game.players');
-        // Only the guest player should be there (no bots)
-        $this->assertCount(1, $players);
-        $this->assertFalse($players[0]['is_bot']);
+        // Guest joins
+        $this->withHeaders(['X-Guest-Token' => $this->guestToken])
+            ->postJson("/api/v1/games/{$code}/join");
+
+        // Guest tries to add bot — should fail
+        $response = $this->withHeaders(['X-Guest-Token' => $this->guestToken])
+            ->postJson("/api/v1/games/{$code}/add-bot");
+
+        $response->assertStatus(403);
     }
 
     public function test_bot_players_show_is_bot_flag_in_game_response(): void
     {
-        $response = $this->withHeaders($this->adminHeaders())
-            ->postJson('/api/v1/games', [
-                'is_public' => true,
-                'add_bots' => true,
-            ]);
+        $createResponse = $this->withHeaders($this->adminHeaders())
+            ->postJson('/api/v1/games', ['is_public' => true]);
 
-        $response->assertStatus(201);
+        $code = $createResponse->json('game.code');
+
+        // Add a bot
+        $this->withHeaders($this->adminHeaders())
+            ->postJson("/api/v1/games/{$code}/add-bot");
+
+        // Fetch game
+        $response = $this->withHeaders($this->adminHeaders())
+            ->getJson("/api/v1/games/{$code}");
+
+        $response->assertStatus(200);
 
         $players = $response->json('game.players');
 
@@ -113,12 +121,10 @@ class BotFeatureTest extends TestCase
         }
     }
 
-    public function test_game_without_add_bots_has_no_bots(): void
+    public function test_game_without_bots_has_no_bots(): void
     {
         $response = $this->withHeaders($this->adminHeaders())
-            ->postJson('/api/v1/games', [
-                'is_public' => true,
-            ]);
+            ->postJson('/api/v1/games', ['is_public' => true]);
 
         $response->assertStatus(201);
 
@@ -130,12 +136,13 @@ class BotFeatureTest extends TestCase
     public function test_bot_players_appear_in_game_show_endpoint(): void
     {
         $createResponse = $this->withHeaders($this->adminHeaders())
-            ->postJson('/api/v1/games', [
-                'is_public' => true,
-                'add_bots' => true,
-            ]);
+            ->postJson('/api/v1/games', ['is_public' => true]);
 
         $code = $createResponse->json('game.code');
+
+        // Add a bot
+        $this->withHeaders($this->adminHeaders())
+            ->postJson("/api/v1/games/{$code}/add-bot");
 
         // Fetch game via show endpoint
         $response = $this->withHeaders($this->adminHeaders())

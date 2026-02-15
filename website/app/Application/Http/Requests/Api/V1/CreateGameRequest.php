@@ -30,7 +30,6 @@ class CreateGameRequest extends FormRequest
             'settings.allow_ready_check' => ['nullable', 'boolean'],
             'is_public' => ['nullable', 'boolean'],
             'password' => ['nullable', 'string', 'min:4', 'max:50'],
-            'add_bots' => ['nullable', 'boolean'],
         ];
     }
 

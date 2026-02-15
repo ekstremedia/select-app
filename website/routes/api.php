@@ -106,6 +106,7 @@ Route::prefix('v1')->group(function () {
         Route::prefix('rounds')->group(function () {
             Route::post('/{id}/answer', [RoundController::class, 'submitAnswer']);
             Route::post('/{id}/vote', [RoundController::class, 'submitVote']);
+            Route::delete('/{id}/vote', [RoundController::class, 'retractVote']);
             Route::post('/{id}/ready', [RoundController::class, 'markReady']);
             Route::post('/{id}/voting', [RoundController::class, 'startVoting']);
             Route::post('/{id}/complete', [RoundController::class, 'complete']);

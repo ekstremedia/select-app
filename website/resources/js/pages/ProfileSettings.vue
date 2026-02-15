@@ -116,7 +116,7 @@
                         severity="secondary"
                         variant="text"
                         size="small"
-                        @click="editing.password = true"
+                        @click="cancelPassword(); editing.password = true"
                     />
                 </div>
 
@@ -202,6 +202,7 @@
                     <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
                         {{ t('common.confirm') }}?
                     </p>
+                    <p v-if="deleteError" class="text-sm text-red-500 mb-4">{{ deleteError }}</p>
                     <div class="flex justify-end gap-2">
                         <Button :label="t('common.cancel')" severity="secondary" variant="text" @click="showDeleteDialog = false" />
                         <Button :label="t('common.confirm')" severity="danger" :loading="deleteLoading" @click="handleDeleteAccount" />
@@ -346,14 +347,18 @@ async function toggleTwoFactor(value) {
     }
 }
 
+const deleteError = ref('');
+
 async function handleDeleteAccount() {
     deleteLoading.value = true;
+    deleteError.value = '';
     try {
         await api.profile.deleteAccount();
         authStore.clearAuth();
         showDeleteDialog.value = false;
         router.visit('/');
-    } catch {
+    } catch (err) {
+        deleteError.value = err.response?.data?.message || t('common.error');
         deleteLoading.value = false;
     }
 }

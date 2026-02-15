@@ -281,8 +281,10 @@ async function submitNickname() {
     }
 }
 
+const page = usePage();
+
 function isActive(path) {
-    const url = usePage().url.split('?')[0];
+    const url = page.url.split('?')[0];
     return url === path || url.startsWith(path + '/');
 }
 
