@@ -2,12 +2,11 @@ name: Tests
 
 on:
   push:
-    branches: [main, select-website-dev]
+    branches: [main]
     paths:
       - 'website/**'
       - '.github/workflows/tests.yml'
   pull_request:
-    branches: [main]
     paths:
       - 'website/**'
       - '.github/workflows/tests.yml'
@@ -47,10 +46,14 @@ jobs:
           restore-keys: ${{ runner.os }}-composer-
 
       - name: Install dependencies
+        env:
+          BROADCAST_CONNECTION: 'null'
         run: composer install --no-interaction --no-progress --prefer-dist
 
       - name: Copy environment file
-        run: cp .env.example .env
+        run: |
+          cp .env.example .env
+          sed -i 's/BROADCAST_CONNECTION=reverb/BROADCAST_CONNECTION=null/' .env
 
       - name: Generate application key
         run: php artisan key:generate
