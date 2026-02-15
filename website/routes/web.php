@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 // Helper: fetch game preview for invite redirects
+if (! function_exists('getGamePreviewFromRedirect')) {
 function getGamePreviewFromRedirect(?string $redirect): ?array
 {
     if (! $redirect || ! preg_match('#^/spill/([A-Z0-9]{4,6})$#i', $redirect, $matches)) {
@@ -30,6 +31,7 @@ function getGamePreviewFromRedirect(?string $redirect): ?array
         'max_players' => $game->settings['max_players'] ?? 10,
         'players' => $players->pluck('nickname')->values()->toArray(),
     ];
+}
 }
 
 // Debug page (only in local/development)
