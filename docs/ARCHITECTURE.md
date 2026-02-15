@@ -11,7 +11,7 @@ the best one. It originated as an IRC bot game on #select (EFnet).
 
 **Tech stack:**
 - **Backend:** Laravel 12, PostgreSQL, Laravel Reverb (WebSockets)
-- **Frontend:** Vue 3, PrimeVue v4 (Aura theme), Tailwind CSS v4, Pinia, Vue Router
+- **Frontend:** Vue 3, PrimeVue v4 (Aura theme), Tailwind CSS v4, Pinia, Inertia.js v2
 - **Mobile:** React Native (Expo) — separate app in `mobileapp/`
 - **Infra:** Docker Compose (dev & prod), Apache reverse proxy on production
 
@@ -47,15 +47,13 @@ website/
 │   ├── Models/User.php            # Laravel User model (Sanctum, auth)
 │   └── Console/Commands/          # Artisan commands (Delectus, gullkorn import)
 │
-├── resources/js/                  # Vue 3 SPA
-│   ├── app.js                     # Entry point (Vue + PrimeVue + Pinia + Router)
-│   ├── App.vue                    # Root component
-│   ├── router.js                  # Vue Router with auth guards
-│   ├── pages/                     # 17 page components
+├── resources/js/                  # Vue 3 frontend (Inertia.js v2)
+│   ├── app.js                     # Entry point (Vue + PrimeVue + Pinia + Inertia)
+│   ├── pages/                     # 19 page components
 │   ├── layouts/                   # AppLayout, GameLayout
 │   ├── stores/                    # Pinia stores (auth, game, sound)
 │   ├── services/                  # API client (axios), WebSocket (Echo)
-│   └── composables/               # useI18n, useDarkMode, useViewport
+│   └── composables/               # useI18n, useDarkMode, useViewport, useAuthGuard
 │
 ├── routes/
 │   ├── api.php                    # All API routes (v1 prefix)
@@ -68,7 +66,7 @@ website/
 │   ├── factories/                 # UserFactory, PlayerFactory
 │   └── seeders/                   # UserSeeder, FinishedGameSeeder
 │
-├── tests/Feature/Api/             # PHPUnit API tests (154 tests)
+├── tests/Feature/Api/             # PHPUnit API tests (243 tests)
 └── public/sounds/                 # Sound effect MP3 files
 ```
 
@@ -104,6 +102,7 @@ Domain/
 │   ├── Actions/
 │   │   ├── StartRoundAction     # Creates round with generated acronym
 │   │   ├── SubmitAnswerAction   # Validates acronym match, stores answer
+│   │   ├── MarkReadyAction      # Toggle "satisfied" state, auto-advance check
 │   │   ├── StartVotingAction    # Transitions round to voting phase
 │   │   ├── SubmitVoteAction     # Records vote, prevents self-voting
 │   │   └── CompleteRoundAction  # Calculates round scores, broadcasts results
@@ -113,6 +112,7 @@ Domain/
 │
 └── Player/Actions/
     ├── CreateGuestPlayerAction  # Creates player with UUID + guest_token
+    ├── CreateBotPlayerAction    # Creates bot player with fun Norwegian name
     ├── GetPlayerByTokenAction   # Resolves player from guest token
     ├── ConvertGuestToUserAction # Converts guest to registered user
     ├── BanPlayerAction          # Sets ban fields + optional IP ban
@@ -157,8 +157,12 @@ lobby  ──[host starts]──→  playing  ──[all rounds done]──→  
 ### Round Lifecycle
 
 ```
-answering  ──[deadline or all submitted]──→  voting  ──[deadline or all voted]──→  completed
+answering  ──[deadline or all ready]──→  voting  ──[deadline or all voted]──→  completed
 ```
+
+**Ready check:** After submitting an answer, players can mark "satisfied". When all active
+players are ready, the answer deadline is set to `now()` and Delectus transitions to voting
+on the next tick. Editing an answer resets the ready state. Bots auto-ready after submitting.
 
 ### Who Drives Transitions?
 
@@ -232,6 +236,7 @@ All game events broadcast on presence channel `game.{code}`:
 | `round.started` | New round begins | acronym, deadline, round_number |
 | `answer.submitted` | Someone submitted | answers_count, total_players |
 | `voting.started` | Voting phase begins | anonymized answers, deadline |
+| `player.ready` | Player marked satisfied | ready_count, total_players |
 | `vote.submitted` | Someone voted | votes_count, total_voters |
 | `round.completed` | Round finished | results with scores |
 | `game.finished` | Game over | winner, final_scores |
@@ -242,17 +247,43 @@ All game events broadcast on presence channel `game.{code}`:
 
 ---
 
+## Bot Players
+
+Bot players simulate real players for testing and filling games. Admin-only feature.
+
+**Creation:** `CreateBotPlayerAction` generates players with fun Norwegian names (e.g., "Kansen42",
+"Fjansen87") with `is_bot = true`.
+
+**Gameplay:** Bots answer using `BotAnswerService` which searches the `gullkorn_clean` table for
+matching sentences, falling back to a word bank. `BotSubmitAnswerJob` and `BotSubmitVoteJob` are
+dispatched with random delays (3-15s for answers, 2-10s for votes) to simulate human timing.
+
+**Auto-ready:** After submitting, bots immediately mark `is_ready = true` on their answer
+and trigger the auto-advance check.
+
+**Lobby controls:**
+- `POST /games/{code}/add-bot` — Admin adds a bot to the lobby
+- `DELETE /games/{code}/remove-bot/{id}` — Admin removes a bot from the lobby
+- `add_bots: true` in game creation settings creates 3-5 bot players automatically
+
+---
+
 ## Frontend Architecture
 
-### SPA Structure
+### Inertia.js v2 ("Thin Inertia")
 
-The app is a single-page application. `routes/web.php` has a catch-all that serves
-`welcome.blade.php`, which mounts the Vue app. Vue Router handles all navigation.
+Navigation uses Inertia.js v2 for server-driven routing. Inertia handles page rendering
+and navigation — all data fetching stays via the existing API service (not Inertia props).
 
-### Router Guards
+- Routes defined in `routes/web.php` using `Inertia::render()`
+- `HandleInertiaRequests` middleware shares `reverb` config + random `gullkorn` sentence
+- Auth guards are client-side via `router.on('before')` in `useAuthGuard.js`
+- Layout-less pages (Welcome, Game, GameSpectate) use `defineOptions({ layout: false })`
+
+### Auth Guards
 
 ```javascript
-// In router.js beforeEach:
+// In useAuthGuard.js (client-side Inertia navigation hook):
 requiresAdmin      → redirects non-admins to /
 requiresRegistered → redirects guests to /login
 requiresPlayer     → redirects unauthenticated to /login
@@ -300,7 +331,7 @@ Exports `wsJoinGame(code)`, `wsLeaveGame(channel)` helpers.
 ```
 players
   id (UUID), user_id (FK nullable), guest_token, nickname,
-  is_guest, games_played, games_won, total_score, last_active_at
+  is_guest, is_bot, games_played, games_won, total_score, last_active_at
 
 users
   id, name, nickname, email, password, role, is_banned,
@@ -319,10 +350,10 @@ rounds
 
 answers
   id, round_id, player_id, text, author_nickname,
-  votes_count (counter cache)
+  votes_count (counter cache), is_ready, edit_count
 
 votes
-  id, answer_id, voter_id, voter_nickname
+  id, answer_id, voter_id, voter_nickname, change_count
 ```
 
 ### Stats & Archive Tables
@@ -370,9 +401,10 @@ DELETE /two-factor/disable
 // Player + ban checked
 GET   /auth/me
 PATCH /profile/nickname
-POST  /games, /games/{code}/join|leave|start|chat
+POST  /games, /games/{code}/join|leave|start|chat|add-bot|kick|ban|invite
+DELETE /games/{code}/remove-bot/{id}
 GET   /games, /games/{code}, /games/{code}/state, /games/{code}/rounds/current
-POST  /rounds/{id}/answer|vote|voting|complete
+POST  /rounds/{id}/answer|vote|voting|complete|ready
 
 // Admin (Sanctum + admin role)
 GET  /admin/players, /admin/games, /admin/stats
@@ -481,4 +513,9 @@ cd website && yarn build                    # Yarn/Vite → host machine
   not Laravel's default `/broadcasting/auth`
 - **Tailwind v4 dark mode** — Requires `@variant dark (&:where(.dark, .dark *))` override
   in `app.css` for class-based toggling
+- **Tailwind v4 `!important`** — Use suffix syntax `text-red-500!` not prefix `!text-red-500`
 - **HTTPS behind proxy** — `URL::forceScheme('https')` + `trustProxies(at: '*')` in bootstrap
+- **User 2FA fields not in $fillable** — Use `forceFill()->save()` when setting 2FA fields
+  on the User model (removed from $fillable to prevent mass-assignment attacks)
+- **Docker service names** — Use `dc restart queue` (service name), not `dc restart select-queue`
+  (container name)

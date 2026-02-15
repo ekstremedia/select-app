@@ -75,7 +75,7 @@ class ArchiveController extends Controller
                 'nickname' => $gp->player->nickname,
                 'score' => $gp->score,
                 'rank' => $i + 1,
-                'is_winner' => in_array($gp->player_id, $winnerIds),
+                'is_winner' => in_array($gp->player_id, $winnerIds, true),
             ]);
 
             return [

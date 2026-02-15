@@ -13,8 +13,8 @@
             </p>
             <div class="flex flex-wrap justify-center gap-1.5 mt-2">
                 <span
-                    v-for="name in gamePreview.players"
-                    :key="name"
+                    v-for="(name, index) in gamePreview.players"
+                    :key="index"
                     class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300"
                 >{{ name }}</span>
             </div>

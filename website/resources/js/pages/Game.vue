@@ -618,7 +618,7 @@
             </div>
             <InputText
                 v-model="gamePassword"
-                type="text"
+                type="password"
                 :placeholder="t('create.password')"
                 class="w-full"
                 autofocus
@@ -685,7 +685,7 @@
                     v-model="settingsForm.excluded_letters"
                     class="w-full uppercase tracking-[0.2em] font-mono"
                     :placeholder="'XZQ'"
-                    @input="settingsForm.excluded_letters = settingsForm.excluded_letters.toUpperCase().replace(/[^A-Z]/g, '')"
+                    @input="settingsForm.excluded_letters = settingsForm.excluded_letters.toUpperCase().replace(/[^A-ZÆØÅ]/g, '')"
                 />
             </div>
 
@@ -856,8 +856,8 @@ const allowReadyCheck = computed(() => gameStore.currentGame?.settings?.allow_re
 const maxEdits = computed(() => gameStore.currentGame?.settings?.max_edits ?? 0);
 const maxVoteChanges = computed(() => gameStore.currentGame?.settings?.max_vote_changes ?? 0);
 const chatEnabled = computed(() => gameStore.currentGame?.settings?.chat_enabled ?? true);
-const editsRemaining = computed(() => maxEdits.value === 0 ? Infinity : Math.max(0, maxEdits.value - submitCount.value));
-const voteChangesLeft = computed(() => maxVoteChanges.value === 0 ? Infinity : Math.max(0, maxVoteChanges.value - voteCount.value));
+const editsRemaining = computed(() => maxEdits.value === 0 ? Infinity : Math.max(0, maxEdits.value - Math.max(0, submitCount.value - 1)));
+const voteChangesLeft = computed(() => maxVoteChanges.value === 0 ? Infinity : Math.max(0, maxVoteChanges.value - Math.max(0, voteCount.value - 1)));
 
 const totalRounds = computed(() => gameStore.currentGame?.settings?.rounds ?? 5);
 
@@ -1457,9 +1457,9 @@ function copyLink() {
 }
 
 // Track unread chat messages when chat is closed
-watch(() => gameStore.chatMessages.length, () => {
+watch(() => gameStore.chatMessages.length, (newLen, oldLen) => {
     if (!chatOpen.value) {
-        unreadCount.value++;
+        unreadCount.value += Math.max(1, newLen - (oldLen ?? 0));
     } else {
         nextTick(() => {
             if (chatContainer.value) {
@@ -1484,6 +1484,20 @@ watch(chatOpen, (open) => {
 watch(() => gameStore.myAnswer?.is_ready, (val) => {
     if (val !== undefined) {
         isReady.value = val;
+    }
+});
+
+// Restore edit count from server state
+watch(() => gameStore.myAnswer?.edit_count, (val) => {
+    if (val !== undefined) {
+        submitCount.value = val + 1; // +1 because submitCount includes initial submit
+    }
+});
+
+// Restore vote change count from server state
+watch(() => gameStore.myVote?.change_count, (val) => {
+    if (val !== undefined) {
+        voteCount.value = val + 1; // +1 because voteCount includes initial vote
     }
 });
 

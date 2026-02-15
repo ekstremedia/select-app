@@ -132,7 +132,7 @@ export const useGameStore = defineStore('game', () => {
 
     async function addBot(code) {
         const { data } = await api.games.addBot(code);
-        if (data.player) {
+        if (data.player && !players.value.find(p => p.id === data.player.id)) {
             players.value.push(data.player);
         }
         return data;

@@ -29,9 +29,6 @@ class User extends Authenticatable
         'ban_reason',
         'banned_at',
         'banned_by',
-        'two_factor_secret',
-        'two_factor_confirmed_at',
-        'two_factor_recovery_codes',
         'avatar_url',
     ];
 

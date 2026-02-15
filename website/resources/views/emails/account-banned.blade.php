@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="und" dir="auto" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<html lang="nb" dir="auto" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 
 <head>
   <title></title>
@@ -83,7 +83,7 @@
 </head>
 
 <body style="word-spacing:normal;background-color:#f3f4f6;">
-  <div aria-roledescription="email" style="background-color:#f3f4f6;" role="article" lang="und" dir="auto">
+  <div aria-roledescription="email" style="background-color:#f3f4f6;" role="article" lang="nb" dir="auto">
     <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
     <div style="margin:0px auto;max-width:600px;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
@@ -140,7 +140,7 @@
                     </tr>
                     <tr>
                       <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#6b7280;">Hvis du mener dette er feil, ta kontakt med oss.</div>
+                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#6b7280;">Hvis du mener dette er feil, ta kontakt med oss på <a href="mailto:post@ekstremedia.no" style="color:#059669;">post@ekstremedia.no</a>.</div>
                       </td>
                     </tr>
                   </tbody>

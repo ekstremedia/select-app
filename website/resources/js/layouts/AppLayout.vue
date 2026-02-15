@@ -14,28 +14,28 @@
                                 v-if="isAuthenticated"
                                 href="/spill"
                                 class="text-sm font-medium transition-colors"
-                                :class="isActive('/spill') ? '!text-emerald-600 dark:!text-emerald-400' : 'text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400'"
+                                :class="isActive('/spill') ? 'text-emerald-600! dark:text-emerald-400!' : 'text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400'"
                             >
                                 {{ t('nav.play') }}
                             </Link>
                             <Link
                                 href="/arkiv"
                                 class="text-sm font-medium transition-colors"
-                                :class="isActive('/arkiv') ? '!text-emerald-600 dark:!text-emerald-400' : 'text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400'"
+                                :class="isActive('/arkiv') ? 'text-emerald-600! dark:text-emerald-400!' : 'text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400'"
                             >
                                 {{ t('nav.archive') }}
                             </Link>
                             <Link
                                 href="/hall-of-fame"
                                 class="text-sm font-medium transition-colors"
-                                :class="isActive('/hall-of-fame') ? '!text-emerald-600 dark:!text-emerald-400' : 'text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400'"
+                                :class="isActive('/hall-of-fame') ? 'text-emerald-600! dark:text-emerald-400!' : 'text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400'"
                             >
                                 {{ t('nav.hallOfFame') }}
                             </Link>
                             <Link
                                 href="/toppliste"
                                 class="text-sm font-medium transition-colors"
-                                :class="isActive('/toppliste') ? '!text-emerald-600 dark:!text-emerald-400' : 'text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400'"
+                                :class="isActive('/toppliste') ? 'text-emerald-600! dark:text-emerald-400!' : 'text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400'"
                             >
                                 {{ t('nav.leaderboard') }}
                             </Link>
@@ -195,7 +195,7 @@ const { isDark, toggleDark } = useDarkMode();
 const menuOpen = ref(false);
 
 function isActive(path) {
-    const url = usePage().url;
+    const url = usePage().url.split('?')[0];
     return url === path || url.startsWith(path + '/');
 }
 

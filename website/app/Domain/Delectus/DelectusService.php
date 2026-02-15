@@ -59,6 +59,7 @@ class DelectusService
                     'game_id' => $game->id,
                     'game_code' => $game->code,
                     'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
                 ]);
             }
         }

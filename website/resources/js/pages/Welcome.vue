@@ -153,7 +153,7 @@ let cycleTimeout = null;
 function parseSentence(sentence) {
     const words = sentence.split(/\s+/).filter(w => w.length > 0);
     return {
-        letters: words.map(w => w.replace(/[^a-zA-ZæøåÆØÅ]/, '').charAt(0).toUpperCase()),
+        letters: words.map(w => w.replace(/[^a-zA-ZæøåÆØÅ]/g, '').charAt(0).toUpperCase()),
         text: words.join(' '),
     };
 }

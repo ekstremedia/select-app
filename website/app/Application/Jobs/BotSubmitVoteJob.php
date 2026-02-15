@@ -18,6 +18,8 @@ class BotSubmitVoteJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public int $tries = 1;
+
     public function __construct(
         public string $roundId,
         public string $playerId,

@@ -204,6 +204,8 @@ class AuthController extends Controller
 
         $token = $player->user->createToken('api')->plainTextToken;
 
+        Mail::to($player->user)->send(new \App\Application\Mail\WelcomeMail($player->user));
+
         return response()->json([
             'player' => [
                 'id' => $player->id,

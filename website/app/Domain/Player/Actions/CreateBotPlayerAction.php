@@ -51,7 +51,7 @@ class CreateBotPlayerAction
     private function generateBotName(): string
     {
         $name = self::BOT_NAMES[array_rand(self::BOT_NAMES)];
-        $suffix = rand(10, 99);
+        $suffix = random_int(10, 99);
 
         return "{$name}{$suffix}";
     }

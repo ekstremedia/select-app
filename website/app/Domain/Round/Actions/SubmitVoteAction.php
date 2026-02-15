@@ -44,6 +44,11 @@ class SubmitVoteAction
             ->first();
 
         if ($existingVote) {
+            // No-op if voting for the same answer
+            if ($existingVote->answer_id === $answer->id) {
+                return $existingVote;
+            }
+
             // Enforce max_vote_changes (0 = unlimited)
             $maxVoteChanges = $round->game->settings['max_vote_changes'] ?? 0;
             if ($maxVoteChanges > 0 && $existingVote->change_count >= $maxVoteChanges) {

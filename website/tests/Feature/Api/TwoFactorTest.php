@@ -42,10 +42,10 @@ class TwoFactorTest extends TestCase
     public function test_cannot_enable_two_factor_when_already_enabled(): void
     {
         $google2fa = new Google2FA;
-        $this->user->update([
+        $this->user->forceFill([
             'two_factor_secret' => $google2fa->generateSecretKey(),
             'two_factor_confirmed_at' => now(),
-        ]);
+        ])->save();
 
         $response = $this->withHeaders($this->authHeaders())
             ->postJson('/api/v1/two-factor/enable');
@@ -107,11 +107,11 @@ class TwoFactorTest extends TestCase
     public function test_can_disable_two_factor_with_password(): void
     {
         $google2fa = new Google2FA;
-        $this->user->update([
+        $this->user->forceFill([
             'two_factor_secret' => $google2fa->generateSecretKey(),
             'two_factor_confirmed_at' => now(),
             'two_factor_recovery_codes' => json_encode(['code1', 'code2']),
-        ]);
+        ])->save();
 
         $response = $this->withHeaders($this->authHeaders())
             ->deleteJson('/api/v1/two-factor/disable', [
@@ -129,10 +129,10 @@ class TwoFactorTest extends TestCase
     public function test_cannot_disable_with_wrong_password(): void
     {
         $google2fa = new Google2FA;
-        $this->user->update([
+        $this->user->forceFill([
             'two_factor_secret' => $google2fa->generateSecretKey(),
             'two_factor_confirmed_at' => now(),
-        ]);
+        ])->save();
 
         $response = $this->withHeaders($this->authHeaders())
             ->deleteJson('/api/v1/two-factor/disable', [

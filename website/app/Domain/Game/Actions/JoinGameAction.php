@@ -37,7 +37,7 @@ class JoinGameAction
                 if ($existing->isBanned()) {
                     throw new \InvalidArgumentException('Du er utestengt fra dette spillet');
                 }
-                if ($existing->isKicked() && ! $existing->isBanned()) {
+                if ($existing->isKicked()) {
                     // Kicked but not banned — allow rejoin, clear kicked_by
                     $existing->update(['is_active' => true, 'kicked_by' => null]);
 

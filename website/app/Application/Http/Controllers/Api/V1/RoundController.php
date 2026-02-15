@@ -60,7 +60,7 @@ class RoundController extends Controller
                 'votes_count' => null,
             ]);
         } elseif ($round->isCompleted()) {
-            $response['answers'] = $round->answers()->with('player')->get()->map(fn ($a) => [
+            $response['answers'] = $round->answers()->with('player')->withCount('votes')->get()->map(fn ($a) => [
                 'id' => $a->id,
                 'player_id' => $a->player_id,
                 'player_name' => $a->author_nickname ?? $a->player->nickname,

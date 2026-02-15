@@ -302,6 +302,7 @@ class GameController extends Controller
                     'id' => $myAnswer->id,
                     'text' => $myAnswer->text,
                     'is_ready' => $myAnswer->is_ready,
+                    'edit_count' => $myAnswer->edit_count,
                 ];
             }
 
@@ -331,11 +332,14 @@ class GameController extends Controller
                 ] : []))->values();
 
                 // Check if current player has voted
-                $myVote = $round->answers()
-                    ->whereHas('votes', fn ($q) => $q->where('voter_id', $player->id))
+                $myVoteRecord = \App\Infrastructure\Models\Vote::whereIn('answer_id', $round->answers->pluck('id'))
+                    ->where('voter_id', $player->id)
                     ->first();
-                if ($myVote) {
-                    $response['my_vote'] = ['answer_id' => $myVote->id];
+                if ($myVoteRecord) {
+                    $response['my_vote'] = [
+                        'answer_id' => $myVoteRecord->answer_id,
+                        'change_count' => $myVoteRecord->change_count,
+                    ];
                 }
             }
         }
@@ -517,6 +521,11 @@ class GameController extends Controller
 
         if (! $gamePlayer) {
             return response()->json(['error' => 'Player not found in this game'], 404);
+        }
+
+        // Co-hosts cannot ban other co-hosts — only the host can
+        if ($player->id !== $game->host_player_id && $gamePlayer->is_co_host) {
+            return response()->json(['error' => 'Only the host can ban co-hosts'], 403);
         }
 
         $gamePlayer->update([

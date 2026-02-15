@@ -25,12 +25,12 @@ class TwoFactorController extends Controller
         $google2fa = new Google2FA;
         $secret = $google2fa->generateSecretKey();
 
-        $user->update([
+        $user->forceFill([
             'two_factor_secret' => $secret,
             'two_factor_recovery_codes' => json_encode(
                 Collection::times(8, fn () => Str::random(10))->all()
             ),
-        ]);
+        ])->save();
 
         $qrCodeUrl = $google2fa->getQRCodeUrl(
             config('app.name'),
@@ -64,9 +64,9 @@ class TwoFactorController extends Controller
             return response()->json(['error' => 'The provided code is invalid.'], 422);
         }
 
-        $user->update([
+        $user->forceFill([
             'two_factor_confirmed_at' => now(),
-        ]);
+        ])->save();
 
         return response()->json(['message' => 'Two-factor authentication confirmed.']);
     }
@@ -79,11 +79,11 @@ class TwoFactorController extends Controller
             return response()->json(['error' => 'The provided password is incorrect.'], 422);
         }
 
-        $user->update([
+        $user->forceFill([
             'two_factor_secret' => null,
             'two_factor_confirmed_at' => null,
             'two_factor_recovery_codes' => null,
-        ]);
+        ])->save();
 
         return response()->json(['message' => 'Two-factor authentication disabled.']);
     }

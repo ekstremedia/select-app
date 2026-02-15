@@ -131,7 +131,6 @@ import { ref, onMounted } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import Skeleton from 'primevue/skeleton';
 import Button from 'primevue/button';
-import Badge from 'primevue/badge';
 import { api } from '../services/api.js';
 import { useI18n } from '../composables/useI18n.js';
 
@@ -195,7 +194,12 @@ async function toggleRound(roundNumber) {
     if (round && !round.answers) {
         try {
             const { data } = await api.archive.round(props.code, roundNumber);
-            round.answers = data.answers ?? data.data ?? [];
+            const raw = data.answers ?? data.data ?? [];
+            round.answers = raw.map(a => ({
+                ...a,
+                player_nickname: a.player_name,
+                voted_by: a.voters || [],
+            }));
         } catch {
             round.answers = [];
         }

@@ -111,9 +111,14 @@ class GameProcessor
                         'Lobbyen ble stengt på grunn av inaktivitet.',
                         true
                     ));
+                } catch (\Throwable $e) {
+                    Log::error('Broadcast failed: chat.lobby_closed', ['game' => $game->code, 'error' => $e->getMessage()]);
+                }
+
+                try {
                     broadcast(new GameFinishedBroadcast($game, []));
                 } catch (\Throwable $e) {
-                    // Ignore broadcast failures
+                    Log::error('Broadcast failed: game.finished', ['game' => $game->code, 'error' => $e->getMessage()]);
                 }
 
                 return;
