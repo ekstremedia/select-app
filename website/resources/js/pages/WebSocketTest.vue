@@ -137,14 +137,17 @@ const presenceMembers = ref([]);
 let statePoller = null;
 let activeChannel = null;
 
-const config = computed(() => ({
-    host: window.location.hostname,
-    port: document.querySelector('meta[name="reverb-port"]')?.content || '?',
-    key: document.querySelector('meta[name="reverb-key"]')?.content || '',
-    tls: window.location.protocol === 'https:',
-    hasAuth: !!localStorage.getItem('select-auth-token'),
-    hasGuest: !!localStorage.getItem('select-guest-token'),
-}));
+const config = computed(() => {
+    const reverb = usePage().props?.reverb;
+    return {
+        host: window.location.hostname,
+        port: reverb?.port || document.querySelector('meta[name="reverb-port"]')?.content || '?',
+        key: reverb?.key || document.querySelector('meta[name="reverb-key"]')?.content || '',
+        tls: window.location.protocol === 'https:',
+        hasAuth: !!localStorage.getItem('select-auth-token'),
+        hasGuest: !!localStorage.getItem('select-guest-token'),
+    };
+});
 
 const statusLabel = computed(() => {
     switch (connectionState.value) {

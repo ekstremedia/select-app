@@ -19,12 +19,14 @@ class Round extends Model
         'status',
         'answer_deadline',
         'vote_deadline',
+        'grace_count',
     ];
 
     protected $casts = [
         'round_number' => 'integer',
         'answer_deadline' => 'datetime',
         'vote_deadline' => 'datetime',
+        'grace_count' => 'integer',
     ];
 
     public const STATUS_ANSWERING = 'answering';

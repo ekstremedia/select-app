@@ -14,8 +14,8 @@ class StartGameAction
 
     public function execute(Game $game, Player $player): Game
     {
-        if ($game->host_player_id !== $player->id) {
-            throw new \InvalidArgumentException('Only the host can start the game');
+        if (! $game->isHostOrCoHost($player)) {
+            throw new \InvalidArgumentException('Only the host or co-host can start the game');
         }
 
         if (! $game->isInLobby()) {

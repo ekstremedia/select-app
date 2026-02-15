@@ -9,9 +9,9 @@
             <div class="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-sm text-emerald-700 dark:text-emerald-300 mb-6">
                 {{ t('auth.forgotPassword.sent') }}
             </div>
-            <router-link to="/login" class="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">
+            <Link href="/login" class="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">
                 {{ t('auth.login.title') }}
-            </router-link>
+            </Link>
         </div>
 
         <form v-else @submit.prevent="handleReset" class="space-y-5">
@@ -75,14 +75,14 @@
 
 <script setup>
 import { ref, reactive } from 'vue';
-import { useRoute } from 'vue-router';
+import { Link } from '@inertiajs/vue3';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
 import Button from 'primevue/button';
 import { api } from '../services/api.js';
 import { useI18n } from '../composables/useI18n.js';
 
-const route = useRoute();
+const props = defineProps({ token: String });
 const { t } = useI18n();
 
 const form = reactive({
@@ -103,7 +103,7 @@ async function handleReset() {
 
     try {
         await api.auth.resetPassword({
-            token: route.params.token,
+            token: props.token,
             email: form.email,
             password: form.password,
             password_confirmation: form.password_confirmation,

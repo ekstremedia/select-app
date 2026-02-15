@@ -6,39 +6,39 @@
                 <div class="flex items-center justify-between h-14">
                     <!-- Left: Logo + Nav links -->
                     <div class="flex items-center gap-6">
-                        <router-link to="/" class="text-xl font-bold tracking-widest text-emerald-600 dark:text-emerald-400">
+                        <Link href="/" class="text-xl font-bold tracking-widest text-emerald-600 dark:text-emerald-400">
                             SELECT
-                        </router-link>
+                        </Link>
                         <div class="hidden sm:flex items-center gap-4">
-                            <router-link
+                            <Link
                                 v-if="isAuthenticated"
-                                to="/games"
-                                class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-                                active-class="!text-emerald-600 dark:!text-emerald-400"
+                                href="/games"
+                                class="text-sm font-medium transition-colors"
+                                :class="isActive('/games') ? '!text-emerald-600 dark:!text-emerald-400' : 'text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400'"
                             >
                                 {{ t('nav.play') }}
-                            </router-link>
-                            <router-link
-                                to="/archive"
-                                class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-                                active-class="!text-emerald-600 dark:!text-emerald-400"
+                            </Link>
+                            <Link
+                                href="/archive"
+                                class="text-sm font-medium transition-colors"
+                                :class="isActive('/archive') ? '!text-emerald-600 dark:!text-emerald-400' : 'text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400'"
                             >
                                 {{ t('nav.archive') }}
-                            </router-link>
-                            <router-link
-                                to="/hall-of-fame"
-                                class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-                                active-class="!text-emerald-600 dark:!text-emerald-400"
+                            </Link>
+                            <Link
+                                href="/hall-of-fame"
+                                class="text-sm font-medium transition-colors"
+                                :class="isActive('/hall-of-fame') ? '!text-emerald-600 dark:!text-emerald-400' : 'text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400'"
                             >
                                 {{ t('nav.hallOfFame') }}
-                            </router-link>
-                            <router-link
-                                to="/leaderboard"
-                                class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-                                active-class="!text-emerald-600 dark:!text-emerald-400"
+                            </Link>
+                            <Link
+                                href="/leaderboard"
+                                class="text-sm font-medium transition-colors"
+                                :class="isActive('/leaderboard') ? '!text-emerald-600 dark:!text-emerald-400' : 'text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400'"
                             >
                                 {{ t('nav.leaderboard') }}
-                            </router-link>
+                            </Link>
                         </div>
                     </div>
 
@@ -60,13 +60,13 @@
 
                         <!-- User section -->
                         <template v-if="isAuthenticated">
-                            <router-link
+                            <Link
                                 v-if="!isGuest"
-                                :to="{ name: 'profile', params: { nickname: authNickname } }"
+                                :href="`/profile/${authNickname}`"
                                 class="px-3 py-1 text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
                             >
                                 {{ authNickname }}
-                            </router-link>
+                            </Link>
                             <span v-else class="px-2 text-sm text-slate-500">{{ authNickname }}</span>
                             <Button
                                 v-if="isGuest"
@@ -74,7 +74,7 @@
                                 size="small"
                                 severity="success"
                                 variant="outlined"
-                                @click="$router.push('/register')"
+                                @click="navigateTo('/register')"
                             />
                             <Button
                                 v-else
@@ -91,14 +91,14 @@
                                 size="small"
                                 severity="secondary"
                                 variant="text"
-                                @click="$router.push('/login')"
+                                @click="navigateTo('/login')"
                             />
                             <Button
                                 :label="t('nav.register')"
                                 size="small"
                                 severity="success"
                                 variant="outlined"
-                                @click="$router.push('/register')"
+                                @click="navigateTo('/register')"
                             />
                         </template>
 
@@ -115,11 +115,11 @@
                 <!-- Mobile menu -->
                 <div v-if="mobileMenuOpen" class="sm:hidden pb-3 border-t border-slate-200 dark:border-slate-800 mt-2 pt-3">
                     <div class="flex flex-col gap-2">
-                        <router-link v-if="isAuthenticated" to="/games" class="px-3 py-2 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-800" @click="mobileMenuOpen = false">{{ t('nav.play') }}</router-link>
-                        <router-link to="/archive" class="px-3 py-2 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-800" @click="mobileMenuOpen = false">{{ t('nav.archive') }}</router-link>
-                        <router-link to="/hall-of-fame" class="px-3 py-2 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-800" @click="mobileMenuOpen = false">{{ t('nav.hallOfFame') }}</router-link>
-                        <router-link to="/leaderboard" class="px-3 py-2 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-800" @click="mobileMenuOpen = false">{{ t('nav.leaderboard') }}</router-link>
-                        <router-link v-if="isAdmin" to="/admin" class="px-3 py-2 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-red-500" @click="mobileMenuOpen = false">Admin</router-link>
+                        <Link v-if="isAuthenticated" href="/games" class="px-3 py-2 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-800" @click="mobileMenuOpen = false">{{ t('nav.play') }}</Link>
+                        <Link href="/archive" class="px-3 py-2 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-800" @click="mobileMenuOpen = false">{{ t('nav.archive') }}</Link>
+                        <Link href="/hall-of-fame" class="px-3 py-2 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-800" @click="mobileMenuOpen = false">{{ t('nav.hallOfFame') }}</Link>
+                        <Link href="/leaderboard" class="px-3 py-2 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-800" @click="mobileMenuOpen = false">{{ t('nav.leaderboard') }}</Link>
+                        <Link v-if="isAdmin" href="/admin" class="px-3 py-2 text-sm rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-red-500" @click="mobileMenuOpen = false">Admin</Link>
                     </div>
                 </div>
             </div>
@@ -128,7 +128,9 @@
         <!-- Guest banner -->
         <div v-if="isAuthenticated && isGuest" class="bg-emerald-50 dark:bg-emerald-950/50 border-b border-emerald-200 dark:border-emerald-900 py-2 px-4 text-center text-sm text-emerald-700 dark:text-emerald-300">
             {{ t('guest.banner') }}
-            <router-link to="/register" class="font-medium underline hover:no-underline ml-1">{{ t('guest.createAccount') }}</router-link>
+            <Link href="/register" class="font-medium underline hover:no-underline ml-1">{{ t('guest.createAccount') }}</Link>
+            <span class="mx-1">{{ t('auth.or') }}</span>
+            <Link href="/login" class="font-medium underline hover:no-underline">{{ t('nav.login') }}</Link>
         </div>
 
         <!-- Page content -->
@@ -148,8 +150,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import { storeToRefs } from 'pinia';
 import Button from 'primevue/button';
 import Toast from 'primevue/toast';
@@ -157,7 +159,6 @@ import { useAuthStore } from '../stores/authStore.js';
 import { useI18n } from '../composables/useI18n.js';
 import { useDarkMode } from '../composables/useDarkMode.js';
 
-const router = useRouter();
 const authStore = useAuthStore();
 const { isAuthenticated, isGuest, isAdmin, nickname: authNickname } = storeToRefs(authStore);
 const { t, toggleLocale } = useI18n();
@@ -165,8 +166,23 @@ const { isDark, toggleDark } = useDarkMode();
 
 const mobileMenuOpen = ref(false);
 
+function isActive(path) {
+    const url = usePage().url;
+    return url === path || url.startsWith(path + '/');
+}
+
+function navigateTo(path) {
+    router.visit(path);
+}
+
 async function handleLogout() {
     await authStore.logout();
-    router.push('/');
+    router.visit('/');
 }
+
+onMounted(async () => {
+    if (!authStore.isInitialized) {
+        await authStore.loadFromStorage();
+    }
+});
 </script>

@@ -5,14 +5,22 @@ window.Pusher = Pusher;
 
 let echoInstance = null;
 
+function getReverbConfig() {
+    return {
+        key: document.querySelector('meta[name="reverb-key"]')?.content || '',
+        port: parseInt(document.querySelector('meta[name="reverb-port"]')?.content || '8080', 10),
+    };
+}
+
 function getEcho() {
     if (echoInstance) {
         return echoInstance;
     }
 
     const wsHost = window.location.hostname;
-    const wsPort = parseInt(document.querySelector('meta[name="reverb-port"]')?.content || '8080', 10);
-    const appKey = document.querySelector('meta[name="reverb-key"]')?.content || '';
+    const reverbConfig = getReverbConfig();
+    const wsPort = reverbConfig.port;
+    const appKey = reverbConfig.key;
     const useTLS = window.location.protocol === 'https:';
 
     echoInstance = new Echo({

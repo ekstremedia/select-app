@@ -218,7 +218,7 @@ class GameTest extends TestCase
         ])->postJson("/api/v1/games/{$code}/start");
 
         $response->assertStatus(422)
-            ->assertJson(['error' => 'Only the host can start the game']);
+            ->assertJson(['error' => 'Only the host or co-host can start the game']);
     }
 
     public function test_cannot_start_game_without_enough_players(): void

@@ -22,7 +22,7 @@ class EndGameAction
     {
         $finishedAt = now();
         $durationSeconds = $game->started_at
-            ? $game->started_at->diffInSeconds($finishedAt)
+            ? (int) $game->started_at->diffInSeconds($finishedAt)
             : null;
 
         $game->update([

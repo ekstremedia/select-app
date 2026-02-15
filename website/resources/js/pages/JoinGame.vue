@@ -36,23 +36,21 @@
         </form>
 
         <p class="mt-8">
-            <router-link to="/games" class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline">
+            <Link href="/games" class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline">
                 {{ t('common.back') }}
-            </router-link>
+            </Link>
         </p>
     </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { Link, router } from '@inertiajs/vue3';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import { useGameStore } from '../stores/gameStore.js';
 import { useI18n } from '../composables/useI18n.js';
 
-const router = useRouter();
-const route = useRoute();
 const gameStore = useGameStore();
 const { t } = useI18n();
 
@@ -73,7 +71,7 @@ async function handleJoin() {
 
     try {
         await gameStore.joinGame(code.value);
-        router.push(`/games/${code.value}`);
+        router.visit(`/games/${code.value}`);
     } catch (err) {
         error.value = err.response?.data?.message || t('common.error');
     } finally {
@@ -83,8 +81,9 @@ async function handleJoin() {
 
 onMounted(() => {
     // Pre-fill from query params if present
-    if (route.query.code) {
-        code.value = String(route.query.code).toUpperCase().slice(0, 6).replace(/[^A-Z0-9]/g, '');
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('code')) {
+        code.value = String(urlParams.get('code')).toUpperCase().slice(0, 6).replace(/[^A-Z0-9]/g, '');
     }
     codeInput.value?.$el?.focus?.();
 });

@@ -62,11 +62,14 @@ class DelectusService
      */
     protected function findGamesNeedingAttention()
     {
-        return Game::where('status', 'playing')
-            ->with(['currentRound', 'players'])
+        return Game::whereIn('status', ['playing', 'voting'])
+            ->with(['rounds'])
             ->get()
             ->filter(function (Game $game) {
-                $round = $game->currentRound;
+                // Find the active round from eager-loaded rounds
+                $round = $game->rounds
+                    ->whereIn('status', ['answering', 'voting'])
+                    ->first();
 
                 // No current round - need to start one
                 if (! $round) {
@@ -92,8 +95,8 @@ class DelectusService
      */
     public function getStatus(): array
     {
-        $activeGames = Game::where('status', 'playing')->count();
-        $waitingGames = Game::where('status', 'waiting')->count();
+        $activeGames = Game::whereIn('status', ['playing', 'voting'])->count();
+        $waitingGames = Game::where('status', 'lobby')->count();
 
         return [
             'active_games' => $activeGames,

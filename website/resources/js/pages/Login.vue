@@ -67,18 +67,18 @@
         </form>
 
         <div class="mt-6 text-center space-y-3">
-            <router-link
-                to="/forgot-password"
+            <Link
+                href="/forgot-password"
                 class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
             >
                 {{ t('auth.login.forgotPassword') }}
-            </router-link>
+            </Link>
 
             <p class="text-sm text-slate-500 dark:text-slate-400">
                 {{ t('auth.login.noAccount') }}
-                <router-link to="/register" class="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">
+                <Link href="/register" class="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">
                     {{ t('auth.login.register') }}
-                </router-link>
+                </Link>
             </p>
         </div>
 
@@ -123,15 +123,13 @@
 
 <script setup>
 import { ref, reactive } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { Link, router } from '@inertiajs/vue3';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
 import Button from 'primevue/button';
 import { useAuthStore } from '../stores/authStore.js';
 import { useI18n } from '../composables/useI18n.js';
 
-const router = useRouter();
-const route = useRoute();
 const authStore = useAuthStore();
 const { t } = useI18n();
 
@@ -158,8 +156,9 @@ async function handleGuest() {
 
     try {
         await authStore.createGuest(guestNickname.value.trim());
-        const redirect = route.query.redirect || '/games';
-        router.push(redirect);
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirect = urlParams.get('redirect') || '/games';
+        router.visit(redirect);
     } catch (err) {
         const data = err.response?.data;
         guestError.value = data?.errors?.nickname?.[0] || data?.message || t('common.error');
@@ -175,8 +174,9 @@ async function handleLogin() {
 
     try {
         await authStore.login(form.email, form.password, form.twoFactorCode || undefined);
-        const redirect = route.query.redirect || '/games';
-        router.push(redirect);
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirect = urlParams.get('redirect') || '/games';
+        router.visit(redirect);
     } catch (err) {
         const status = err.response?.status;
         const data = err.response?.data;

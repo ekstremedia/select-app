@@ -40,10 +40,10 @@
 
         <!-- Game cards -->
         <div v-else class="space-y-4">
-            <router-link
+            <Link
                 v-for="game in games"
                 :key="game.code"
-                :to="`/archive/${game.code}`"
+                :href="`/archive/${game.code}`"
                 class="block p-5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors"
             >
                 <div class="flex items-center justify-between mb-3">
@@ -62,7 +62,7 @@
                         {{ game.rounds_count }} {{ t('games.rounds') }}
                     </span>
                 </div>
-            </router-link>
+            </Link>
         </div>
 
         <!-- Load more -->
@@ -80,6 +80,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import Skeleton from 'primevue/skeleton';

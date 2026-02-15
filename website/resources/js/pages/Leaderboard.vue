@@ -41,12 +41,12 @@
             </Column>
             <Column field="nickname" :header="t('leaderboard.player')">
                 <template #body="{ data }">
-                    <router-link
-                        :to="`/profile/${data.nickname}`"
+                    <Link
+                        :href="`/profile/${data.nickname}`"
                         class="font-medium text-slate-800 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400"
                     >
                         {{ data.nickname }}
-                    </router-link>
+                    </Link>
                 </template>
             </Column>
             <Column field="games_played" :header="t('leaderboard.gamesPlayed')" class="hidden sm:table-cell" />
@@ -68,6 +68,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import Button from 'primevue/button';
 import Skeleton from 'primevue/skeleton';
 import DataTable from 'primevue/datatable';

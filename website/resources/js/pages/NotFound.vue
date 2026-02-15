@@ -12,16 +12,15 @@
         <Button
             :label="t('common.goHome')"
             severity="success"
-            @click="router.push('/')"
+            @click="router.visit('/')"
         />
     </div>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router';
+import { router } from '@inertiajs/vue3';
 import Button from 'primevue/button';
 import { useI18n } from '../composables/useI18n.js';
 
-const router = useRouter();
 const { t } = useI18n();
 </script>

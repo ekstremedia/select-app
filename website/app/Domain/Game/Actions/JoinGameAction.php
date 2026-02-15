@@ -11,8 +11,8 @@ class JoinGameAction
 {
     public function execute(Game $game, Player $player, ?string $password = null): GamePlayer
     {
-        if (! $game->isInLobby()) {
-            throw new \InvalidArgumentException('Cannot join a game that has already started');
+        if ($game->isFinished()) {
+            throw new \InvalidArgumentException('Cannot join a finished game');
         }
 
         // Check password for protected games

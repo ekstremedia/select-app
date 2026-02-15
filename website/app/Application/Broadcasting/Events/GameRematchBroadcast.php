@@ -9,38 +9,31 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class ChatMessageBroadcast implements ShouldBroadcastNow
+class GameRematchBroadcast implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public bool $action = false;
-
     public function __construct(
-        public Game $game,
-        public string $nickname,
-        public string $message,
-        public bool $system = false,
+        public Game $oldGame,
+        public string $newGameCode
     ) {}
 
     public function broadcastOn(): array
     {
         return [
-            new PresenceChannel('game.'.$this->game->code),
+            new PresenceChannel('game.'.$this->oldGame->code),
         ];
     }
 
     public function broadcastAs(): string
     {
-        return 'chat.message';
+        return 'game.rematch';
     }
 
     public function broadcastWith(): array
     {
         return [
-            'nickname' => $this->nickname,
-            'message' => $this->message,
-            'system' => $this->system,
-            'action' => $this->action,
+            'new_game_code' => $this->newGameCode,
         ];
     }
 }

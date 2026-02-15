@@ -86,6 +86,9 @@ Route::prefix('v1')->group(function () {
             Route::post('/{code}/leave', [GameController::class, 'leave']);
             Route::post('/{code}/start', [GameController::class, 'start']);
             Route::post('/{code}/chat', [GameController::class, 'chat']);
+            Route::post('/{code}/co-host/{playerId}', [GameController::class, 'toggleCoHost']);
+            Route::patch('/{code}/visibility', [GameController::class, 'updateVisibility']);
+            Route::post('/{code}/rematch', [GameController::class, 'rematch']);
             Route::get('/{code}/rounds/current', [RoundController::class, 'current']);
         });
 

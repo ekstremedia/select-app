@@ -117,7 +117,7 @@
                     severity="secondary"
                     variant="outlined"
                     class="flex-1"
-                    @click="router.push('/games')"
+                    @click="router.visit('/games')"
                 />
                 <Button
                     type="submit"
@@ -133,14 +133,13 @@
 
 <script setup>
 import { ref, reactive } from 'vue';
-import { useRouter } from 'vue-router';
+import { router } from '@inertiajs/vue3';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import Slider from 'primevue/slider';
 import { useGameStore } from '../stores/gameStore.js';
 import { useI18n } from '../composables/useI18n.js';
 
-const router = useRouter();
 const gameStore = useGameStore();
 const { t } = useI18n();
 
@@ -187,7 +186,7 @@ async function handleCreate() {
 
         const data = await gameStore.createGame(payload);
         const code = data.game?.code || gameStore.gameCode;
-        router.push(`/games/${code}`);
+        router.visit(`/games/${code}`);
     } catch (err) {
         error.value = err.response?.data?.message || t('common.error');
     } finally {

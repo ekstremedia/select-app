@@ -25,6 +25,17 @@ export const useGameStore = defineStore('game', () => {
     const isHost = computed(() => {
         if (!currentGame.value) return false;
         const authStore = _getAuthStore();
+        const myId = authStore?.player?.id;
+        if (!myId) return false;
+        if (currentGame.value.host_player_id === myId) return true;
+        // Co-hosts have the same permissions as host
+        const me = players.value.find(p => p.id === myId);
+        return me?.is_co_host === true;
+    });
+
+    const isActualHost = computed(() => {
+        if (!currentGame.value) return false;
+        const authStore = _getAuthStore();
         return currentGame.value.host_player_id === authStore?.player?.id;
     });
 
@@ -50,7 +61,7 @@ export const useGameStore = defineStore('game', () => {
         const { data } = await api.games.get(code);
         currentGame.value = data.game;
         players.value = data.game.players || [];
-        _syncPhase(data.game.status);
+        _syncPhase(data.game.status, data.round?.status);
         return data;
     }
 
@@ -66,7 +77,7 @@ export const useGameStore = defineStore('game', () => {
         const { data } = await api.games.join(code, password);
         currentGame.value = data.game;
         players.value = data.game.players || [];
-        _syncPhase(data.game.status);
+        _syncPhase(data.game.status, data.round?.status);
         return data;
     }
 
@@ -98,11 +109,39 @@ export const useGameStore = defineStore('game', () => {
         return data;
     }
 
-    async function sendChatMessage(code, message) {
-        const { data } = await api.games.chat(code, message);
+    async function toggleCoHost(code, playerId) {
+        const { data } = await api.games.toggleCoHost(code, playerId);
+        // Update local player list
+        const player = players.value.find(p => p.id === data.player_id);
+        if (player) {
+            player.is_co_host = data.is_co_host;
+        }
+        return data;
+    }
+
+    async function updateVisibility(code, isPublic) {
+        const { data } = await api.games.updateVisibility(code, isPublic);
+        if (currentGame.value) {
+            currentGame.value.is_public = data.is_public;
+        }
+        return data;
+    }
+
+    async function rematch(code) {
+        const { data } = await api.games.rematch(code);
+        // Reset and set up the new game
+        resetState();
+        currentGame.value = data.game;
+        players.value = data.game.players || [];
+        phase.value = 'lobby';
+        return data;
+    }
+
+    async function sendChatMessage(code, message, action = false) {
+        const { data } = await api.games.chat(code, message, action);
         // Add own message locally since toOthers() excludes the sender
         if (data.message) {
-            chatMessages.value.push(data.message);
+            chatMessages.value.push({ ...data.message, action });
         }
     }
 
@@ -110,7 +149,14 @@ export const useGameStore = defineStore('game', () => {
         const { data } = await api.games.state(code);
         currentGame.value = data.game;
         players.value = data.game.players || [];
-        _syncPhase(data.game.status);
+
+        // Use server-derived phase when available
+        if (data.phase) {
+            phase.value = data.phase;
+        } else {
+            _syncPhase(data.game.status, data.round?.status);
+        }
+
         if (data.round) {
             _setRound(data.round);
         }
@@ -121,12 +167,35 @@ export const useGameStore = defineStore('game', () => {
             myVote.value = data.my_vote;
         }
         if (data.answers) {
-            answers.value = data.answers;
+            // Mark own answers for voting phase recovery
+            const myAnswerId = myAnswer.value?.id;
+            answers.value = (data.answers || []).map(a => ({
+                ...a,
+                is_own: a.id === myAnswerId || a.player_id === _getAuthStore()?.player?.id,
+            }));
         }
         if (data.completed_rounds) {
-            // Store completed rounds for display
             currentGame.value.completed_rounds = data.completed_rounds;
         }
+
+        // Recover round results and scores for results phase
+        if (phase.value === 'results' && data.completed_rounds?.length) {
+            const lastCompleted = data.completed_rounds[data.completed_rounds.length - 1];
+            if (lastCompleted?.answers && !roundResults.value) {
+                roundResults.value = lastCompleted.answers.map(a => ({
+                    text: a.text,
+                    player_nickname: a.player_name,
+                    votes_count: a.votes_count,
+                }));
+            }
+            // Rebuild scores from player list
+            if (!scores.value.length) {
+                scores.value = (data.game.players || [])
+                    .map(p => ({ player_id: p.id, nickname: p.nickname, score: p.score ?? 0 }))
+                    .sort((a, b) => b.score - a.score);
+            }
+        }
+
         return data;
     }
 
@@ -200,9 +269,15 @@ export const useGameStore = defineStore('game', () => {
             })
             .listen('.voting.started', (data) => {
                 phase.value = 'voting';
-                answers.value = data.answers || [];
-                if (data.vote_deadline) {
-                    deadline.value = new Date(data.vote_deadline);
+                // Mark the player's own answer so they can't vote for it
+                const myAnswerId = myAnswer.value?.id;
+                answers.value = (data.answers || []).map(a => ({
+                    ...a,
+                    is_own: a.id === myAnswerId,
+                }));
+                const voteDeadline = data.vote_deadline || data.deadline;
+                if (voteDeadline) {
+                    deadline.value = new Date(voteDeadline);
                     _startCountdown();
                 }
             })
@@ -229,6 +304,24 @@ export const useGameStore = defineStore('game', () => {
                 _stopCountdown();
                 useSoundStore().play('game-win');
             })
+            .listen('.game.rematch', (data) => {
+                if (data.new_game_code) {
+                    // Navigate to the new game — Inertia router is not available here
+                    // so use window.location for a full redirect
+                    window.location.href = `/games/${data.new_game_code}`;
+                }
+            })
+            .listen('.co_host.changed', (data) => {
+                const player = players.value.find(p => p.id === data.player_id);
+                if (player) {
+                    player.is_co_host = data.is_co_host;
+                }
+            })
+            .listen('.game.settings_changed', (data) => {
+                if (currentGame.value && data.is_public !== undefined) {
+                    currentGame.value.is_public = data.is_public;
+                }
+            })
             .listen('.chat.message', (data) => {
                 chatMessages.value.push(data);
                 if (data.system !== true) {
@@ -247,21 +340,44 @@ export const useGameStore = defineStore('game', () => {
     }
 
     function _setRound(roundData) {
-        currentRound.value = roundData;
+        // Normalize field names — HTTP responses use "id"/"answer_deadline",
+        // but broadcast events use "round_id"/"deadline"
+        currentRound.value = {
+            ...roundData,
+            id: roundData.id || roundData.round_id,
+        };
         acronym.value = roundData.acronym || '';
-        if (roundData.answer_deadline) {
-            deadline.value = new Date(roundData.answer_deadline);
+
+        // Pick the correct deadline based on round status
+        let activeDeadline;
+        if (roundData.status === 'voting' && roundData.vote_deadline) {
+            activeDeadline = roundData.vote_deadline;
+        } else {
+            activeDeadline = roundData.answer_deadline || roundData.deadline;
+        }
+
+        if (activeDeadline) {
+            deadline.value = new Date(activeDeadline);
             _startCountdown();
         }
     }
 
-    function _syncPhase(status) {
+    function _syncPhase(status, roundStatus = null) {
         if (status === 'lobby') {
             phase.value = 'lobby';
-        } else if (status === 'playing') {
-            phase.value = 'playing';
         } else if (status === 'finished') {
             phase.value = 'finished';
+        } else if (status === 'playing' || status === 'voting') {
+            if (roundStatus === 'voting') {
+                phase.value = 'voting';
+            } else if (roundStatus === 'completed') {
+                phase.value = 'results';
+            } else if (roundStatus === 'answering') {
+                phase.value = 'playing';
+            } else {
+                // Fallback based on game status
+                phase.value = status === 'voting' ? 'voting' : 'playing';
+            }
         }
     }
 
@@ -329,6 +445,7 @@ export const useGameStore = defineStore('game', () => {
         chatMessages,
         roundResults,
         isHost,
+        isActualHost,
         hasSubmittedAnswer,
         hasVoted,
         gameCode,
@@ -339,6 +456,9 @@ export const useGameStore = defineStore('game', () => {
         startGame,
         submitAnswer,
         submitVote,
+        toggleCoHost,
+        updateVisibility,
+        rematch,
         sendChatMessage,
         fetchGameState,
         fetchCurrentRound,

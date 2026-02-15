@@ -40,15 +40,16 @@
         </form>
 
         <p class="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
-            <router-link to="/login" class="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">
+            <Link href="/login" class="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">
                 {{ t('common.back') }}
-            </router-link>
+            </Link>
         </p>
     </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import { api } from '../services/api.js';

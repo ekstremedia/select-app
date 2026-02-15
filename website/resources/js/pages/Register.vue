@@ -136,24 +136,22 @@
 
         <p class="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
             {{ t('auth.register.hasAccount') }}
-            <router-link to="/login" class="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">
+            <Link href="/login" class="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">
                 {{ t('auth.register.login') }}
-            </router-link>
+            </Link>
         </p>
     </div>
 </template>
 
 <script setup>
 import { ref, reactive } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { Link, router } from '@inertiajs/vue3';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
 import Button from 'primevue/button';
 import { useAuthStore } from '../stores/authStore.js';
 import { useI18n } from '../composables/useI18n.js';
 
-const router = useRouter();
-const route = useRoute();
 const authStore = useAuthStore();
 const { t } = useI18n();
 
@@ -187,8 +185,9 @@ async function handleRegister() {
         } else {
             await authStore.register({ ...form });
         }
-        const redirect = route.query.redirect || '/games';
-        router.push(redirect);
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirect = urlParams.get('redirect') || '/games';
+        router.visit(redirect);
     } catch (err) {
         const status = err.response?.status;
         const data = err.response?.data;
@@ -213,8 +212,9 @@ async function handleGuest() {
 
     try {
         await authStore.createGuest(guestNickname.value.trim());
-        const redirect = route.query.redirect || '/games';
-        router.push(redirect);
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirect = urlParams.get('redirect') || '/games';
+        router.visit(redirect);
     } catch (err) {
         guestError.value = err.response?.data?.message || t('common.error');
     } finally {

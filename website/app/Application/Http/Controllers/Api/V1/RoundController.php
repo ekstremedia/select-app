@@ -105,13 +105,17 @@ class RoundController extends Controller
         }
 
         // Broadcast vote submitted (just count)
-        $votesCount = $round->answers()->sum('votes_count');
-        $totalVoters = $round->game->activePlayers()->count();
+        $game = $round->game;
+        $totalVoters = $game->activePlayers()->count();
+        $uniqueVoters = \App\Infrastructure\Models\Vote::whereHas('answer', fn ($q) => $q->where('round_id', $round->id))->distinct('voter_id')->count('voter_id');
         try {
-            broadcast(new VoteSubmittedBroadcast($round->game, $votesCount, $totalVoters));
+            broadcast(new VoteSubmittedBroadcast($game, $uniqueVoters, $totalVoters));
         } catch (\Throwable $e) {
             Log::error('Broadcast failed: vote.submitted', ['error' => $e->getMessage()]);
         }
+
+        // Timer runs out naturally — Delectus completes the round when vote_deadline passes.
+        // This allows players to change their vote until time runs out.
 
         return response()->json([
             'vote' => [
@@ -126,8 +130,8 @@ class RoundController extends Controller
         $round = Round::findOrFail($roundId);
         $player = $request->attributes->get('player');
 
-        if ($round->game->host_player_id !== $player->id) {
-            return response()->json(['error' => 'Only host can start voting'], 403);
+        if (! $round->game->isHostOrCoHost($player)) {
+            return response()->json(['error' => 'Only host or co-host can start voting'], 403);
         }
 
         try {
@@ -164,8 +168,8 @@ class RoundController extends Controller
         $round = Round::findOrFail($roundId);
         $player = $request->attributes->get('player');
 
-        if ($round->game->host_player_id !== $player->id) {
-            return response()->json(['error' => 'Only host can complete round'], 403);
+        if (! $round->game->isHostOrCoHost($player)) {
+            return response()->json(['error' => 'Only host or co-host can complete round'], 403);
         }
 
         try {

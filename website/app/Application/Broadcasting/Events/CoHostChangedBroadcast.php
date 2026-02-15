@@ -9,17 +9,14 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class ChatMessageBroadcast implements ShouldBroadcastNow
+class CoHostChangedBroadcast implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public bool $action = false;
-
     public function __construct(
         public Game $game,
-        public string $nickname,
-        public string $message,
-        public bool $system = false,
+        public string $playerId,
+        public bool $isCoHost
     ) {}
 
     public function broadcastOn(): array
@@ -31,16 +28,14 @@ class ChatMessageBroadcast implements ShouldBroadcastNow
 
     public function broadcastAs(): string
     {
-        return 'chat.message';
+        return 'co_host.changed';
     }
 
     public function broadcastWith(): array
     {
         return [
-            'nickname' => $this->nickname,
-            'message' => $this->message,
-            'system' => $this->system,
-            'action' => $this->action,
+            'player_id' => $this->playerId,
+            'is_co_host' => $this->isCoHost,
         ];
     }
 }

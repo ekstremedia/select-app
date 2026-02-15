@@ -12,7 +12,7 @@
                     severity="success"
                     size="large"
                     class="w-full"
-                    @click="router.push('/games/create')"
+                    @click="router.visit('/games/create')"
                 />
 
                 <!-- Join by code -->
@@ -42,7 +42,7 @@
             <!-- Open games list -->
             <div>
                 <h2 class="text-lg font-semibold mb-3 text-slate-800 dark:text-slate-200">
-                    {{ t('games.openGames') }}
+                    {{ t('games.availableGames') }}
                 </h2>
 
                 <div v-if="loading" class="space-y-3">
@@ -70,6 +70,16 @@
                                 </span>
                             </div>
                             <div class="flex items-center gap-3">
+                                <Badge
+                                    v-if="game.status && game.status !== 'lobby'"
+                                    :value="game.status === 'voting' ? t('games.statusVoting') : `${t('game.round')} ${game.current_round}/${game.total_rounds}`"
+                                    :severity="game.status === 'voting' ? 'warn' : 'info'"
+                                />
+                                <Badge
+                                    v-else
+                                    :value="t('games.statusLobby')"
+                                    severity="success"
+                                />
                                 <Badge :value="`${game.player_count}/${game.max_players ?? 8}`" />
                                 <span class="text-xs text-slate-400">
                                     {{ game.rounds ?? 5 }} {{ t('games.rounds') }}
@@ -84,8 +94,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, onUnmounted } from 'vue';
+import { router } from '@inertiajs/vue3';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import Skeleton from 'primevue/skeleton';
@@ -94,7 +104,6 @@ import { api } from '../services/api.js';
 import { useGameStore } from '../stores/gameStore.js';
 import { useI18n } from '../composables/useI18n.js';
 
-const router = useRouter();
 const gameStore = useGameStore();
 const { t } = useI18n();
 
@@ -104,12 +113,11 @@ const joinCode = ref('');
 const joinError = ref('');
 
 async function loadGames() {
-    loading.value = true;
     try {
         const { data } = await api.games.list();
         openGames.value = data.games ?? data.data ?? [];
     } catch {
-        openGames.value = [];
+        // Keep existing list on error during polling
     } finally {
         loading.value = false;
     }
@@ -119,10 +127,15 @@ async function handleJoin(code) {
     joinError.value = '';
     try {
         await gameStore.joinGame(code);
-        router.push(`/games/${code}`);
     } catch (err) {
-        joinError.value = err.response?.data?.message || t('common.error');
+        // "Player already in game" is fine — just navigate to the game
+        const msg = err.response?.data?.error || err.response?.data?.message || '';
+        if (!msg.toLowerCase().includes('already in game')) {
+            joinError.value = msg || t('common.error');
+            return;
+        }
     }
+    router.visit(`/games/${code}`);
 }
 
 async function handleJoinByCode() {
@@ -130,5 +143,16 @@ async function handleJoinByCode() {
     await handleJoin(joinCode.value);
 }
 
-onMounted(loadGames);
+let pollInterval = null;
+
+onMounted(() => {
+    loadGames();
+    pollInterval = setInterval(loadGames, 10000);
+});
+
+onUnmounted(() => {
+    if (pollInterval) {
+        clearInterval(pollInterval);
+    }
+});
 </script>

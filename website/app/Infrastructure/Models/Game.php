@@ -61,7 +61,7 @@ class Game extends Model
     public function players()
     {
         return $this->belongsToMany(Player::class, 'game_players')
-            ->withPivot(['score', 'is_active', 'joined_at'])
+            ->withPivot(['score', 'is_active', 'is_co_host', 'joined_at'])
             ->withTimestamps();
     }
 
@@ -89,6 +89,18 @@ class Game extends Model
         return $this->rounds()
             ->whereIn('status', [Round::STATUS_ANSWERING, Round::STATUS_VOTING])
             ->first();
+    }
+
+    public function isHostOrCoHost(Player $player): bool
+    {
+        if ($this->host_player_id === $player->id) {
+            return true;
+        }
+
+        return $this->gamePlayers()
+            ->where('player_id', $player->id)
+            ->where('is_co_host', true)
+            ->exists();
     }
 
     public function isInLobby(): bool
@@ -135,6 +147,12 @@ class Game extends Model
     {
         return $query->where('is_public', true)
             ->where('status', self::STATUS_LOBBY);
+    }
+
+    public function scopePublicJoinable($query)
+    {
+        return $query->where('is_public', true)
+            ->whereIn('status', [self::STATUS_LOBBY, self::STATUS_PLAYING, self::STATUS_VOTING]);
     }
 
     public function scopeFinished($query)

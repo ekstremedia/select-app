@@ -1,33 +1,48 @@
 import './bootstrap';
-import { createApp } from 'vue';
+import { createApp, h } from 'vue';
+import { createInertiaApp } from '@inertiajs/vue3';
+import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createPinia } from 'pinia';
 import PrimeVue from 'primevue/config';
 import ToastService from 'primevue/toastservice';
 import ConfirmationService from 'primevue/confirmationservice';
 import Aura from '@primeuix/themes/aura';
-import App from './App.vue';
-import router from './router.js';
+import AppLayout from './layouts/AppLayout.vue';
+import { setupAuthGuard } from './composables/useAuthGuard.js';
 
-const app = createApp(App);
-const pinia = createPinia();
+createInertiaApp({
+    resolve: async (name) => {
+        const page = await resolvePageComponent(
+            `./pages/${name}.vue`,
+            import.meta.glob('./pages/**/*.vue'),
+        );
+        if (page.default.layout === undefined) {
+            page.default.layout = AppLayout;
+        }
+        return page;
+    },
+    setup({ el, App, props, plugin }) {
+        const app = createApp({ render: () => h(App, props) });
 
-app.use(pinia);
-app.use(router);
-
-app.use(PrimeVue, {
-    theme: {
-        preset: Aura,
-        options: {
-            darkModeSelector: '.dark',
-            cssLayer: {
-                name: 'primevue',
-                order: 'theme, base, primevue, utilities',
+        app.use(plugin);
+        app.use(createPinia());
+        app.use(PrimeVue, {
+            theme: {
+                preset: Aura,
+                options: {
+                    darkModeSelector: '.dark',
+                    cssLayer: {
+                        name: 'primevue',
+                        order: 'theme, base, primevue, utilities',
+                    },
+                },
             },
-        },
+        });
+        app.use(ToastService);
+        app.use(ConfirmationService);
+
+        app.mount(el);
+
+        setupAuthGuard();
     },
 });
-
-app.use(ToastService);
-app.use(ConfirmationService);
-
-app.mount('#app');

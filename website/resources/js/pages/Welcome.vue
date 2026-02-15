@@ -112,8 +112,8 @@
         <!-- CTA section -->
         <section class="px-4 pb-16 sm:pb-24 text-center">
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button :label="t('cta.play')" severity="success" size="large" raised @click="router.push('/games')" />
-                <Button :label="t('cta.download')" severity="secondary" size="large" variant="outlined" @click="router.push('/archive')" />
+                <Button :label="t('cta.play')" severity="success" size="large" raised @click="router.visit('/games')" />
+                <Button :label="t('cta.download')" severity="secondary" size="large" variant="outlined" @click="router.visit('/archive')" />
             </div>
         </section>
 
@@ -128,18 +128,19 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { router, usePage } from '@inertiajs/vue3';
 import Button from 'primevue/button';
 import { useI18n } from '../composables/useI18n.js';
 import { useDarkMode } from '../composables/useDarkMode.js';
+import { useAuthStore } from '../stores/authStore.js';
 import { api } from '../services/api.js';
 
-const router = useRouter();
+defineOptions({ layout: false });
 
 const { t, toggleLocale, isNorwegian } = useI18n();
 const { isDark, toggleDark } = useDarkMode();
 
-const gullkorn = document.getElementById('app')?.dataset.gullkorn || '';
+const gullkorn = usePage().props.gullkorn || '';
 const gullkornWords = gullkorn.split(/\s+/).filter(w => w.length > 0);
 const acronymLetters = gullkornWords.map(w => w.replace(/[^a-zA-ZæøåÆØÅ]/, '').charAt(0).toUpperCase());
 const gullkornSentence = gullkornWords.join(' ');
@@ -171,7 +172,11 @@ function animateAcronym() {
     }, 300);
 }
 
-onMounted(() => {
+onMounted(async () => {
+    const authStore = useAuthStore();
+    if (!authStore.isInitialized) {
+        await authStore.loadFromStorage();
+    }
     animateAcronym();
     api.stats().then(res => { stats.value = res.data; }).catch(() => {});
 });

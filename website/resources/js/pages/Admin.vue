@@ -26,12 +26,12 @@
                 >
                     <Column field="nickname" header="Nickname">
                         <template #body="{ data }">
-                            <router-link
-                                :to="`/profile/${data.nickname}`"
+                            <Link
+                                :href="`/profile/${data.nickname}`"
                                 class="font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
                             >
                                 {{ data.nickname }}
-                            </router-link>
+                            </Link>
                         </template>
                     </Column>
                     <Column field="email" header="Email" class="hidden sm:table-cell" />
@@ -83,12 +83,12 @@
                 >
                     <Column field="code" header="Code">
                         <template #body="{ data }">
-                            <router-link
-                                :to="`/archive/${data.code}`"
+                            <Link
+                                :href="`/archive/${data.code}`"
                                 class="font-mono font-bold text-emerald-600 dark:text-emerald-400 hover:underline tracking-widest"
                             >
                                 #{{ data.code }}
-                            </router-link>
+                            </Link>
                         </template>
                     </Column>
                     <Column field="status" header="Status">
@@ -155,6 +155,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import Skeleton from 'primevue/skeleton';

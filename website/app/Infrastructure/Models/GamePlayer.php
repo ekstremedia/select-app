@@ -16,12 +16,14 @@ class GamePlayer extends Model
         'player_id',
         'score',
         'is_active',
+        'is_co_host',
         'joined_at',
     ];
 
     protected $casts = [
         'score' => 'integer',
         'is_active' => 'boolean',
+        'is_co_host' => 'boolean',
         'joined_at' => 'datetime',
     ];
 

@@ -84,7 +84,10 @@ export const api = {
         start: (code) => client.post(`/games/${code}/start`),
         currentRound: (code) => client.get(`/games/${code}/rounds/current`),
         state: (code) => client.get(`/games/${code}/state`),
-        chat: (code, message) => client.post(`/games/${code}/chat`, { message }),
+        chat: (code, message, action = false) => client.post(`/games/${code}/chat`, { message, action }),
+        toggleCoHost: (code, playerId) => client.post(`/games/${code}/co-host/${playerId}`),
+        updateVisibility: (code, isPublic) => client.patch(`/games/${code}/visibility`, { is_public: isPublic }),
+        rematch: (code) => client.post(`/games/${code}/rematch`),
     },
     rounds: {
         submitAnswer: (id, text) => client.post(`/rounds/${id}/answer`, { text }),

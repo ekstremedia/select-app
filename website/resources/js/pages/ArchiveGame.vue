@@ -1,10 +1,10 @@
 <template>
     <div class="max-w-4xl mx-auto px-4 py-8 sm:py-12">
         <!-- Back link -->
-        <router-link to="/archive" class="inline-flex items-center gap-1 text-sm text-emerald-600 dark:text-emerald-400 hover:underline mb-6">
+        <Link href="/archive" class="inline-flex items-center gap-1 text-sm text-emerald-600 dark:text-emerald-400 hover:underline mb-6">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
             {{ t('archive.backToArchive') }}
-        </router-link>
+        </Link>
 
         <!-- Loading -->
         <div v-if="loading" class="space-y-6">
@@ -56,12 +56,12 @@
                             <span class="text-lg font-bold w-8 text-center" :class="i === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'">
                                 {{ i + 1 }}
                             </span>
-                            <router-link
-                                :to="`/profile/${player.nickname}`"
+                            <Link
+                                :href="`/profile/${player.nickname}`"
                                 class="font-medium text-slate-800 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400"
                             >
                                 {{ player.nickname }}
-                            </router-link>
+                            </Link>
                         </div>
                         <span class="font-bold text-emerald-600 dark:text-emerald-400">{{ player.score }} {{ t('game.points') }}</span>
                     </div>
@@ -106,12 +106,12 @@
                                 <div>
                                     <p class="text-slate-800 dark:text-slate-200">{{ answer.text }}</p>
                                     <div class="flex items-center gap-2 mt-1">
-                                        <router-link
-                                            :to="`/profile/${answer.player_nickname}`"
+                                        <Link
+                                            :href="`/profile/${answer.player_nickname}`"
                                             class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
                                         >
                                             {{ answer.player_nickname }}
-                                        </router-link>
+                                        </Link>
                                         <span v-if="answer.voted_by?.length" class="text-xs text-slate-400">
                                             {{ t('archive.votedBy') }}: {{ answer.voted_by.join(', ') }}
                                         </span>
@@ -132,14 +132,14 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { Link } from '@inertiajs/vue3';
 import Skeleton from 'primevue/skeleton';
 import Button from 'primevue/button';
 import Badge from 'primevue/badge';
 import { api } from '../services/api.js';
 import { useI18n } from '../composables/useI18n.js';
 
-const route = useRoute();
+const props = defineProps({ code: String });
 const { t } = useI18n();
 
 const game = ref(null);
@@ -157,7 +157,7 @@ async function loadGame() {
     error.value = '';
 
     try {
-        const { data } = await api.archive.get(route.params.code);
+        const { data } = await api.archive.get(props.code);
         game.value = data.game ?? data;
     } catch (err) {
         if (err.response?.status === 404) {
@@ -183,7 +183,7 @@ async function toggleRound(roundNumber) {
     const round = game.value?.rounds?.find((r) => r.round_number === roundNumber);
     if (round && !round.answers) {
         try {
-            const { data } = await api.archive.round(route.params.code, roundNumber);
+            const { data } = await api.archive.round(props.code, roundNumber);
             round.answers = data.answers ?? data.data ?? [];
         } catch {
             round.answers = [];
@@ -192,7 +192,7 @@ async function toggleRound(roundNumber) {
 }
 
 function shareGame() {
-    const url = `${window.location.origin}/archive/${route.params.code}`;
+    const url = `${window.location.origin}/archive/${props.code}`;
     navigator.clipboard.writeText(url);
 }
 

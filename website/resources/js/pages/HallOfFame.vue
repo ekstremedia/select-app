@@ -42,16 +42,16 @@
                 </div>
                 <p class="text-slate-800 dark:text-slate-200 mb-2">{{ sentence.text }}</p>
                 <div class="flex items-center justify-between">
-                    <router-link
-                        :to="`/profile/${sentence.player_nickname}`"
+                    <Link
+                        :href="`/profile/${sentence.player_nickname}`"
                         class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
                     >
                         {{ sentence.player_nickname }}
-                    </router-link>
+                    </Link>
                     <span v-if="sentence.game_code" class="text-xs text-slate-400">
-                        <router-link :to="`/archive/${sentence.game_code}`" class="hover:underline">
+                        <Link :href="`/archive/${sentence.game_code}`" class="hover:underline">
                             #{{ sentence.game_code }}
-                        </router-link>
+                        </Link>
                     </span>
                 </div>
             </div>
@@ -105,6 +105,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import Button from 'primevue/button';
 import Skeleton from 'primevue/skeleton';
 import Badge from 'primevue/badge';

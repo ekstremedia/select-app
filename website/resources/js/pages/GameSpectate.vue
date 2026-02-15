@@ -1,8 +1,8 @@
 <template>
     <GameLayout
-        :game-code="gameStore.gameCode || route.params.code"
+        :game-code="gameStore.gameCode || props.code"
         :player-count="gameStore.players.length"
-        @leave="router.push('/games')"
+        @leave="router.visit('/games')"
     >
         <div class="flex flex-col h-full overflow-hidden">
             <!-- Loading state -->
@@ -169,7 +169,7 @@
                             </div>
                         </div>
 
-                        <Button :label="t('game.viewArchive')" severity="secondary" variant="outlined" @click="router.push(`/archive/${route.params.code}`)" />
+                        <Button :label="t('game.viewArchive')" severity="secondary" variant="outlined" @click="router.visit(`/archive/${props.code}`)" />
                     </div>
                 </div>
             </template>
@@ -179,7 +179,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { router } from '@inertiajs/vue3';
 import { storeToRefs } from 'pinia';
 import Button from 'primevue/button';
 import Badge from 'primevue/badge';
@@ -189,8 +189,10 @@ import { useGameStore } from '../stores/gameStore.js';
 import { useI18n } from '../composables/useI18n.js';
 import { listenToGame, leaveGame as wsLeaveGame } from '../services/websocket.js';
 
-const router = useRouter();
-const route = useRoute();
+defineOptions({ layout: false });
+
+const props = defineProps({ code: String });
+
 const gameStore = useGameStore();
 const { t } = useI18n();
 
@@ -216,13 +218,13 @@ async function initSpectate() {
     error.value = '';
 
     try {
-        await gameStore.fetchGame(route.params.code);
+        await gameStore.fetchGame(props.code);
 
         // Use listen-only channel (not presence join) for spectating
-        gameStore.connectWebSocket(route.params.code);
+        gameStore.connectWebSocket(props.code);
 
         if (phase.value === 'playing' || phase.value === 'voting') {
-            await gameStore.fetchCurrentRound(route.params.code);
+            await gameStore.fetchCurrentRound(props.code);
         }
     } catch (err) {
         error.value = err.response?.data?.message || t('common.error');

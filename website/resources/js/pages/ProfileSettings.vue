@@ -170,7 +170,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { router } from '@inertiajs/vue3';
 import { storeToRefs } from 'pinia';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
@@ -183,7 +183,6 @@ import { useI18n } from '../composables/useI18n.js';
 import { useDarkMode } from '../composables/useDarkMode.js';
 import { api } from '../services/api.js';
 
-const router = useRouter();
 const authStore = useAuthStore();
 const soundStore = useSoundStore();
 const { t, toggleLocale } = useI18n();
@@ -269,7 +268,7 @@ async function handleDeleteAccount() {
         await api.profile.deleteAccount();
         authStore.clearAuth();
         showDeleteDialog.value = false;
-        router.push('/');
+        router.visit('/');
     } catch {
         deleteLoading.value = false;
     }
