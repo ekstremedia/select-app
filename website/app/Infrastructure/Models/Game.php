@@ -136,9 +136,9 @@ class Game extends Model
             'rounds' => 8,
             'answer_time' => 120,
             'vote_time' => 60,
-            'time_between_rounds' => 10,
-            'acronym_length_min' => 4,
-            'acronym_length_max' => 4,
+            'time_between_rounds' => 15,
+            'acronym_length_min' => 5,
+            'acronym_length_max' => 5,
             'excluded_letters' => '',
         ];
     }

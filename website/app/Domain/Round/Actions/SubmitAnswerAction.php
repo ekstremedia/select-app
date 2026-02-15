@@ -32,6 +32,9 @@ class SubmitAnswerAction
             throw new \InvalidArgumentException('Player is not in this game');
         }
 
+        // Normalise to lowercase (the game does not use uppercase)
+        $text = mb_strtolower(trim($text));
+
         // Validate answer matches acronym
         $validation = $this->validator->validate($text, $round->acronym);
         if (! $validation->isValid) {

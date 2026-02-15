@@ -128,6 +128,7 @@ const translations = {
         'game.of': 'av',
         'game.timeLeft': 'Tid igjen',
         'game.submitAnswer': 'Send svar',
+        'game.answerInvalid': 'Setningen passer ikke med akronymet',
         'game.updateAnswer': 'Oppdater svar',
         'game.edit': 'Rediger',
         'game.remaining': 'igjen',
@@ -219,6 +220,29 @@ const translations = {
         'common.notFound': 'Siden ble ikke funnet',
         'common.notFoundDesc': 'Beklager, vi finner ikke denne siden.',
         'common.goHome': 'Gå til forsiden',
+        'common.forbidden': 'Forbudt',
+        'common.forbiddenDesc': 'Du har ikke tilgang til denne siden.',
+        'common.serverError': 'Serverfeil',
+        'common.serverErrorDesc': 'Noe gikk galt på vår side.',
+        'common.serviceUnavailable': 'Tjenesten er utilgjengelig',
+        'common.serviceUnavailableDesc': 'Vi utfører vedlikehold. Prøv igjen senere.',
+
+        // Game - additional
+        'game.finishedInactivity': 'Spillet ble avsluttet på grunn av manglende deltakelse.',
+        'game.voteChangesRemaining': 'stemmeendringer igjen',
+
+        // Create - additional
+        'create.addBots': 'Legg til boter',
+        'create.addBotsDesc': '3-5 AI-spillere med tilfeldige navn',
+
+        // Lobby - additional
+        'lobby.bot': 'Bot',
+        'lobby.kick': 'Spark',
+        'lobby.kickConfirm': 'Er du sikker på at du vil sparke {name}? De kan ikke bli med igjen.',
+        'lobby.endGame': 'Avslutt spill',
+        'lobby.endGameConfirm': 'Er du sikker på at du vil avslutte spillet?',
+        'lobby.expiringWarning': 'Denne lobbyen stenges snart på grunn av inaktivitet.',
+        'lobby.keepOpen': 'Hold åpen',
     },
     en: {
         // Navigation
@@ -347,6 +371,7 @@ const translations = {
         'game.of': 'of',
         'game.timeLeft': 'Time left',
         'game.submitAnswer': 'Submit answer',
+        'game.answerInvalid': 'Sentence does not match the acronym',
         'game.updateAnswer': 'Update answer',
         'game.edit': 'Edit',
         'game.remaining': 'left',
@@ -438,6 +463,29 @@ const translations = {
         'common.notFound': 'Page not found',
         'common.notFoundDesc': 'Sorry, we could not find this page.',
         'common.goHome': 'Go to home page',
+        'common.forbidden': 'Forbidden',
+        'common.forbiddenDesc': 'You do not have permission to access this page.',
+        'common.serverError': 'Server Error',
+        'common.serverErrorDesc': 'Something went wrong on our end.',
+        'common.serviceUnavailable': 'Service Unavailable',
+        'common.serviceUnavailableDesc': 'We are currently undergoing maintenance. Please try again later.',
+
+        // Game - additional
+        'game.finishedInactivity': 'The game was ended due to inactivity.',
+        'game.voteChangesRemaining': 'vote changes remaining',
+
+        // Create - additional
+        'create.addBots': 'Add bots',
+        'create.addBotsDesc': '3-5 AI players with random names',
+
+        // Lobby - additional
+        'lobby.bot': 'Bot',
+        'lobby.kick': 'Kick',
+        'lobby.kickConfirm': 'Are you sure you want to kick {name}? They cannot rejoin.',
+        'lobby.endGame': 'End game',
+        'lobby.endGameConfirm': 'Are you sure you want to end this game?',
+        'lobby.expiringWarning': 'This lobby will close soon due to inactivity.',
+        'lobby.keepOpen': 'Keep open',
     },
 };
 

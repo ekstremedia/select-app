@@ -2,7 +2,6 @@
 
 namespace App\Application\Jobs;
 
-use App\Application\Broadcasting\Events\VotingStartedBroadcast;
 use App\Domain\Round\Actions\StartVotingAction;
 use App\Infrastructure\Models\Round;
 use Illuminate\Bus\Queueable;
@@ -10,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class ProcessAnswerDeadlineJob implements ShouldQueue
 {
@@ -27,20 +27,11 @@ class ProcessAnswerDeadlineJob implements ShouldQueue
             return;
         }
 
-        // Start voting phase
-        $round = $action->execute($round);
-
-        $answers = $round->answers()->with('player')->get()->map(fn ($a) => [
-            'id' => $a->id,
-            'player_id' => $a->player_id,
-            'player_name' => $a->player->nickname,
-            'text' => $a->text,
-        ]);
-
+        // Start voting phase — StartVotingAction already broadcasts VotingStartedBroadcast
         try {
-            broadcast(new VotingStartedBroadcast($round->game, $round, $answers->toArray()));
+            $action->execute($round);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Broadcast failed: voting.started (job)', ['error' => $e->getMessage()]);
+            Log::error('ProcessAnswerDeadlineJob: Failed to start voting', ['error' => $e->getMessage()]);
         }
     }
 }

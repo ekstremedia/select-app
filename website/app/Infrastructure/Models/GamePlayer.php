@@ -17,6 +17,7 @@ class GamePlayer extends Model
         'score',
         'is_active',
         'is_co_host',
+        'kicked_by',
         'joined_at',
     ];
 
@@ -26,6 +27,11 @@ class GamePlayer extends Model
         'is_co_host' => 'boolean',
         'joined_at' => 'datetime',
     ];
+
+    public function isKicked(): bool
+    {
+        return $this->kicked_by !== null;
+    }
 
     public function game(): BelongsTo
     {

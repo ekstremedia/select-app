@@ -26,6 +26,7 @@ class CreateGameRequest extends FormRequest
             'settings.excluded_letters' => ['nullable', 'string', 'max:26'],
             'is_public' => ['nullable', 'boolean'],
             'password' => ['nullable', 'string', 'min:4', 'max:50'],
+            'add_bots' => ['nullable', 'boolean'],
         ];
     }
 }

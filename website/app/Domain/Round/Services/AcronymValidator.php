@@ -13,6 +13,11 @@ class AcronymValidator
             return new ValidationResult(false, 'Answer cannot be empty');
         }
 
+        // Only letters, spaces, and basic punctuation allowed
+        if (preg_match('/[^\p{L}\s,.\!\?:;\-]/u', $answer)) {
+            return new ValidationResult(false, 'Only letters and punctuation (,.!?:;-) are allowed');
+        }
+
         // Split answer into words (handle multiple spaces)
         $words = preg_split('/\s+/', $answer);
         $words = array_filter($words, fn ($word) => ! empty($word));

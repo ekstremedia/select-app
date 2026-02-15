@@ -146,6 +146,7 @@
         </footer>
 
         <Toast />
+        <ConfirmDialog />
     </div>
 </template>
 
@@ -155,6 +156,7 @@ import { Link, router, usePage } from '@inertiajs/vue3';
 import { storeToRefs } from 'pinia';
 import Button from 'primevue/button';
 import Toast from 'primevue/toast';
+import ConfirmDialog from 'primevue/confirmdialog';
 import { useAuthStore } from '../stores/authStore.js';
 import { useI18n } from '../composables/useI18n.js';
 import { useDarkMode } from '../composables/useDarkMode.js';

@@ -111,6 +111,19 @@
                 </div>
             </div>
 
+            <!-- Bot players (admin only) -->
+            <div v-if="authStore.isAdmin" class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                <div class="flex items-center gap-3">
+                    <Checkbox v-model="settings.add_bots" :binary="true" inputId="addBots" />
+                    <div>
+                        <label for="addBots" class="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                            {{ t('create.addBots') }}
+                        </label>
+                        <p class="text-xs text-slate-400">{{ t('create.addBotsDesc') }}</p>
+                    </div>
+                </div>
+            </div>
+
             <div class="flex gap-3">
                 <Button
                     :label="t('common.back')"
@@ -137,22 +150,26 @@ import { router } from '@inertiajs/vue3';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import Slider from 'primevue/slider';
+import Checkbox from 'primevue/checkbox';
 import { useGameStore } from '../stores/gameStore.js';
+import { useAuthStore } from '../stores/authStore.js';
 import { useI18n } from '../composables/useI18n.js';
 
 const gameStore = useGameStore();
+const authStore = useAuthStore();
 const { t } = useI18n();
 
 const settings = reactive({
     rounds: 8,
     answer_time: 60,
     vote_time: 30,
-    time_between_rounds: 10,
-    acronym_length: 4,
+    time_between_rounds: 15,
+    acronym_length: 5,
     max_players: 8,
     excluded_letters: '',
     is_private: false,
     password: '',
+    add_bots: false,
 });
 
 const loading = ref(false);
@@ -182,6 +199,9 @@ async function handleCreate() {
         };
         if (settings.is_private && settings.password) {
             payload.password = settings.password;
+        }
+        if (settings.add_bots) {
+            payload.add_bots = true;
         }
 
         const data = await gameStore.createGame(payload);

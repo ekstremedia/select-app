@@ -28,21 +28,21 @@ const { t } = useI18n();
 
 const title = computed(() => {
     const titles = {
-        403: 'Forbidden',
+        403: t('common.forbidden'),
         404: t('common.notFound'),
-        500: 'Server Error',
-        503: 'Service Unavailable',
+        500: t('common.serverError'),
+        503: t('common.serviceUnavailable'),
     };
     return titles[props.status] || 'Error';
 });
 
 const description = computed(() => {
     const descriptions = {
-        403: 'You do not have permission to access this page.',
+        403: t('common.forbiddenDesc'),
         404: t('common.notFoundDesc'),
-        500: 'Something went wrong on our end.',
-        503: 'We are currently undergoing maintenance. Please try again later.',
+        500: t('common.serverErrorDesc'),
+        503: t('common.serviceUnavailableDesc'),
     };
-    return descriptions[props.status] || 'An unexpected error occurred.';
+    return descriptions[props.status] || t('common.error');
 });
 </script>

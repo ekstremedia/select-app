@@ -35,13 +35,14 @@ class StartVotingAction
         ]);
 
         // Load answers for the broadcast (hide player_id for anonymous voting)
+        // Use seeded shuffle so order is stable across broadcast and state endpoint
         $answers = $round->answers()
             ->get()
+            ->shuffle(crc32($round->id))
             ->map(fn ($answer) => [
                 'id' => $answer->id,
                 'text' => $answer->text,
             ])
-            ->shuffle() // Randomize order
             ->values()
             ->toArray();
 
@@ -56,7 +57,7 @@ class StartVotingAction
         try {
             broadcast(new VotingStartedBroadcast($game, $round->fresh(), $answers));
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Broadcast failed: voting.started', ['game' => $game->code, 'error' => $e->getMessage()]);
+            Log::error('Broadcast failed: voting.started', ['game' => $game->code, 'error' => $e->getMessage()]);
         }
 
         return $round->fresh();

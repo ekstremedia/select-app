@@ -8,7 +8,7 @@ use App\Infrastructure\Models\Game;
 use App\Infrastructure\Models\Player;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Laravel\Sanctum\PersonalAccessToken;
+use Illuminate\Support\Facades\Auth;
 
 class BroadcastAuthController extends Controller
 {
@@ -60,12 +60,9 @@ class BroadcastAuthController extends Controller
         }
 
         // Try Bearer token (Sanctum API token) — needed because this is a web route
-        $bearerToken = $request->bearerToken();
-        if ($bearerToken) {
-            $tokenModel = PersonalAccessToken::findToken($bearerToken);
-            if ($tokenModel) {
-                return Player::where('user_id', $tokenModel->tokenable_id)->first();
-            }
+        $sanctumUser = Auth::guard('sanctum')->user();
+        if ($sanctumUser) {
+            return Player::where('user_id', $sanctumUser->id)->first();
         }
 
         return null;

@@ -3,22 +3,21 @@
 namespace App\Application\Broadcasting\Events;
 
 use App\Infrastructure\Models\Game;
+use App\Infrastructure\Models\Player;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class ChatMessageBroadcast implements ShouldBroadcastNow
+class PlayerKickedBroadcast implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public function __construct(
         public Game $game,
-        public string $nickname,
-        public string $message,
-        public bool $system = false,
-        public bool $action = false,
+        public Player $kickedPlayer,
+        public string $kickedByNickname,
     ) {}
 
     public function broadcastOn(): array
@@ -30,16 +29,18 @@ class ChatMessageBroadcast implements ShouldBroadcastNow
 
     public function broadcastAs(): string
     {
-        return 'chat.message';
+        return 'player.kicked';
     }
 
     public function broadcastWith(): array
     {
+        $game = $this->game->fresh();
+
         return [
-            'nickname' => $this->nickname,
-            'message' => $this->message,
-            'system' => $this->system,
-            'action' => $this->action,
+            'player_id' => $this->kickedPlayer->id,
+            'player_nickname' => $this->kickedPlayer->nickname,
+            'kicked_by_nickname' => $this->kickedByNickname,
+            'players_count' => $game->activePlayers()->count(),
         ];
     }
 }

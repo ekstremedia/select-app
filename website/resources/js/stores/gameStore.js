@@ -18,6 +18,7 @@ export const useGameStore = defineStore('game', () => {
     const timeRemaining = ref(0);
     const chatMessages = ref([]);
     const roundResults = ref(null);
+    const lobbyExpiring = ref(false);
     const wsChannel = ref(null);
 
     let countdownInterval = null;
@@ -109,6 +110,24 @@ export const useGameStore = defineStore('game', () => {
         return data;
     }
 
+    async function endGame(code) {
+        const { data } = await api.games.end(code);
+        resetState();
+        return data;
+    }
+
+    async function keepalive(code) {
+        await api.games.keepalive(code);
+        lobbyExpiring.value = false;
+    }
+
+    async function kickPlayer(code, playerId) {
+        const { data } = await api.games.kick(code, playerId);
+        // Remove from local player list
+        players.value = players.value.filter(p => p.id !== data.player_id);
+        return data;
+    }
+
     async function toggleCoHost(code, playerId) {
         const { data } = await api.games.toggleCoHost(code, playerId);
         // Update local player list
@@ -166,13 +185,13 @@ export const useGameStore = defineStore('game', () => {
         if (data.my_vote) {
             myVote.value = data.my_vote;
         }
-        if (data.answers) {
-            // Mark own answers for voting phase recovery
+        if (data.answers && !answers.value.length) {
+            // Only set answers if not already populated (avoid re-render flicker)
             const myAnswerId = myAnswer.value?.id;
-            answers.value = (data.answers || []).map(a => ({
+            answers.value = _sortAnswersOwnLast((data.answers || []).map(a => ({
                 ...a,
                 is_own: a.id === myAnswerId || a.player_id === _getAuthStore()?.player?.id,
-            }));
+            })));
         }
         if (data.completed_rounds) {
             currentGame.value.completed_rounds = data.completed_rounds;
@@ -191,13 +210,14 @@ export const useGameStore = defineStore('game', () => {
             // Rebuild scores from player list
             if (!scores.value.length) {
                 scores.value = (data.game.players || [])
-                    .map(p => ({ player_id: p.id, nickname: p.nickname, score: p.score ?? 0 }))
+                    .map(p => ({ player_id: p.id, nickname: p.nickname, player_name: p.nickname, score: p.score ?? 0 }))
                     .sort((a, b) => b.score - a.score);
             }
-            // Set a short countdown — Delectus will start the next round soon
-            const delay = data.game.settings?.time_between_rounds ?? 10;
-            deadline.value = new Date(Date.now() + delay * 1000);
-            _startCountdown();
+            // Between-rounds timer for page-load recovery only
+            if (!_resultsInterval) {
+                const delay = data.game.settings?.time_between_rounds ?? 15;
+                _startResultsCountdown(delay);
+            }
         }
 
         // Recover finished game state
@@ -208,7 +228,7 @@ export const useGameStore = defineStore('game', () => {
             // Build scores from players if not already set
             if (!scores.value.length) {
                 scores.value = (data.game.players || [])
-                    .map(p => ({ player_id: p.id, player_name: p.nickname, score: p.score ?? 0 }))
+                    .map(p => ({ player_id: p.id, nickname: p.nickname, player_name: p.nickname, score: p.score ?? 0 }))
                     .sort((a, b) => b.score - a.score);
             }
         }
@@ -259,6 +279,16 @@ export const useGameStore = defineStore('game', () => {
                     currentGame.value.host_player_id = data.new_host_id;
                 }
             })
+            .listen('.player.kicked', (data) => {
+                players.value = players.value.filter((p) => p.id !== data.player_id);
+                // If I was kicked, redirect to games list
+                const authStore = _getAuthStore();
+                if (authStore?.player?.id === data.player_id) {
+                    sessionStorage.setItem('select-kicked', '1');
+                    resetState();
+                    window.location.href = '/games';
+                }
+            })
             .listen('.game.started', (data) => {
                 phase.value = 'playing';
                 if (currentGame.value) {
@@ -286,12 +316,12 @@ export const useGameStore = defineStore('game', () => {
             })
             .listen('.voting.started', (data) => {
                 phase.value = 'voting';
-                // Mark the player's own answer so they can't vote for it
+                // Mark the player's own answer and pin it at the bottom
                 const myAnswerId = myAnswer.value?.id;
-                answers.value = (data.answers || []).map(a => ({
+                answers.value = _sortAnswersOwnLast((data.answers || []).map(a => ({
                     ...a,
                     is_own: a.id === myAnswerId,
-                }));
+                })));
                 const voteDeadline = data.vote_deadline || data.deadline;
                 if (voteDeadline) {
                     deadline.value = new Date(voteDeadline);
@@ -309,12 +339,13 @@ export const useGameStore = defineStore('game', () => {
                 roundResults.value = data.results || [];
                 scores.value = data.scores || [];
                 _stopCountdown();
+                deadline.value = null;
                 useSoundStore().play('vote-reveal');
 
-                // Start a between-rounds countdown
-                const delay = data.time_between_rounds ?? currentGame.value?.settings?.time_between_rounds ?? 10;
-                deadline.value = new Date(Date.now() + delay * 1000);
-                _startCountdown();
+                // Between-rounds countdown: simple decrement, completely independent
+                // from the deadline-based system used for playing/voting phases.
+                const delay = data.time_between_rounds ?? currentGame.value?.settings?.time_between_rounds ?? 15;
+                _startResultsCountdown(delay);
             })
             .listen('.game.finished', (data) => {
                 phase.value = 'finished';
@@ -344,6 +375,9 @@ export const useGameStore = defineStore('game', () => {
                     currentGame.value.is_public = data.is_public;
                 }
             })
+            .listen('.lobby.expiring', (data) => {
+                lobbyExpiring.value = true;
+            })
             .listen('.chat.message', (data) => {
                 chatMessages.value.push(data);
                 if (data.system !== true) {
@@ -370,6 +404,13 @@ export const useGameStore = defineStore('game', () => {
         };
         acronym.value = roundData.acronym || '';
 
+        // Don't touch the deadline during results phase — the between-rounds
+        // timer is managed by the .round.completed handler, and the round data
+        // still contains the old (expired) voting deadline which would overwrite it.
+        if (roundData.status === 'completed') {
+            return;
+        }
+
         // Pick the correct deadline based on round status
         let activeDeadline;
         if (roundData.status === 'voting' && roundData.vote_deadline) {
@@ -382,6 +423,12 @@ export const useGameStore = defineStore('game', () => {
             deadline.value = new Date(activeDeadline);
             _startCountdown();
         }
+    }
+
+    function _sortAnswersOwnLast(answerList) {
+        const others = answerList.filter(a => !a.is_own);
+        const own = answerList.filter(a => a.is_own);
+        return [...others, ...own];
     }
 
     function _syncPhase(status, roundStatus = null) {
@@ -404,18 +451,25 @@ export const useGameStore = defineStore('game', () => {
     }
 
     function _startCountdown() {
+        _stopResultsCountdown();
         _stopCountdown();
         _updateTimeRemaining();
         countdownInterval = setInterval(() => {
             _updateTimeRemaining();
-            if (timeRemaining.value <= 10 && timeRemaining.value > 0) {
+            // Only play warning/time-up sounds during active phases (not between rounds)
+            const isActivePhase = phase.value === 'playing' || phase.value === 'voting';
+            if (isActivePhase && timeRemaining.value <= 10 && timeRemaining.value > 0) {
                 useSoundStore().play('time-warning');
             }
             if (timeRemaining.value <= 0) {
                 _stopCountdown();
-                useSoundStore().play('time-up');
-                // Poll game state as fallback in case we missed a WebSocket event
-                _pollAfterDeadline();
+                if (isActivePhase) {
+                    useSoundStore().play('time-up');
+                    // Poll game state as fallback in case we missed a WebSocket event
+                    // Only poll during active phases — the between-rounds timer is cosmetic
+                    // and the next round will arrive via .round.started WebSocket event
+                    _pollAfterDeadline();
+                }
             }
         }, 1000);
     }
@@ -451,9 +505,33 @@ export const useGameStore = defineStore('game', () => {
         timeRemaining.value = diff;
     }
 
+    // Between-rounds timer: completely independent from the deadline-based countdown.
+    // Uses a simple decrementing counter so nothing (fetchGameState, _setRound, polls)
+    // can interfere with it.
+    let _resultsInterval = null;
+    function _startResultsCountdown(seconds) {
+        _stopResultsCountdown();
+        _stopCountdown();
+        deadline.value = null;
+        timeRemaining.value = seconds;
+        _resultsInterval = setInterval(() => {
+            timeRemaining.value = Math.max(0, timeRemaining.value - 1);
+            if (timeRemaining.value <= 0) {
+                _stopResultsCountdown();
+            }
+        }, 1000);
+    }
+    function _stopResultsCountdown() {
+        if (_resultsInterval) {
+            clearInterval(_resultsInterval);
+            _resultsInterval = null;
+        }
+    }
+
     function resetState() {
         disconnectWebSocket();
         _stopCountdown();
+        _stopResultsCountdown();
         if (_pollTimer) { clearTimeout(_pollTimer); _pollTimer = null; }
         currentGame.value = null;
         players.value = [];
@@ -468,6 +546,7 @@ export const useGameStore = defineStore('game', () => {
         timeRemaining.value = 0;
         chatMessages.value = [];
         roundResults.value = null;
+        lobbyExpiring.value = false;
     }
 
     return {
@@ -484,6 +563,7 @@ export const useGameStore = defineStore('game', () => {
         timeRemaining,
         chatMessages,
         roundResults,
+        lobbyExpiring,
         isHost,
         isActualHost,
         hasSubmittedAnswer,
@@ -496,6 +576,9 @@ export const useGameStore = defineStore('game', () => {
         startGame,
         submitAnswer,
         submitVote,
+        endGame,
+        keepalive,
+        kickPlayer,
         toggleCoHost,
         updateVisibility,
         rematch,

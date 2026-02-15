@@ -104,7 +104,7 @@
                         >
                             <div class="flex items-start justify-between gap-3">
                                 <div>
-                                    <p class="text-slate-800 dark:text-slate-200">{{ answer.text }}</p>
+                                    <p class="text-slate-800 dark:text-slate-200">{{ answer.text?.toLowerCase() }}</p>
                                     <div class="flex items-center gap-2 mt-1">
                                         <Link
                                             :href="`/profile/${answer.player_nickname}`"
@@ -163,11 +163,11 @@ async function loadGame() {
             standings: data.players || [],
             rounds: (data.rounds || []).map(r => ({
                 ...r,
-                answers: (r.answers || []).map(a => ({
+                answers: r.answers ? r.answers.map(a => ({
                     ...a,
                     player_nickname: a.player_name,
                     voted_by: a.voters || [],
-                })),
+                })) : undefined,
             })),
         };
         // Auto-expand all rounds
@@ -206,9 +206,13 @@ async function toggleRound(roundNumber) {
     }
 }
 
-function shareGame() {
+async function shareGame() {
     const url = `${window.location.origin}/archive/${props.code}`;
-    navigator.clipboard.writeText(url);
+    try {
+        await navigator.clipboard.writeText(url);
+    } catch {
+        // Clipboard API not available — ignore silently
+    }
 }
 
 onMounted(loadGame);

@@ -18,17 +18,23 @@ class EndGameAction
         private ScoringService $scoringService
     ) {}
 
-    public function execute(Game $game): Game
+    public function execute(Game $game, ?string $reason = null): Game
     {
         $finishedAt = now();
         $durationSeconds = $game->started_at
             ? (int) $game->started_at->diffInSeconds($finishedAt)
             : null;
 
+        $settings = $game->settings;
+        if ($reason) {
+            $settings['finished_reason'] = $reason;
+        }
+
         $game->update([
             'status' => Game::STATUS_FINISHED,
             'finished_at' => $finishedAt,
             'duration_seconds' => $durationSeconds,
+            'settings' => $settings,
         ]);
 
         // Update player stats on player model
@@ -47,7 +53,7 @@ class EndGameAction
             ->map(function ($gp, $index) use ($tiedAtTop) {
                 return [
                     'player_id' => $gp->player_id,
-                    'player_name' => $gp->player->nickname,
+                    'player_name' => $gp->player?->nickname ?? 'Unknown',
                     'score' => $gp->score,
                     'is_winner' => $index === 0 && ! $tiedAtTop,
                 ];
@@ -56,11 +62,13 @@ class EndGameAction
 
         $winner = (! $tiedAtTop && ! empty($finalScores)) ? $finalScores[0] : null;
 
+        $winnerGp = $gamePlayers->first();
+
         // Save game result (denormalized summary)
         GameResult::create([
             'game_id' => $game->id,
             'winner_nickname' => $winner ? $winner['player_name'] : null,
-            'winner_user_id' => $winner ? $game->gamePlayers()->orderByDesc('score')->first()?->player?->user_id : null,
+            'winner_user_id' => $winner ? $winnerGp?->player?->user_id : null,
             'final_scores' => $finalScores,
             'rounds_played' => $game->rounds()->where('status', 'completed')->count(),
             'player_count' => count($finalScores),

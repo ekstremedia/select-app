@@ -25,11 +25,18 @@ class JoinGameAction
             // Lock the game row to prevent race conditions on player count
             $game = Game::lockForUpdate()->find($game->id);
 
+            if (! $game) {
+                throw new \InvalidArgumentException('Game not found');
+            }
+
             $existing = GamePlayer::where('game_id', $game->id)
                 ->where('player_id', $player->id)
                 ->first();
 
             if ($existing) {
+                if ($existing->isKicked()) {
+                    throw new \InvalidArgumentException('You have been kicked from this game');
+                }
                 if ($existing->is_active) {
                     throw new \InvalidArgumentException('Player already in game');
                 }

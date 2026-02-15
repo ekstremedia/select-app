@@ -25,6 +25,7 @@ class Player extends Model
         'guest_token',
         'nickname',
         'is_guest',
+        'is_bot',
         'games_played',
         'games_won',
         'total_score',
@@ -35,6 +36,7 @@ class Player extends Model
     {
         return [
             'is_guest' => 'boolean',
+            'is_bot' => 'boolean',
             'games_played' => 'integer',
             'games_won' => 'integer',
             'total_score' => 'integer',
@@ -55,7 +57,7 @@ class Player extends Model
     public function games()
     {
         return $this->belongsToMany(Game::class, 'game_players')
-            ->withPivot(['score', 'is_active', 'joined_at'])
+            ->withPivot(['score', 'is_active', 'is_co_host', 'joined_at'])
             ->withTimestamps();
     }
 

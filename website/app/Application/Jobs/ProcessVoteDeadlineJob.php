@@ -12,6 +12,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class ProcessVoteDeadlineJob implements ShouldQueue
 {
@@ -33,14 +34,22 @@ class ProcessVoteDeadlineJob implements ShouldQueue
 
         try {
             broadcast(new RoundCompletedBroadcast($round->game, $result['round_results']));
-
-            if ($result['game_finished']) {
-                broadcast(new GameFinishedBroadcast($round->game, $result['final_scores']));
-            } else {
-                broadcast(new RoundStartedBroadcast($round->game, $result['next_round']));
-            }
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Broadcast failed: round.completed (job)', ['error' => $e->getMessage()]);
+            Log::error('Broadcast failed: round.completed (job)', ['error' => $e->getMessage()]);
+        }
+
+        if ($result['game_finished']) {
+            try {
+                broadcast(new GameFinishedBroadcast($round->game, $result['final_scores']));
+            } catch (\Throwable $e) {
+                Log::error('Broadcast failed: game.finished (job)', ['error' => $e->getMessage()]);
+            }
+        } elseif (isset($result['next_round'])) {
+            try {
+                broadcast(new RoundStartedBroadcast($round->game, $result['next_round']));
+            } catch (\Throwable $e) {
+                Log::error('Broadcast failed: round.started (job)', ['error' => $e->getMessage()]);
+            }
         }
     }
 }

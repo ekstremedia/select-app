@@ -125,6 +125,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import { getConnectionState, joinGame, leaveGame, disconnect } from '../services/websocket.js';

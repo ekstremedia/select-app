@@ -98,7 +98,7 @@
                                 :key="answer.id"
                                 class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
                             >
-                                <p class="text-slate-800 dark:text-slate-200">{{ answer.text }}</p>
+                                <p class="text-slate-800 dark:text-slate-200">{{ answer.text?.toLowerCase() }}</p>
                             </div>
                         </div>
 
@@ -124,7 +124,7 @@
                             >
                                 <div class="flex items-start justify-between gap-3">
                                     <div>
-                                        <p class="font-medium text-slate-800 dark:text-slate-200">{{ result.text }}</p>
+                                        <p class="font-medium text-slate-800 dark:text-slate-200">{{ result.text?.toLowerCase() }}</p>
                                         <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ result.player_nickname }}</p>
                                     </div>
                                     <Badge :value="result.votes_count" severity="success" />

@@ -9,6 +9,7 @@ import ConfirmationService from 'primevue/confirmationservice';
 import Aura from '@primeuix/themes/aura';
 import AppLayout from './layouts/AppLayout.vue';
 import { setupAuthGuard } from './composables/useAuthGuard.js';
+import { useAuthStore } from './stores/authStore.js';
 
 createInertiaApp({
     resolve: async (name) => {
@@ -21,11 +22,12 @@ createInertiaApp({
         }
         return page;
     },
-    setup({ el, App, props, plugin }) {
+    async setup({ el, App, props, plugin }) {
         const app = createApp({ render: () => h(App, props) });
 
         app.use(plugin);
-        app.use(createPinia());
+        const pinia = createPinia();
+        app.use(pinia);
         app.use(PrimeVue, {
             theme: {
                 preset: Aura,
@@ -40,6 +42,10 @@ createInertiaApp({
         });
         app.use(ToastService);
         app.use(ConfirmationService);
+
+        // Initialize auth before mounting so guards and admin checks are ready
+        const authStore = useAuthStore(pinia);
+        await authStore.loadFromStorage();
 
         app.mount(el);
 

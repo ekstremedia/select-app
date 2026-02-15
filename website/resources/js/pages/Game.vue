@@ -38,6 +38,19 @@
 
                 <!-- Phase: Lobby -->
                 <div v-if="phase === 'lobby'" class="flex-1 overflow-y-auto">
+                    <!-- Lobby expiring warning -->
+                    <div v-if="gameStore.lobbyExpiring" class="mx-4 mt-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700 text-center">
+                        <p class="text-sm font-medium text-amber-700 dark:text-amber-300 mb-2">
+                            {{ t('lobby.expiringWarning') }}
+                        </p>
+                        <Button
+                            :label="t('lobby.keepOpen')"
+                            severity="warn"
+                            size="small"
+                            @click="handleKeepalive"
+                        />
+                    </div>
+
                     <div class="max-w-md mx-auto px-4 py-8 text-center">
                         <h2 class="text-2xl font-bold mb-2 text-slate-800 dark:text-slate-200">
                             {{ t('lobby.title') }}
@@ -46,26 +59,45 @@
                         <!-- Game code display -->
                         <div class="my-6 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900">
                             <p class="text-xs text-emerald-600 dark:text-emerald-400 mb-1">{{ t('lobby.gameCode') }}</p>
-                            <p class="text-3xl font-mono font-bold tracking-[0.4em] text-emerald-700 dark:text-emerald-300">
+                            <p class="text-xl font-mono font-bold tracking-[0.4em] text-emerald-700 dark:text-emerald-300">
                                 {{ gameStore.gameCode }}
                             </p>
-                            <canvas v-if="qrCanvas" ref="qrTarget" class="mx-auto mt-3 rounded-lg" width="128" height="128"></canvas>
-                            <div class="flex items-center justify-center gap-2 mt-3">
+                            <div class="flex items-center justify-center mt-3">
                                 <Button
                                     :label="copiedLink ? t('lobby.copied') : t('lobby.shareLink')"
                                     size="small"
                                     severity="success"
                                     @click="copyLink"
                                 />
-                                <Button
-                                    :label="copied ? t('lobby.copied') : t('lobby.copyCode')"
-                                    size="small"
-                                    severity="secondary"
-                                    variant="outlined"
-                                    @click="copyCode"
-                                />
                             </div>
                         </div>
+
+                        <!-- Start / End buttons (host only) -->
+                        <div v-if="gameStore.isHost" class="mb-6">
+                            <Button
+                                :label="t('lobby.startGame')"
+                                severity="success"
+                                size="large"
+                                class="w-full"
+                                :disabled="gameStore.players.length < 2"
+                                :loading="startLoading"
+                                @click="handleStart"
+                            />
+                            <p v-if="gameStore.players.length < 2" class="text-sm text-slate-400 mt-2">
+                                {{ t('lobby.needMorePlayers') }}
+                            </p>
+                            <Button
+                                :label="t('lobby.endGame')"
+                                severity="danger"
+                                variant="text"
+                                size="small"
+                                class="w-full mt-2"
+                                @click="handleEndGame"
+                            />
+                        </div>
+                        <p v-else class="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                            {{ t('lobby.waitingForHost') }}
+                        </p>
 
                         <!-- Player list -->
                         <div class="space-y-2 mb-6">
@@ -81,6 +113,7 @@
                                     <span class="font-medium text-slate-800 dark:text-slate-200">{{ player.nickname }}</span>
                                 </div>
                                 <div class="flex items-center gap-2">
+                                    <Badge v-if="player.is_bot" :value="t('lobby.bot')" severity="secondary" />
                                     <Badge v-if="player.id === gameStore.currentGame?.host_player_id" :value="t('lobby.host')" severity="success" />
                                     <Badge v-else-if="player.is_co_host" :value="t('lobby.coHost')" severity="info" />
                                     <Button
@@ -90,6 +123,14 @@
                                         :severity="player.is_co_host ? 'secondary' : 'info'"
                                         variant="text"
                                         @click="handleToggleCoHost(player.id)"
+                                    />
+                                    <Button
+                                        v-if="gameStore.isHost && player.id !== gameStore.currentGame?.host_player_id && player.id !== authStore.player?.id"
+                                        :label="t('lobby.kick')"
+                                        size="small"
+                                        severity="danger"
+                                        variant="text"
+                                        @click="handleKickPlayer(player.id, player.nickname)"
                                     />
                                 </div>
                             </div>
@@ -119,45 +160,32 @@
                             </div>
                         </div>
 
-                        <!-- Start button (host only) -->
-                        <div v-if="gameStore.isHost">
-                            <Button
-                                :label="t('lobby.startGame')"
-                                severity="success"
-                                size="large"
-                                class="w-full"
-                                :disabled="gameStore.players.length < 2"
-                                :loading="startLoading"
-                                @click="handleStart"
-                            />
-                            <p v-if="gameStore.players.length < 2" class="text-sm text-slate-400 mt-2">
-                                {{ t('lobby.needMorePlayers') }}
-                            </p>
-                        </div>
-                        <p v-else class="text-sm text-slate-500 dark:text-slate-400">
-                            {{ t('lobby.waitingForHost') }}
-                        </p>
                     </div>
                 </div>
 
                 <!-- Phase: Playing (answer input) -->
                 <div v-else-if="phase === 'playing'" class="flex-1 overflow-y-auto">
                     <div class="max-w-lg mx-auto px-4 py-6 text-center">
-                        <!-- Acronym display -->
+                        <!-- Acronym display (reactive — letters change color as you type) -->
                         <div class="flex justify-center gap-2 sm:gap-3 mb-6">
                             <span
-                                v-for="(letter, i) in acronymLetters"
+                                v-for="(match, i) in letterMatches"
                                 :key="i"
-                                class="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl text-xl sm:text-3xl font-bold bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border-2 border-emerald-300 dark:border-emerald-700"
+                                class="select-none inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl text-xl sm:text-3xl font-bold border-2 transition-colors duration-150"
+                                :class="match.status === 'correct'
+                                    ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border-emerald-400 dark:border-emerald-600'
+                                    : match.status === 'wrong'
+                                        ? 'bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 border-red-400 dark:border-red-700'
+                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600'"
                             >
-                                {{ letter }}
+                                {{ match.expected }}
                             </span>
                         </div>
 
                         <!-- Submitted + can edit -->
                         <div v-if="gameStore.hasSubmittedAnswer && !isEditing" class="space-y-4">
                             <div class="p-6 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900">
-                                <p class="text-emerald-700 dark:text-emerald-300 font-medium mb-2">{{ gameStore.myAnswer?.text }}</p>
+                                <p class="text-emerald-700 dark:text-emerald-300 font-medium mb-2">{{ gameStore.myAnswer?.text?.toLowerCase() }}</p>
                                 <p v-if="gameStore.currentRound" class="text-xs text-slate-400 mt-2">
                                     {{ gameStore.currentRound.answers_count ?? 0 }}/{{ gameStore.currentRound.total_players ?? gameStore.players.length }} {{ t('game.submitted') }}
                                 </p>
@@ -182,20 +210,9 @@
                                     :placeholder="t('game.yourAnswer')"
                                     rows="3"
                                     class="w-full p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                                    @input="validateAnswer"
+                                    @input="sanitizeAndValidate"
+                                    @keydown.enter.prevent="isAnswerValid && handleSubmitAnswer()"
                                 ></textarea>
-                            </div>
-
-                            <!-- Letter validation feedback -->
-                            <div class="flex justify-center gap-1">
-                                <span
-                                    v-for="(match, i) in letterMatches"
-                                    :key="i"
-                                    class="inline-flex items-center justify-center w-8 h-8 rounded text-sm font-bold"
-                                    :class="match.status === 'correct' ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300' : match.status === 'wrong' ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'"
-                                >
-                                    {{ match.expected }}
-                                </span>
                             </div>
 
                             <p class="text-xs text-slate-400">
@@ -231,17 +248,6 @@
                             {{ t('game.voting') }}
                         </h2>
 
-                        <!-- Acronym reminder -->
-                        <div class="flex justify-center gap-2 mb-6">
-                            <span
-                                v-for="(letter, i) in acronymLetters"
-                                :key="i"
-                                class="inline-flex items-center justify-center w-8 h-8 rounded text-sm font-bold bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300"
-                            >
-                                {{ letter }}
-                            </span>
-                        </div>
-
                         <!-- Vote status -->
                         <p v-if="gameStore.currentRound" class="text-xs text-slate-400 text-center mb-4">
                             {{ gameStore.currentRound.votes_count ?? 0 }}/{{ gameStore.currentRound.total_voters ?? 0 }} {{ t('game.votes') }}
@@ -260,10 +266,10 @@
                                             ? 'border-emerald-500 dark:border-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 cursor-pointer'
                                             : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-emerald-300 dark:hover:border-emerald-700 cursor-pointer'
                                 "
-                                @click="!answer.is_own && !voteLoading && handleDirectVote(answer.id)"
+                                @click="!answer.is_own && !voteLoading && canVote(answer.id) && handleDirectVote(answer.id)"
                             >
                                 <div class="flex items-start justify-between gap-2">
-                                    <p class="text-slate-800 dark:text-slate-200">{{ answer.text }}</p>
+                                    <p class="select-none text-slate-800 dark:text-slate-200">{{ answer.text?.toLowerCase() }}</p>
                                     <span v-if="gameStore.myVote?.answer_id === answer.id" class="shrink-0 text-emerald-500 dark:text-emerald-400 text-xs font-medium">
                                         {{ t('game.yourVote') }}
                                     </span>
@@ -273,7 +279,7 @@
                         </div>
 
                         <p v-if="gameStore.hasVoted" class="text-center text-xs text-slate-400 mt-4">
-                            {{ t('game.tapToChangeVote') }}
+                            {{ voteChangesLeft > 0 ? `${t('game.tapToChangeVote')} (${voteChangesLeft} ${t('game.voteChangesRemaining')})` : t('game.tapToChangeVote') }}
                         </p>
                     </div>
                 </div>
@@ -291,11 +297,11 @@
                                 v-for="(result, i) in gameStore.roundResults"
                                 :key="result.player_id || i"
                                 class="p-4 rounded-xl border border-slate-200 dark:border-slate-800"
-                                :class="isRoundWinner(result, i) ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-900' : 'bg-slate-50 dark:bg-slate-900'"
+                                :class="isRoundWinner(result) ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-900' : 'bg-slate-50 dark:bg-slate-900'"
                             >
                                 <div class="flex items-start justify-between gap-3">
                                     <div>
-                                        <p class="font-medium text-slate-800 dark:text-slate-200">{{ result.answer || result.text }}</p>
+                                        <p class="select-none font-medium text-slate-800 dark:text-slate-200">{{ (result.answer || result.text)?.toLowerCase() }}</p>
                                         <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ result.player_name || result.player_nickname }}</p>
                                     </div>
                                     <div class="text-right shrink-0">
@@ -303,8 +309,8 @@
                                         <p class="text-xs text-slate-400 mt-1">{{ result.votes ?? result.votes_count ?? 0 }} {{ t('game.votes') }}</p>
                                     </div>
                                 </div>
-                                <Badge v-if="isRoundWinner(result, i) && !roundHasTie" :value="t('game.winner')" severity="success" class="mt-2" />
-                                <Badge v-else-if="isRoundWinner(result, i) && roundHasTie" :value="t('game.tie')" severity="warn" class="mt-2" />
+                                <Badge v-if="isRoundWinner(result) && !roundHasTie" :value="t('game.winner')" severity="success" class="mt-2" />
+                                <Badge v-else-if="isRoundWinner(result) && roundHasTie" :value="t('game.tie')" severity="warn" class="mt-2" />
                             </div>
                         </div>
 
@@ -315,7 +321,7 @@
                                 <div
                                     v-for="score in gameStore.scores"
                                     :key="score.player_id"
-                                    class="flex items-center justify-between"
+                                    class="flex items-center justify-between select-none"
                                 >
                                     <span class="text-sm text-slate-700 dark:text-slate-300">{{ score.player_name || score.nickname }}</span>
                                     <span class="text-sm font-bold text-emerald-600 dark:text-emerald-400">{{ score.score }} {{ t('game.points') }}</span>
@@ -335,7 +341,7 @@
                 <div v-else-if="phase === 'finished'" class="flex-1 overflow-y-auto">
                     <div class="max-w-lg mx-auto px-4 py-8 text-center">
                         <h2 class="text-3xl font-bold mb-2 text-emerald-600 dark:text-emerald-400 animate-bounce-in">
-                            {{ t('game.finished') }}
+                            {{ gameStore.currentGame?.settings?.finished_reason === 'inactivity' ? t('game.finishedInactivity') : t('game.finished') }}
                         </h2>
 
                         <!-- Winner -->
@@ -457,12 +463,13 @@
                             class="flex-1 font-mono !text-xs"
                             size="small"
                         />
-                        <Button type="submit" icon="pi pi-send" severity="success" size="small" :disabled="!chatMessage.trim()" />
+                        <Button type="submit" label="Send" severity="success" size="small" :disabled="!chatMessage.trim()" />
                     </form>
                 </div>
             </div>
         </div>
     </GameLayout>
+    <ConfirmDialog />
 </template>
 
 <script setup>
@@ -473,7 +480,8 @@ import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import Badge from 'primevue/badge';
 import ProgressBar from 'primevue/progressbar';
-import QRCode from 'qrcode';
+import ConfirmDialog from 'primevue/confirmdialog';
+import { useConfirm } from 'primevue/useconfirm';
 import confetti from 'canvas-confetti';
 import GameLayout from '../layouts/GameLayout.vue';
 import { useGameStore } from '../stores/gameStore.js';
@@ -487,6 +495,7 @@ const props = defineProps({ code: String });
 const gameStore = useGameStore();
 const authStore = useAuthStore();
 const { t } = useI18n();
+const confirm = useConfirm();
 
 const { phase } = storeToRefs(gameStore);
 
@@ -501,16 +510,17 @@ const chatMessage = ref('');
 const chatContainer = ref(null);
 const answerInput = ref(null);
 const chatInputRef = ref(null);
-const qrTarget = ref(null);
-const qrCanvas = ref(false);
 const copied = ref(false);
 const copiedLink = ref(false);
 const unreadCount = ref(0);
 const isEditing = ref(false);
 const submitCount = ref(0);
 const rematchLoading = ref(false);
+const voteCount = ref(0);
 const MAX_SUBMISSIONS = 3;
+const MAX_VOTES = 3;
 const editsRemaining = computed(() => Math.max(0, MAX_SUBMISSIONS - submitCount.value));
+const voteChangesLeft = computed(() => Math.max(0, MAX_VOTES - voteCount.value));
 
 const totalRounds = computed(() => gameStore.currentGame?.settings?.rounds ?? 5);
 
@@ -522,12 +532,17 @@ const roundHasTie = computed(() => {
     return topVotes === secondVotes && topVotes > 0;
 });
 
-function isRoundWinner(result, index) {
+function isRoundWinner(result) {
     const results = gameStore.roundResults;
     if (!results?.length) return false;
     const topVotes = results[0]?.votes ?? results[0]?.votes_count ?? 0;
     const myVotes = result.votes ?? result.votes_count ?? 0;
     return myVotes > 0 && myVotes === topVotes;
+}
+
+function canVote(answerId) {
+    // Allow clicking the already-voted answer (to see feedback), or if changes remain
+    return gameStore.myVote?.answer_id === answerId || voteChangesLeft.value > 0;
 }
 
 function getFinalRank(index) {
@@ -570,7 +585,7 @@ const timerPercent = computed(() => {
     if (!gameStore.deadline) return 100;
     let total;
     if (phase.value === 'results') {
-        total = gameStore.currentGame?.settings?.time_between_rounds ?? 10;
+        total = gameStore.currentGame?.settings?.time_between_rounds ?? 15;
     } else if (phase.value === 'voting') {
         total = gameStore.currentGame?.settings?.vote_time ?? 30;
     } else {
@@ -580,7 +595,11 @@ const timerPercent = computed(() => {
 });
 
 const letterMatches = computed(() => {
-    const words = answerText.value.trim().split(/\s+/).filter(Boolean);
+    // Use submitted answer text when not editing, otherwise use live input
+    const text = (gameStore.hasSubmittedAnswer && !isEditing.value)
+        ? (gameStore.myAnswer?.text || '')
+        : answerText.value;
+    const words = text.trim().split(/\s+/).filter(Boolean);
     return acronymLetters.value.map((letter, i) => {
         if (i >= words.length) {
             return { expected: letter, status: 'empty' };
@@ -597,12 +616,19 @@ const validWordCount = computed(() => {
     return letterMatches.value.filter((m) => m.status === 'correct').length;
 });
 
-const isAnswerValid = computed(() => {
-    return letterMatches.value.length > 0 && letterMatches.value.every((m) => m.status === 'correct');
+const wordCount = computed(() => {
+    return answerText.value.trim().split(/\s+/).filter(Boolean).length;
 });
 
-function validateAnswer() {
-    // Real-time validation is handled by letterMatches computed
+const isAnswerValid = computed(() => {
+    return letterMatches.value.length > 0
+        && letterMatches.value.every((m) => m.status === 'correct')
+        && wordCount.value === acronymLetters.value.length;
+});
+
+function sanitizeAndValidate() {
+    // Strip characters that aren't letters, spaces, or allowed punctuation (,.!?:;-)
+    answerText.value = answerText.value.replace(/[^\p{L}\s,.!?:;\-]/gu, '');
 }
 
 async function initGame() {
@@ -626,23 +652,10 @@ async function initGame() {
             await gameStore.fetchGameState(props.code);
         }
 
-        // Generate QR code for lobby
-        if (phase.value === 'lobby') {
-            generateQR();
-        }
     } catch (err) {
         error.value = err.response?.data?.message || t('common.error');
     } finally {
         loading.value = false;
-    }
-}
-
-async function generateQR() {
-    qrCanvas.value = true;
-    await nextTick();
-    if (qrTarget.value) {
-        const url = `${window.location.origin}/games/join?code=${props.code}`;
-        QRCode.toCanvas(qrTarget.value, url, { width: 128, margin: 1 });
     }
 }
 
@@ -664,6 +677,31 @@ async function handleStart() {
     } finally {
         startLoading.value = false;
     }
+}
+
+async function handleKeepalive() {
+    try {
+        await gameStore.keepalive(props.code);
+    } catch {
+        // Ignore
+    }
+}
+
+function handleEndGame() {
+    confirm.require({
+        message: t('lobby.endGameConfirm'),
+        header: t('lobby.endGame'),
+        acceptLabel: t('common.confirm'),
+        rejectLabel: t('common.cancel'),
+        accept: async () => {
+            try {
+                await gameStore.endGame(props.code);
+                router.visit('/games');
+            } catch (err) {
+                error.value = err.response?.data?.error || t('common.error');
+            }
+        },
+    });
 }
 
 function startEditing() {
@@ -688,7 +726,12 @@ async function handleSubmitAnswer() {
         submitCount.value++;
         isEditing.value = false;
     } catch (err) {
-        error.value = err.response?.data?.message || t('common.error');
+        const status = err.response?.status;
+        if (status === 422) {
+            error.value = t('game.answerInvalid');
+        } else {
+            error.value = err.response?.data?.error || err.response?.data?.message || t('common.error');
+        }
     } finally {
         submitLoading.value = false;
     }
@@ -697,9 +740,13 @@ async function handleSubmitAnswer() {
 async function handleDirectVote(answerId) {
     if (!answerId || !gameStore.currentRound || voteLoading.value) return;
 
+    // Clicking the same answer you already voted for is a no-op
+    if (gameStore.myVote?.answer_id === answerId) return;
+
     voteLoading.value = true;
     try {
         await gameStore.submitVote(gameStore.currentRound.id, answerId);
+        voteCount.value++;
     } catch (err) {
         error.value = err.response?.data?.message || t('common.error');
     } finally {
@@ -830,6 +877,22 @@ async function handleToggleCoHost(playerId) {
     }
 }
 
+function handleKickPlayer(playerId, nickname) {
+    confirm.require({
+        message: t('lobby.kickConfirm').replace('{name}', nickname),
+        header: t('lobby.kick'),
+        acceptLabel: t('common.confirm'),
+        rejectLabel: t('common.cancel'),
+        accept: async () => {
+            try {
+                await gameStore.kickPlayer(props.code, playerId);
+            } catch (err) {
+                error.value = err.response?.data?.error || t('common.error');
+            }
+        },
+    });
+}
+
 async function handleToggleVisibility() {
     try {
         await gameStore.updateVisibility(props.code, !gameStore.currentGame?.is_public);
@@ -882,6 +945,7 @@ watch(phase, (newPhase, oldPhase) => {
         answerText.value = '';
         isEditing.value = false;
         submitCount.value = 0;
+        voteCount.value = 0;
     }
     if (newPhase === 'finished' && oldPhase !== 'finished') {
         // Only celebrate if there's a clear winner (not a tie)

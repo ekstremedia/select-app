@@ -33,5 +33,12 @@ Route::get('/archive', fn () => Inertia::render('Archive'))->name('archive');
 Route::get('/archive/{code}', fn (string $code) => Inertia::render('ArchiveGame', ['code' => $code]))->name('archive-game');
 Route::get('/leaderboard', fn () => Inertia::render('Leaderboard'))->name('leaderboard');
 Route::get('/hall-of-fame', fn () => Inertia::render('HallOfFame'))->name('hall-of-fame');
-Route::get('/admin', fn () => Inertia::render('Admin'))->name('admin');
-Route::get('/websocket-test', fn () => Inertia::render('WebSocketTest'))->name('websocket-test');
+Route::get('/admin', fn () => Inertia::render('Admin'))->middleware(['auth', 'admin'])->name('admin');
+
+Route::get('/websocket-test', function () {
+    if (! app()->environment('local', 'development')) {
+        abort(404);
+    }
+
+    return Inertia::render('WebSocketTest');
+})->name('websocket-test');

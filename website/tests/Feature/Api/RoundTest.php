@@ -173,7 +173,8 @@ class RoundTest extends TestCase
             ->postJson("/api/v1/rounds/{$round->id}/voting");
 
         $answers = $votingResponse->json('answers');
-        $player2Answer = collect($answers)->firstWhere('player_id', $this->player2->id);
+        $player2AnswerText = implode(' ', $words2);
+        $player2Answer = collect($answers)->firstWhere('text', $player2AnswerText);
 
         // Host votes for player2's answer
         $response = $this->withHeaders(['X-Guest-Token' => $this->hostToken])
@@ -204,7 +205,8 @@ class RoundTest extends TestCase
             ->postJson("/api/v1/rounds/{$round->id}/voting");
 
         $answers = $votingResponse->json('answers');
-        $hostAnswer = collect($answers)->firstWhere('player_id', $this->host->id);
+        $hostAnswerText = implode(' ', $words);
+        $hostAnswer = collect($answers)->firstWhere('text', $hostAnswerText);
 
         // Host tries to vote for own answer
         $response = $this->withHeaders(['X-Guest-Token' => $this->hostToken])

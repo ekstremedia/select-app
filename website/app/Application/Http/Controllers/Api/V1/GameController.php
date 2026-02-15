@@ -4,19 +4,25 @@ namespace App\Application\Http\Controllers\Api\V1;
 
 use App\Application\Broadcasting\Events\ChatMessageBroadcast;
 use App\Application\Broadcasting\Events\CoHostChangedBroadcast;
+use App\Application\Broadcasting\Events\GameFinishedBroadcast;
 use App\Application\Broadcasting\Events\GameRematchBroadcast;
 use App\Application\Broadcasting\Events\GameSettingsChangedBroadcast;
 use App\Application\Broadcasting\Events\GameStartedBroadcast;
 use App\Application\Broadcasting\Events\PlayerJoinedBroadcast;
+use App\Application\Broadcasting\Events\PlayerKickedBroadcast;
 use App\Application\Broadcasting\Events\PlayerLeftBroadcast;
 use App\Application\Broadcasting\Events\RoundStartedBroadcast;
+use App\Application\Jobs\BotSubmitAnswerJob;
 use App\Application\Http\Requests\Api\V1\CreateGameRequest;
 use App\Application\Http\Requests\Api\V1\JoinGameRequest;
 use App\Domain\Game\Actions\CreateGameAction;
 use App\Domain\Game\Actions\GetGameByCodeAction;
 use App\Domain\Game\Actions\JoinGameAction;
+use App\Domain\Game\Actions\KickPlayerAction;
+use App\Domain\Game\Actions\EndGameAction;
 use App\Domain\Game\Actions\LeaveGameAction;
 use App\Domain\Game\Actions\StartGameAction;
+use App\Domain\Player\Actions\CreateBotPlayerAction;
 use App\Http\Controllers\Controller;
 use App\Infrastructure\Models\Game;
 use App\Infrastructure\Models\Round;
@@ -52,7 +58,7 @@ class GameController extends Controller
         return response()->json(['games' => $games]);
     }
 
-    public function store(CreateGameRequest $request, CreateGameAction $action): JsonResponse
+    public function store(CreateGameRequest $request, CreateGameAction $action, CreateBotPlayerAction $createBot, JoinGameAction $joinAction): JsonResponse
     {
         $player = $request->attributes->get('player');
 
@@ -62,6 +68,20 @@ class GameController extends Controller
             (bool) $request->validated('is_public', false),
             $request->validated('password'),
         );
+
+        // Add bots if requested (admin only)
+        if ($request->validated('add_bots') && $player->user?->isAdmin()) {
+            $botCount = rand(3, 5);
+            for ($i = 0; $i < $botCount; $i++) {
+                try {
+                    $bot = $createBot->execute();
+                    $joinAction->execute($game, $bot);
+                } catch (\Throwable $e) {
+                    Log::warning('Failed to add bot to game', ['error' => $e->getMessage()]);
+                }
+            }
+            $game = $game->fresh();
+        }
 
         return response()->json([
             'game' => $this->formatGame($game),
@@ -157,6 +177,16 @@ class GameController extends Controller
             Log::error('Broadcast failed: game.started', ['game' => $code, 'error' => $e->getMessage()]);
         }
 
+        // Dispatch bot answer jobs for round 1
+        $botPlayers = $game->activePlayers()->where('players.is_bot', true)->get();
+        $answerTime = $game->settings['answer_time'] ?? 60;
+        $minDelay = max(3, (int) ($answerTime * 0.2));
+        $maxDelay = max(8, (int) ($answerTime * 0.8));
+        foreach ($botPlayers as $bot) {
+            $delay = rand($minDelay, $maxDelay);
+            BotSubmitAnswerJob::dispatch($round->id, $bot->id)->delay(now()->addSeconds($delay));
+        }
+
         return response()->json([
             'game' => $this->formatGame($game),
             'round' => [
@@ -167,6 +197,44 @@ class GameController extends Controller
                 'answer_deadline' => $round->answer_deadline?->toIso8601String(),
             ],
         ]);
+    }
+
+    public function end(Request $request, string $code, GetGameByCodeAction $getGame, EndGameAction $endAction): JsonResponse
+    {
+        $player = $request->attributes->get('player');
+        $game = $getGame->execute($code);
+
+        if (! $game) {
+            return response()->json(['error' => 'Game not found'], 404);
+        }
+
+        if ($game->isFinished()) {
+            return response()->json(['error' => 'Game is already finished'], 422);
+        }
+
+        if (! $game->isHostOrCoHost($player)) {
+            return response()->json(['error' => 'Only the host or co-host can end the game'], 403);
+        }
+
+        if ($game->isInLobby()) {
+            // Lobby games: just cancel, no scoring needed
+            $game->update([
+                'status' => Game::STATUS_FINISHED,
+                'finished_at' => now(),
+                'settings' => array_merge($game->settings, ['finished_reason' => 'cancelled']),
+            ]);
+
+            try {
+                broadcast(new GameFinishedBroadcast($game, []));
+            } catch (\Throwable $e) {
+                Log::error('Broadcast failed: game.finished', ['game' => $code, 'error' => $e->getMessage()]);
+            }
+        } else {
+            // Active games: use full EndGameAction with scoring
+            $endAction->execute($game, 'ended_by_host');
+        }
+
+        return response()->json(['success' => true]);
     }
 
     public function state(Request $request, string $code, GetGameByCodeAction $getGame): JsonResponse
@@ -206,13 +274,22 @@ class GameController extends Controller
 
             // Include answers if voting or completed
             if ($round->isVoting() || $round->isCompleted()) {
-                $response['answers'] = $round->answers()->with('player')->get()->map(fn ($a) => [
+                $isCompleted = $round->isCompleted();
+                $allAnswers = $round->answers()->with('player')->get();
+
+                // Shuffle during voting for anonymous presentation (seeded for stable order)
+                if (! $isCompleted) {
+                    $allAnswers = $allAnswers->shuffle(crc32($round->id));
+                }
+
+                $response['answers'] = $allAnswers->map(fn ($a) => array_merge([
                     'id' => $a->id,
+                    'text' => $a->text,
+                    'votes_count' => $isCompleted ? $a->votes_count : null,
+                ], $isCompleted ? [
                     'player_id' => $a->player_id,
                     'player_name' => $a->author_nickname ?? $a->player->nickname,
-                    'text' => $a->text,
-                    'votes_count' => $round->isCompleted() ? $a->votes_count : null,
-                ]);
+                ] : []))->values();
 
                 // Check if current player has voted
                 $myVote = $round->answers()
@@ -272,9 +349,7 @@ class GameController extends Controller
         $isAction = $request->boolean('action');
 
         try {
-            $broadcast = new ChatMessageBroadcast($game, $player->nickname, $message);
-            $broadcast->action = $isAction;
-            broadcast($broadcast)->toOthers();
+            broadcast(new ChatMessageBroadcast($game, $player->nickname, $message, false, $isAction))->toOthers();
         } catch (\Throwable $e) {
             Log::error('Broadcast failed: chat.message', ['game' => $code, 'error' => $e->getMessage()]);
         }
@@ -327,6 +402,49 @@ class GameController extends Controller
             'player_id' => $playerId,
             'is_co_host' => $gamePlayer->is_co_host,
         ]);
+    }
+
+    public function kick(Request $request, string $code, string $playerId, GetGameByCodeAction $getGame, KickPlayerAction $action): JsonResponse
+    {
+        $player = $request->attributes->get('player');
+        $game = $getGame->execute($code);
+
+        if (! $game) {
+            return response()->json(['error' => 'Game not found'], 404);
+        }
+
+        try {
+            $action->execute($game, $player, $playerId);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+
+        $kickedPlayer = \App\Infrastructure\Models\Player::find($playerId);
+
+        try {
+            broadcast(new PlayerKickedBroadcast($game, $kickedPlayer, $player->nickname));
+            broadcast(new ChatMessageBroadcast($game, 'Delectus', "{$kickedPlayer->nickname} ble sparket fra spillet av {$player->nickname}", true));
+        } catch (\Throwable $e) {
+            Log::error('Broadcast failed: player.kicked', ['game' => $code, 'error' => $e->getMessage()]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'player_id' => $playerId,
+        ]);
+    }
+
+    public function keepalive(Request $request, string $code, GetGameByCodeAction $getGame): JsonResponse
+    {
+        $game = $getGame->execute($code);
+
+        if (! $game || ! $game->isInLobby()) {
+            return response()->json(['error' => 'Game not found or not in lobby'], 404);
+        }
+
+        $game->touch();
+
+        return response()->json(['success' => true]);
     }
 
     public function rematch(Request $request, string $code, GetGameByCodeAction $getGame, CreateGameAction $createAction, JoinGameAction $joinAction): JsonResponse
@@ -440,6 +558,7 @@ class GameController extends Controller
             'score' => $p->pivot->score,
             'is_host' => $p->id === $game->host_player_id,
             'is_co_host' => (bool) $p->pivot->is_co_host,
+            'is_bot' => (bool) $p->is_bot,
         ]);
 
         $result = [

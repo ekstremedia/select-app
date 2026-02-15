@@ -138,7 +138,7 @@ async function loadGames() {
         const { data } = await api.archive.list(params);
         const newGames = data.games ?? data.data ?? [];
         games.value = page.value === 1 ? newGames : [...games.value, ...newGames];
-        hasMore.value = data.meta?.has_more ?? (data.next_page_url != null) ?? false;
+        hasMore.value = data.meta?.has_more ?? (data.next_page_url != null);
     } catch {
         // Keep existing games on error
     } finally {

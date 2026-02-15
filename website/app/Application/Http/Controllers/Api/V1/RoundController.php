@@ -7,7 +7,6 @@ use App\Application\Broadcasting\Events\GameFinishedBroadcast;
 use App\Application\Broadcasting\Events\RoundCompletedBroadcast;
 use App\Application\Broadcasting\Events\RoundStartedBroadcast;
 use App\Application\Broadcasting\Events\VoteSubmittedBroadcast;
-use App\Application\Broadcasting\Events\VotingStartedBroadcast;
 use App\Application\Http\Requests\Api\V1\SubmitAnswerRequest;
 use App\Application\Http\Requests\Api\V1\SubmitVoteRequest;
 use App\Domain\Game\Actions\GetGameByCodeAction;
@@ -140,18 +139,12 @@ class RoundController extends Controller
             return response()->json(['error' => $e->getMessage()], 422);
         }
 
-        $answers = $round->answers()->with('player')->get()->map(fn ($a) => [
+        // StartVotingAction already broadcasts voting.started with anonymous answers
+        // Return anonymous answer list to the host too
+        $answers = $round->answers()->get()->map(fn ($a) => [
             'id' => $a->id,
-            'player_id' => $a->player_id,
-            'player_name' => $a->author_nickname ?? $a->player->nickname,
             'text' => $a->text,
         ]);
-
-        try {
-            broadcast(new VotingStartedBroadcast($round->game, $round, $answers->toArray()));
-        } catch (\Throwable $e) {
-            Log::error('Broadcast failed: voting.started', ['error' => $e->getMessage()]);
-        }
 
         return response()->json([
             'round' => [
@@ -180,14 +173,22 @@ class RoundController extends Controller
 
         try {
             broadcast(new RoundCompletedBroadcast($round->game, $result['round_results']));
-
-            if ($result['game_finished']) {
-                broadcast(new GameFinishedBroadcast($round->game, $result['final_scores']));
-            } elseif (isset($result['next_round'])) {
-                broadcast(new RoundStartedBroadcast($round->game, $result['next_round']));
-            }
         } catch (\Throwable $e) {
             Log::error('Broadcast failed: round.completed', ['error' => $e->getMessage()]);
+        }
+
+        if ($result['game_finished']) {
+            try {
+                broadcast(new GameFinishedBroadcast($round->game, $result['final_scores']));
+            } catch (\Throwable $e) {
+                Log::error('Broadcast failed: game.finished', ['error' => $e->getMessage()]);
+            }
+        } elseif (isset($result['next_round'])) {
+            try {
+                broadcast(new RoundStartedBroadcast($round->game, $result['next_round']));
+            } catch (\Throwable $e) {
+                Log::error('Broadcast failed: round.started', ['error' => $e->getMessage()]);
+            }
         }
 
         return response()->json($result);

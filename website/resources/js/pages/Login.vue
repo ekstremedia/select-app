@@ -148,6 +148,16 @@ const guestNickname = ref('');
 const guestLoading = ref(false);
 const guestError = ref('');
 
+function getSafeRedirect() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirect = urlParams.get('redirect') || '/games';
+    // Prevent open redirect: must start with / and not //
+    if (redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.includes('://')) {
+        return redirect;
+    }
+    return '/games';
+}
+
 async function handleGuest() {
     if (!guestNickname.value.trim()) return;
 
@@ -156,9 +166,7 @@ async function handleGuest() {
 
     try {
         await authStore.createGuest(guestNickname.value.trim());
-        const urlParams = new URLSearchParams(window.location.search);
-        const redirect = urlParams.get('redirect') || '/games';
-        router.visit(redirect);
+        router.visit(getSafeRedirect());
     } catch (err) {
         const data = err.response?.data;
         guestError.value = data?.errors?.nickname?.[0] || data?.message || t('common.error');
@@ -174,9 +182,7 @@ async function handleLogin() {
 
     try {
         await authStore.login(form.email, form.password, form.twoFactorCode || undefined);
-        const urlParams = new URLSearchParams(window.location.search);
-        const redirect = urlParams.get('redirect') || '/games';
-        router.visit(redirect);
+        router.visit(getSafeRedirect());
     } catch (err) {
         const status = err.response?.status;
         const data = err.response?.data;

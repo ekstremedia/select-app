@@ -6,7 +6,7 @@
         <meta name="description" content="Select — the classic acronym sentence game from #select on EFnet">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <meta name="reverb-key" content="{{ config('reverb.apps.apps.0.key', '') }}">
-        <meta name="reverb-port" content="{{ config('reverb.apps.apps.0.options.port', env('REVERB_PORT', 8080)) }}">
+        <meta name="reverb-port" content="{{ config('reverb.apps.apps.0.options.port', config('broadcasting.connections.reverb.port', 8080)) }}">
 
         <title>{{ config('app.name', 'Select') }}</title>
 

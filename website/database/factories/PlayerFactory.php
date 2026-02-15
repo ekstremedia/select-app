@@ -46,4 +46,12 @@ class PlayerFactory extends Factory
             'user_id' => \App\Models\User::factory(),
         ]);
     }
+
+    public function bot(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_bot' => true,
+            'is_guest' => true,
+        ]);
+    }
 }

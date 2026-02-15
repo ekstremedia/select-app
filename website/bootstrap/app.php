@@ -37,13 +37,13 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->respond(function (Response $response) {
+        $exceptions->respond(function (Response $response, \Throwable $exception, \Illuminate\Http\Request $request) {
             $status = $response->getStatusCode();
 
-            if (in_array($status, [403, 404, 500, 503]) && ! request()->is('api/*', 'debug*')) {
+            if (in_array($status, [403, 404, 500, 503]) && ! $request->is('api/*', 'debug*')) {
                 return Inertia::render('ErrorPage', [
                     'status' => $status,
-                ])->toResponse(request())->setStatusCode($status);
+                ])->toResponse($request)->setStatusCode($status);
             }
 
             return $response;

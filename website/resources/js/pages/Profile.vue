@@ -72,7 +72,7 @@
                                     <span class="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 tracking-widest">
                                         {{ sentence.acronym }}
                                     </span>
-                                    <p class="text-slate-800 dark:text-slate-200 mt-1">{{ sentence.text }}</p>
+                                    <p class="text-slate-800 dark:text-slate-200 mt-1">{{ sentence.text?.toLowerCase() }}</p>
                                 </div>
                                 <Badge :value="`${sentence.votes_count} ${t('game.votes')}`" severity="success" />
                             </div>

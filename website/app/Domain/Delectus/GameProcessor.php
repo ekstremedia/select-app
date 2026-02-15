@@ -5,13 +5,19 @@ declare(strict_types=1);
 namespace App\Domain\Delectus;
 
 use App\Application\Broadcasting\Events\ChatMessageBroadcast;
+use App\Application\Broadcasting\Events\GameFinishedBroadcast;
+use App\Application\Broadcasting\Events\LobbyExpiringBroadcast;
+use App\Application\Broadcasting\Events\RoundCompletedBroadcast;
 use App\Application\Broadcasting\Events\RoundStartedBroadcast;
+use App\Application\Jobs\BotSubmitAnswerJob;
+use App\Application\Jobs\BotSubmitVoteJob;
 use App\Domain\Game\Actions\EndGameAction;
 use App\Domain\Round\Actions\CompleteRoundAction;
 use App\Domain\Round\Actions\StartRoundAction;
 use App\Domain\Round\Actions\StartVotingAction;
 use App\Infrastructure\Models\Game;
 use App\Infrastructure\Models\Round;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -60,6 +66,88 @@ class GameProcessor
         };
     }
 
+    private const LOBBY_TIMEOUT_SECONDS = 300; // 5 minutes
+
+    private const LOBBY_WARNING_SECONDS = 60; // 60 second warning before close
+
+    /**
+     * Process an inactive lobby game.
+     *
+     * Flow:
+     * 1. Inactive > 5 min with no warning → broadcast warning, store timestamp
+     * 2. Warning sent > 60s ago and no keepalive → close lobby
+     * 3. If updated_at is newer than warning → user did keepalive, clear warning
+     */
+    public function processLobby(Game $game): void
+    {
+        $settings = $game->settings;
+        $warningAt = $settings['lobby_warning_at'] ?? null;
+
+        if ($warningAt) {
+            $warningTime = \Carbon\Carbon::parse($warningAt);
+
+            // User did keepalive after warning (updated_at is newer)
+            if ($game->updated_at->gt($warningTime)) {
+                $settings = collect($settings)->except('lobby_warning_at')->all();
+                DB::table('games')->where('id', $game->id)->update(['settings' => json_encode($settings)]);
+
+                return;
+            }
+
+            // Warning expired — close the lobby
+            if ($warningTime->diffInSeconds(now()) >= self::LOBBY_WARNING_SECONDS) {
+                Log::info('Delectus: Closing inactive lobby', ['game_code' => $game->code]);
+
+                $game->update([
+                    'status' => Game::STATUS_FINISHED,
+                    'finished_at' => now(),
+                    'settings' => array_merge($settings, ['finished_reason' => 'lobby_timeout']),
+                ]);
+
+                try {
+                    broadcast(new ChatMessageBroadcast(
+                        $game,
+                        'Delectus',
+                        'Lobbyen ble stengt på grunn av inaktivitet.',
+                        true
+                    ));
+                    broadcast(new GameFinishedBroadcast($game, []));
+                } catch (\Throwable $e) {
+                    // Ignore broadcast failures
+                }
+
+                return;
+            }
+
+            // Still waiting for keepalive, do nothing
+            return;
+        }
+
+        // No warning sent yet — check if idle long enough
+        if ($game->updated_at->diffInSeconds(now()) >= self::LOBBY_TIMEOUT_SECONDS) {
+            Log::info('Delectus: Lobby inactive, sending warning', ['game_code' => $game->code]);
+
+            $settings['lobby_warning_at'] = now()->toIso8601String();
+
+            // Update settings without touching updated_at (raw query)
+            DB::table('games')->where('id', $game->id)->update([
+                'settings' => json_encode($settings),
+            ]);
+
+            try {
+                broadcast(new LobbyExpiringBroadcast($game, self::LOBBY_WARNING_SECONDS));
+                broadcast(new ChatMessageBroadcast(
+                    $game,
+                    'Delectus',
+                    'Lobbyen stenges om 60 sekunder på grunn av inaktivitet. Trykk "Bli" for å holde den åpen.',
+                    true
+                ));
+            } catch (\Throwable $e) {
+                Log::error('Broadcast failed: lobby.expiring', ['game' => $game->code, 'error' => $e->getMessage()]);
+            }
+        }
+    }
+
     /**
      * No current round - start the first round or a new round.
      */
@@ -67,15 +155,14 @@ class GameProcessor
     {
         $completedRounds = $game->rounds()->where('status', 'completed')->count();
         $totalRounds = $game->settings['rounds'] ?? 5;
+        $timeBetweenRounds = $game->settings['time_between_rounds'] ?? 15;
+
+        $lastCompleted = $completedRounds > 0
+            ? $game->rounds()->where('status', 'completed')->latest('updated_at')->first()
+            : null;
 
         if ($completedRounds >= $totalRounds) {
             // All rounds complete — wait for time_between_rounds before ending
-            $timeBetweenRounds = $game->settings['time_between_rounds'] ?? 5;
-            $lastCompleted = $game->rounds()
-                ->where('status', 'completed')
-                ->latest('updated_at')
-                ->first();
-
             if ($lastCompleted && (int) $lastCompleted->updated_at->diffInSeconds(now()) < $timeBetweenRounds) {
                 return; // Still showing results
             }
@@ -87,28 +174,31 @@ class GameProcessor
         }
 
         // Check if the last completed round had 0 answers — abandoned game
-        if ($completedRounds > 0) {
-            $lastCompleted = $game->rounds()
-                ->where('status', 'completed')
-                ->latest('round_number')
-                ->first();
+        if ($lastCompleted && $lastCompleted->answers()->count() === 0) {
+            Log::info('Delectus: Last round had no answers, ending game', [
+                'game_code' => $game->code,
+                'round' => $lastCompleted->round_number,
+            ]);
 
-            if ($lastCompleted && $lastCompleted->answers()->count() === 0) {
-                Log::info('Delectus: Last round had no answers, ending game', [
-                    'game_code' => $game->code,
-                    'round' => $lastCompleted->round_number,
-                ]);
-                $this->endGameAction->execute($game);
-
-                return;
+            try {
+                broadcast(new ChatMessageBroadcast(
+                    $game,
+                    'Delectus',
+                    'Spillet ble avsluttet på grunn av manglende deltakelse.',
+                    true
+                ));
+            } catch (\Throwable $e) {
+                // Ignore broadcast failures
             }
 
-            // Check time_between_rounds delay
-            $timeBetweenRounds = $game->settings['time_between_rounds'] ?? 5;
+            $this->endGameAction->execute($game, 'inactivity');
 
-            if ($timeBetweenRounds > 0 && $lastCompleted && (int) $lastCompleted->updated_at->diffInSeconds(now()) < $timeBetweenRounds) {
-                return; // Still waiting between rounds
-            }
+            return;
+        }
+
+        // Check time_between_rounds delay
+        if ($lastCompleted && $timeBetweenRounds > 0 && (int) $lastCompleted->updated_at->diffInSeconds(now()) < $timeBetweenRounds) {
+            return; // Still waiting between rounds
         }
 
         // Check active players — end game if 0 or 1 left
@@ -138,6 +228,9 @@ class GameProcessor
         } catch (\Throwable $e) {
             Log::error('Broadcast failed: round.started', ['game' => $game->code, 'error' => $e->getMessage()]);
         }
+
+        // Dispatch bot answer jobs with random delays
+        $this->dispatchBotAnswers($game, $round);
     }
 
     /**
@@ -200,7 +293,18 @@ class GameProcessor
             // Mark the round as completed (skipped) so it doesn't block
             $round->update(['status' => Round::STATUS_COMPLETED]);
 
-            $this->endGameAction->execute($game);
+            try {
+                broadcast(new ChatMessageBroadcast(
+                    $game,
+                    'Delectus',
+                    'Spillet ble avsluttet på grunn av manglende deltakelse.',
+                    true
+                ));
+            } catch (\Throwable $e) {
+                // Ignore broadcast failures
+            }
+
+            $this->endGameAction->execute($game, 'inactivity');
 
             return;
         }
@@ -217,7 +321,7 @@ class GameProcessor
             $game->update(['status' => Game::STATUS_PLAYING]);
 
             try {
-                broadcast(new \App\Application\Broadcasting\Events\RoundCompletedBroadcast(
+                broadcast(new RoundCompletedBroadcast(
                     $game,
                     $this->completeRoundAction->getScoresWithoutVoting($round)
                 ));
@@ -235,6 +339,9 @@ class GameProcessor
         ]);
 
         $this->startVotingAction->execute($round);
+
+        // Dispatch bot vote jobs with random delays
+        $this->dispatchBotVotes($game, $round);
     }
 
     /**
@@ -251,5 +358,39 @@ class GameProcessor
         $this->completeRoundAction->execute($round);
 
         // The next tick will start the new round or end the game
+    }
+
+    /**
+     * Dispatch delayed answer jobs for all bot players in the game.
+     */
+    private function dispatchBotAnswers(Game $game, Round $round): void
+    {
+        $botPlayers = $game->activePlayers()->where('players.is_bot', true)->get();
+        $answerTime = $game->settings['answer_time'] ?? 60;
+        // Bots answer between 20%-80% of answer time, spread out
+        $minDelay = max(3, (int) ($answerTime * 0.2));
+        $maxDelay = max(8, (int) ($answerTime * 0.8));
+
+        foreach ($botPlayers as $bot) {
+            $delay = rand($minDelay, $maxDelay);
+            BotSubmitAnswerJob::dispatch($round->id, $bot->id)->delay(now()->addSeconds($delay));
+        }
+    }
+
+    /**
+     * Dispatch delayed vote jobs for all bot players in the game.
+     */
+    private function dispatchBotVotes(Game $game, Round $round): void
+    {
+        $botPlayers = $game->activePlayers()->where('players.is_bot', true)->get();
+        $voteTime = $game->settings['vote_time'] ?? 30;
+        // Bots vote between 15%-70% of vote time, spread out
+        $minDelay = max(2, (int) ($voteTime * 0.15));
+        $maxDelay = max(5, (int) ($voteTime * 0.7));
+
+        foreach ($botPlayers as $bot) {
+            $delay = rand($minDelay, $maxDelay);
+            BotSubmitVoteJob::dispatch($round->id, $bot->id)->delay(now()->addSeconds($delay));
+        }
     }
 }

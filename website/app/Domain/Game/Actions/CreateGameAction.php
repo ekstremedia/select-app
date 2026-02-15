@@ -44,6 +44,10 @@ class CreateGameAction
             $attempts++;
         } while (Game::where('code', $code)->exists() && $attempts < 50);
 
+        if (Game::where('code', $code)->exists()) {
+            throw new \RuntimeException('Unable to generate unique game code after 50 attempts');
+        }
+
         return $code;
     }
 }

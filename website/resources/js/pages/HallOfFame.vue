@@ -40,7 +40,7 @@
                     </span>
                     <Badge :value="`${sentence.votes_count} ${t('game.votes')}`" severity="success" />
                 </div>
-                <p class="text-slate-800 dark:text-slate-200 mb-2">{{ sentence.text }}</p>
+                <p class="text-slate-800 dark:text-slate-200 mb-2">{{ sentence.text?.toLowerCase() }}</p>
                 <div class="flex items-center justify-between">
                     <Link
                         :href="`/profile/${sentence.player_nickname}`"

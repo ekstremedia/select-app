@@ -48,6 +48,21 @@ class DelectusService
             }
         }
 
+        // Process stale lobbies (check every tick, logic inside handles timing)
+        $lobbyGames = $this->findStaleLobbies();
+        foreach ($lobbyGames as $game) {
+            try {
+                $this->gameProcessor->processLobby($game);
+                $processed++;
+            } catch (\Throwable $e) {
+                Log::error('Delectus: Error processing lobby', [
+                    'game_id' => $game->id,
+                    'game_code' => $game->code,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         return $processed;
     }
 
@@ -55,15 +70,15 @@ class DelectusService
      * Find all games that need Delectus to take action.
      *
      * A game needs attention when:
-     * 1. Status is 'playing' AND has a current round AND:
+     * 1. Status is 'playing' or 'voting' AND has a current round AND:
      *    - Round is 'answering' and answer_deadline has passed
-     *    - Round is 'voting' and voting_deadline has passed
-     * 2. Status is 'playing' AND no current round (needs to start one)
+     *    - Round is 'voting' and vote_deadline has passed
+     * 2. Status is 'playing' AND no current round (needs to start one or end game)
      */
     protected function findGamesNeedingAttention()
     {
         return Game::whereIn('status', ['playing', 'voting'])
-            ->with(['rounds'])
+            ->with(['rounds' => fn ($q) => $q->whereIn('status', ['answering', 'voting'])])
             ->get()
             ->filter(function (Game $game) {
                 // Find the active round from eager-loaded rounds
@@ -88,6 +103,17 @@ class DelectusService
 
                 return false;
             });
+    }
+
+    /**
+     * Find lobby games that have been inactive for over 4 minutes.
+     * (Warning is sent at 5 min, close at 6 min — we query with buffer.)
+     */
+    protected function findStaleLobbies()
+    {
+        return Game::where('status', 'lobby')
+            ->where('updated_at', '<=', now()->subMinutes(4))
+            ->get();
     }
 
     /**

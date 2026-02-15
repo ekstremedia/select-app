@@ -9,16 +9,13 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class ChatMessageBroadcast implements ShouldBroadcastNow
+class LobbyExpiringBroadcast implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public function __construct(
         public Game $game,
-        public string $nickname,
-        public string $message,
-        public bool $system = false,
-        public bool $action = false,
+        public int $expiresInSeconds,
     ) {}
 
     public function broadcastOn(): array
@@ -30,16 +27,13 @@ class ChatMessageBroadcast implements ShouldBroadcastNow
 
     public function broadcastAs(): string
     {
-        return 'chat.message';
+        return 'lobby.expiring';
     }
 
     public function broadcastWith(): array
     {
         return [
-            'nickname' => $this->nickname,
-            'message' => $this->message,
-            'system' => $this->system,
-            'action' => $this->action,
+            'expires_in_seconds' => $this->expiresInSeconds,
         ];
     }
 }
