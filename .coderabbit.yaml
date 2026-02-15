@@ -1,0 +1,23 @@
+language: en
+reviews:
+  profile: concise
+  request_changes_workflow: true
+  high_level_summary: true
+  high_level_summary_placeholder: "@coderabbitai summary"
+  auto_title_placeholder: "@coderabbitai"
+  review_status: true
+  path_instructions:
+    - path: "website/**"
+      instructions: |
+        Review all changes. Focus on bugs, security issues, and logic errors.
+        Keep feedback short and actionable - one line per issue.
+        Format each issue as: `file:line - issue description. Fix: suggested fix`
+        Skip praise, skip style nitpicks (Pint handles formatting).
+        This is a Laravel 12 + Vue 3 + PrimeVue app with DDD architecture.
+  path_filters:
+    - "!website/public/build/**"
+    - "!**/*.lock"
+    - "!**/node_modules/**"
+    - "!**/vendor/**"
+chat:
+  auto_reply: true
