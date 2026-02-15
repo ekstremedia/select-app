@@ -61,14 +61,14 @@ class GameTest extends TestCase
         $this->assertCount(1, $response->json('game.players'));
     }
 
-    public function test_game_code_is_6_characters(): void
+    public function test_game_code_is_4_characters(): void
     {
         $response = $this->withHeaders([
             'X-Guest-Token' => $this->guestToken,
         ])->postJson('/api/v1/games');
 
         $code = $response->json('game.code');
-        $this->assertEquals(6, strlen($code));
+        $this->assertEquals(4, strlen($code));
         $this->assertMatchesRegularExpression('/^[A-Z0-9]+$/', $code);
     }
 
