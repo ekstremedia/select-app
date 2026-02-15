@@ -571,7 +571,7 @@ function copyCode() {
 
 function copyLink() {
     const code = gameStore.gameCode || route.params.code;
-    const url = `${window.location.origin}/games/join?code=${code}`;
+    const url = `${window.location.origin}/games/${code}`;
     navigator.clipboard.writeText(url);
     copiedLink.value = true;
     setTimeout(() => { copiedLink.value = false; }, 2000);
