@@ -18,6 +18,8 @@ class GamePlayer extends Model
         'is_active',
         'is_co_host',
         'kicked_by',
+        'banned_by',
+        'ban_reason',
         'joined_at',
     ];
 
@@ -31,6 +33,11 @@ class GamePlayer extends Model
     public function isKicked(): bool
     {
         return $this->kicked_by !== null;
+    }
+
+    public function isBanned(): bool
+    {
+        return $this->banned_by !== null;
     }
 
     public function game(): BelongsTo

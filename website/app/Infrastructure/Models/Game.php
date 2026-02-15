@@ -152,7 +152,8 @@ class Game extends Model
     public function scopePublicJoinable($query)
     {
         return $query->where('is_public', true)
-            ->whereIn('status', [self::STATUS_LOBBY, self::STATUS_PLAYING, self::STATUS_VOTING]);
+            ->whereIn('status', [self::STATUS_LOBBY, self::STATUS_PLAYING, self::STATUS_VOTING])
+            ->where('updated_at', '>=', now()->subHours(2));
     }
 
     public function scopeFinished($query)

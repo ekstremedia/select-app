@@ -42,7 +42,7 @@
             <Column field="nickname" :header="t('leaderboard.player')">
                 <template #body="{ data }">
                     <Link
-                        :href="`/profile/${data.nickname}`"
+                        :href="`/profil/${data.nickname}`"
                         class="font-medium text-slate-800 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400"
                     >
                         {{ data.nickname }}

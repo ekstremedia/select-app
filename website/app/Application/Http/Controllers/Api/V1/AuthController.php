@@ -10,6 +10,7 @@ use App\Application\Http\Requests\Api\V1\RegisterRequest;
 use App\Application\Http\Requests\Api\V1\ResetPasswordRequest;
 use App\Application\Http\Requests\Api\V1\UpdateNicknameRequest;
 use App\Application\Http\Requests\Api\V1\UpdatePasswordRequest;
+use App\Application\Mail\WelcomeMail;
 use App\Domain\Player\Actions\ConvertGuestToUserAction;
 use App\Domain\Player\Actions\CreateGuestPlayerAction;
 use App\Http\Controllers\Controller;
@@ -18,6 +19,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use PragmaRX\Google2FA\Google2FA;
@@ -56,6 +58,8 @@ class AuthController extends Controller
 
                 $token = $player->user->createToken('api')->plainTextToken;
 
+                Mail::to($player->user)->send(new WelcomeMail($player->user));
+
                 return response()->json([
                     'player' => [
                         'id' => $player->id,
@@ -91,6 +95,8 @@ class AuthController extends Controller
         ]);
 
         $token = $user->createToken('api')->plainTextToken;
+
+        Mail::to($user)->send(new WelcomeMail($user));
 
         return response()->json([
             'player' => [

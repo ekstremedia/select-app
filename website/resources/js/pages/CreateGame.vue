@@ -111,8 +111,8 @@
                 </div>
             </div>
 
-            <!-- Bot players (admin only) -->
-            <div v-if="authStore.isAdmin" class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+            <!-- Bot players -->
+            <div class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                 <div class="flex items-center gap-3">
                     <Checkbox v-model="settings.add_bots" :binary="true" inputId="addBots" />
                     <div>
@@ -130,7 +130,7 @@
                     severity="secondary"
                     variant="outlined"
                     class="flex-1"
-                    @click="router.visit('/games')"
+                    @click="router.visit('/spill')"
                 />
                 <Button
                     type="submit"
@@ -206,7 +206,7 @@ async function handleCreate() {
 
         const data = await gameStore.createGame(payload);
         const code = data.game?.code || gameStore.gameCode;
-        router.visit(`/games/${code}`);
+        router.visit(`/spill/${code}`);
     } catch (err) {
         error.value = err.response?.data?.message || t('common.error');
     } finally {

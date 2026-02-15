@@ -34,8 +34,14 @@ class JoinGameAction
                 ->first();
 
             if ($existing) {
-                if ($existing->isKicked()) {
-                    throw new \InvalidArgumentException('You have been kicked from this game');
+                if ($existing->isBanned()) {
+                    throw new \InvalidArgumentException('Du er utestengt fra dette spillet');
+                }
+                if ($existing->isKicked() && ! $existing->isBanned()) {
+                    // Kicked but not banned — allow rejoin, clear kicked_by
+                    $existing->update(['is_active' => true, 'kicked_by' => null]);
+
+                    return $existing;
                 }
                 if ($existing->is_active) {
                     throw new \InvalidArgumentException('Player already in game');

@@ -80,6 +80,12 @@
     }
 
   </style>
+  <style type="text/css">
+    a {
+      color: #059669;
+    }
+
+  </style>
 </head>
 
 <body style="word-spacing:normal;background-color:#f3f4f6;">
@@ -120,27 +126,40 @@
                   <tbody>
                     <tr>
                       <td align="left" style="font-size:0px;padding:10px 25px;padding-bottom:8px;word-break:break-word;">
-                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:22px;font-weight:600;line-height:1.6;text-align:left;color:#111827;">Kontoen din er utestengt</div>
+                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:22px;font-weight:600;line-height:1.6;text-align:left;color:#111827;">Tilbakestill passord</div>
                       </td>
                     </tr>
                     <tr>
                       <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:16px;line-height:1.6;text-align:left;color:#374151;">Hei {{ $user->nickname ?? $user->name }}.</div>
+                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:16px;line-height:1.6;text-align:left;color:#374151;">Hei {{ $user->nickname ?? $user->name }}!</div>
                       </td>
                     </tr>
                     <tr>
                       <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:16px;line-height:1.6;text-align:left;color:#374151;">Kontoen din p&#229; SELECT har blitt utestengt.</div>
+                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:16px;line-height:1.6;text-align:left;color:#374151;">Vi mottok en foresp&#248;rsel om &#229; tilbakestille passordet ditt. Klikk p&#229; knappen under for &#229; velge et nytt passord.</div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="font-size:0px;padding:24px 0;word-break:break-word;">
+                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
+                          <tbody>
+                            <tr>
+                              <td align="center" bgcolor="#059669" role="presentation" style="border:none;border-radius:8px;cursor:auto;mso-padding-alt:10px 25px;background:#059669;" valign="middle">
+                                <a href="{{ $url }}" style="display:inline-block;background:#059669;color:#ffffff;font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:16px;font-weight:600;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 25px;mso-padding-alt:0px;border-radius:8px;" target="_blank"> Velg nytt passord </a>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </td>
                     </tr>
                     <tr>
                       <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:16px;line-height:1.6;text-align:left;color:#374151;"><strong>&#197;rsak:</strong> {{ $reason }}</div>
+                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#6b7280;">Denne lenken utl&#248;per om 60 minutter.</div>
                       </td>
                     </tr>
                     <tr>
                       <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#6b7280;">Hvis du mener dette er feil, ta kontakt med oss.</div>
+                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#6b7280;">Hvis du ikke ba om &#229; tilbakestille passordet ditt, kan du trygt ignorere denne e-posten.</div>
                       </td>
                     </tr>
                   </tbody>

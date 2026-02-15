@@ -13,8 +13,10 @@ use App\Application\Broadcasting\Events\PlayerKickedBroadcast;
 use App\Application\Broadcasting\Events\PlayerLeftBroadcast;
 use App\Application\Broadcasting\Events\RoundStartedBroadcast;
 use App\Application\Http\Requests\Api\V1\CreateGameRequest;
+use App\Application\Http\Requests\Api\V1\InvitePlayerRequest;
 use App\Application\Http\Requests\Api\V1\JoinGameRequest;
 use App\Application\Jobs\BotSubmitAnswerJob;
+use App\Application\Mail\GameInviteMail;
 use App\Domain\Game\Actions\CreateGameAction;
 use App\Domain\Game\Actions\EndGameAction;
 use App\Domain\Game\Actions\GetGameByCodeAction;
@@ -25,10 +27,12 @@ use App\Domain\Game\Actions\StartGameAction;
 use App\Domain\Player\Actions\CreateBotPlayerAction;
 use App\Http\Controllers\Controller;
 use App\Infrastructure\Models\Game;
+use App\Infrastructure\Models\Player;
 use App\Infrastructure\Models\Round;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 
 class GameController extends Controller
@@ -436,6 +440,102 @@ class GameController extends Controller
         ]);
     }
 
+    public function banPlayer(Request $request, string $code, string $playerId, GetGameByCodeAction $getGame): JsonResponse
+    {
+        $player = $request->attributes->get('player');
+        $game = $getGame->execute($code);
+
+        if (! $game) {
+            return response()->json(['error' => 'Game not found'], 404);
+        }
+
+        if ($game->isFinished()) {
+            return response()->json(['error' => 'Cannot ban players from a finished game'], 422);
+        }
+
+        if (! $game->isHostOrCoHost($player)) {
+            return response()->json(['error' => 'Only the host or co-host can ban players'], 403);
+        }
+
+        if ($playerId === $game->host_player_id) {
+            return response()->json(['error' => 'Cannot ban the host'], 422);
+        }
+
+        $request->validate([
+            'reason' => 'nullable|string|max:200',
+        ]);
+
+        $gamePlayer = $game->gamePlayers()
+            ->where('player_id', $playerId)
+            ->first();
+
+        if (! $gamePlayer) {
+            return response()->json(['error' => 'Player not found in this game'], 404);
+        }
+
+        $gamePlayer->update([
+            'is_active' => false,
+            'is_co_host' => false,
+            'kicked_by' => $player->id,
+            'banned_by' => $player->id,
+            'ban_reason' => $request->input('reason'),
+        ]);
+
+        $bannedPlayer = Player::find($playerId);
+
+        if ($bannedPlayer) {
+            try {
+                broadcast(new PlayerKickedBroadcast($game, $bannedPlayer, $player->nickname, true, $request->input('reason')));
+                broadcast(new ChatMessageBroadcast($game, 'Delectus', "{$bannedPlayer->nickname} ble utestengt fra spillet av {$player->nickname}", true));
+            } catch (\Throwable $e) {
+                Log::error('Broadcast failed: player.banned', ['game' => $code, 'error' => $e->getMessage()]);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'player_id' => $playerId,
+        ]);
+    }
+
+    public function unbanPlayer(Request $request, string $code, string $playerId, GetGameByCodeAction $getGame): JsonResponse
+    {
+        $player = $request->attributes->get('player');
+        $game = $getGame->execute($code);
+
+        if (! $game) {
+            return response()->json(['error' => 'Game not found'], 404);
+        }
+
+        if (! $game->isInLobby()) {
+            return response()->json(['error' => 'Can only unban players in the lobby'], 422);
+        }
+
+        if (! $game->isHostOrCoHost($player)) {
+            return response()->json(['error' => 'Only the host or co-host can unban players'], 403);
+        }
+
+        $gamePlayer = $game->gamePlayers()
+            ->where('player_id', $playerId)
+            ->whereNotNull('banned_by')
+            ->first();
+
+        if (! $gamePlayer) {
+            return response()->json(['error' => 'Banned player not found'], 404);
+        }
+
+        $gamePlayer->update([
+            'banned_by' => null,
+            'ban_reason' => null,
+            'kicked_by' => null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'player_id' => $playerId,
+        ]);
+    }
+
     public function keepalive(Request $request, string $code, GetGameByCodeAction $getGame): JsonResponse
     {
         $game = $getGame->execute($code);
@@ -530,6 +630,53 @@ class GameController extends Controller
         ]);
     }
 
+    public function invite(InvitePlayerRequest $request, string $code, GetGameByCodeAction $getGame): JsonResponse
+    {
+        $player = $request->attributes->get('player');
+        $game = $getGame->execute($code);
+
+        if (! $game) {
+            return response()->json(['error' => 'Game not found'], 404);
+        }
+
+        if (! $game->isInLobby()) {
+            return response()->json(['error' => 'Invites can only be sent from the lobby'], 422);
+        }
+
+        $isParticipant = $game->gamePlayers()
+            ->where('player_id', $player->id)
+            ->where('is_active', true)
+            ->exists();
+
+        if (! $isParticipant) {
+            return response()->json(['error' => 'Only game participants can send invites'], 403);
+        }
+
+        // Rate limit: 5 invites per player per 10 minutes
+        $rateLimitKey = 'game-invite:'.$player->id;
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 5)) {
+            $seconds = RateLimiter::availableIn($rateLimitKey);
+
+            return response()->json([
+                'error' => 'Too many invites. Try again later.',
+                'retry_after' => $seconds,
+            ], 429);
+        }
+        RateLimiter::hit($rateLimitKey, 600);
+
+        $gameUrl = config('app.url').'/spill/'.$game->code;
+
+        Mail::to($request->validated('email'))
+            ->send(new GameInviteMail($player, $game, $gameUrl));
+
+        $remaining = 5 - RateLimiter::attempts($rateLimitKey);
+
+        return response()->json([
+            'sent' => true,
+            'invites_remaining' => max(0, $remaining),
+        ]);
+    }
+
     private function derivePhase(Game $game, ?Round $round): string
     {
         if ($game->isInLobby()) {
@@ -575,6 +722,18 @@ class GameController extends Controller
             'has_password' => ! is_null($game->password),
             'players' => $players,
         ];
+
+        // Include banned players for host visibility
+        $bannedPlayers = $game->gamePlayers()
+            ->whereNotNull('banned_by')
+            ->with('player')
+            ->get()
+            ->map(fn ($gp) => [
+                'id' => $gp->player_id,
+                'nickname' => $gp->player->nickname,
+                'ban_reason' => $gp->ban_reason,
+            ]);
+        $result['banned_players'] = $bannedPlayers;
 
         // Include winner info for finished games
         if ($game->isFinished()) {

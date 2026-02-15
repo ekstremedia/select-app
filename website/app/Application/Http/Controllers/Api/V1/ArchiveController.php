@@ -68,10 +68,14 @@ class ArchiveController extends Controller
                 ]),
             ]);
 
+            $finalScores = $game->gameResult?->final_scores ?? [];
+            $winnerIds = collect($finalScores)->where('is_winner', true)->pluck('player_id')->all();
+
             $players = $game->gamePlayers->sortByDesc('score')->values()->map(fn ($gp, $i) => [
                 'nickname' => $gp->player->nickname,
                 'score' => $gp->score,
                 'rank' => $i + 1,
+                'is_winner' => in_array($gp->player_id, $winnerIds),
             ]);
 
             return [

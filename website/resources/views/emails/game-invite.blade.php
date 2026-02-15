@@ -80,6 +80,12 @@
     }
 
   </style>
+  <style type="text/css">
+    a {
+      color: #059669;
+    }
+
+  </style>
 </head>
 
 <body style="word-spacing:normal;background-color:#f3f4f6;">
@@ -120,27 +126,35 @@
                   <tbody>
                     <tr>
                       <td align="left" style="font-size:0px;padding:10px 25px;padding-bottom:8px;word-break:break-word;">
-                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:22px;font-weight:600;line-height:1.6;text-align:left;color:#111827;">Kontoen din er utestengt</div>
+                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:22px;font-weight:600;line-height:1.6;text-align:left;color:#111827;">Du er invitert til et spill!</div>
                       </td>
                     </tr>
                     <tr>
                       <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:16px;line-height:1.6;text-align:left;color:#374151;">Hei {{ $user->nickname ?? $user->name }}.</div>
+                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:16px;line-height:1.6;text-align:left;color:#374151;">{{ $inviter->nickname }} har invitert deg til &#229; spille SELECT &mdash; akronymspillet der kreativitet og humor vinner.</div>
                       </td>
                     </tr>
                     <tr>
                       <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:16px;line-height:1.6;text-align:left;color:#374151;">Kontoen din p&#229; SELECT har blitt utestengt.</div>
+                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:16px;line-height:1.6;text-align:left;color:#374151;">Spillkode: <strong>{{ $game->code }}</strong></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="font-size:0px;padding:24px 0;word-break:break-word;">
+                        <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
+                          <tbody>
+                            <tr>
+                              <td align="center" bgcolor="#059669" role="presentation" style="border:none;border-radius:8px;cursor:auto;mso-padding-alt:10px 25px;background:#059669;" valign="middle">
+                                <a href="{{ $gameUrl }}" style="display:inline-block;background:#059669;color:#ffffff;font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:16px;font-weight:600;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 25px;mso-padding-alt:0px;border-radius:8px;" target="_blank"> Bli med i spillet </a>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </td>
                     </tr>
                     <tr>
                       <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:16px;line-height:1.6;text-align:left;color:#374151;"><strong>&#197;rsak:</strong> {{ $reason }}</div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#6b7280;">Hvis du mener dette er feil, ta kontakt med oss.</div>
+                        <div style="font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;text-align:left;color:#6b7280;">Klikk p&#229; knappen over for &#229; bli med. Ingen konto n&#248;dvendig &mdash; du kan spille som gjest!</div>
                       </td>
                     </tr>
                   </tbody>

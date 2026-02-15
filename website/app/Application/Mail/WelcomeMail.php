@@ -19,14 +19,14 @@ class WelcomeMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Welcome to SELECT!',
+            subject: 'Velkommen til SELECT!',
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.welcome',
+            html: 'emails.welcome',
         );
     }
 }

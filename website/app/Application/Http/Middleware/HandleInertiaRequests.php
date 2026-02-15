@@ -32,6 +32,7 @@ class HandleInertiaRequests extends Middleware
             if (Schema::hasTable('gullkorn_clean')) {
                 $gullkorn = DB::table('gullkorn_clean')
                     ->where('stemmer', '>', 4)
+                    ->whereRaw("array_length(regexp_split_to_array(trim(setning), E'\\\\s+'), 1) BETWEEN 3 AND 6")
                     ->inRandomOrder()
                     ->first();
 

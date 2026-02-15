@@ -36,7 +36,7 @@
         </form>
 
         <p class="mt-8">
-            <Link href="/games" class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline">
+            <Link href="/spill" class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline">
                 {{ t('common.back') }}
             </Link>
         </p>
@@ -71,7 +71,7 @@ async function handleJoin() {
 
     try {
         await gameStore.joinGame(code.value);
-        router.visit(`/games/${code.value}`);
+        router.visit(`/spill/${code.value}`);
     } catch (err) {
         error.value = err.response?.data?.message || t('common.error');
     } finally {

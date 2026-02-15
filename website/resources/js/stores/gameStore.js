@@ -128,6 +128,23 @@ export const useGameStore = defineStore('game', () => {
         return data;
     }
 
+    async function banPlayer(code, playerId, reason) {
+        const { data } = await api.games.ban(code, playerId, reason);
+        // Remove from local player list
+        players.value = players.value.filter(p => p.id !== data.player_id);
+        return data;
+    }
+
+    async function unbanPlayer(code, playerId) {
+        const { data } = await api.games.unban(code, playerId);
+        // Refresh game to update banned_players list
+        if (currentGame.value) {
+            const refreshed = await api.games.get(code);
+            currentGame.value = refreshed.data.game;
+        }
+        return data;
+    }
+
     async function toggleCoHost(code, playerId) {
         const { data } = await api.games.toggleCoHost(code, playerId);
         // Update local player list
@@ -281,12 +298,19 @@ export const useGameStore = defineStore('game', () => {
             })
             .listen('.player.kicked', (data) => {
                 players.value = players.value.filter((p) => p.id !== data.player_id);
-                // If I was kicked, redirect to games list
+                // If I was kicked/banned, redirect to games list
                 const authStore = _getAuthStore();
                 if (authStore?.player?.id === data.player_id) {
-                    sessionStorage.setItem('select-kicked', '1');
+                    if (data.banned) {
+                        sessionStorage.setItem('select-kicked', 'banned');
+                        if (data.ban_reason) {
+                            sessionStorage.setItem('select-banned-reason', data.ban_reason);
+                        }
+                    } else {
+                        sessionStorage.setItem('select-kicked', 'kicked');
+                    }
                     resetState();
-                    window.location.href = '/games';
+                    window.location.href = '/spill';
                 }
             })
             .listen('.game.started', (data) => {
@@ -361,7 +385,7 @@ export const useGameStore = defineStore('game', () => {
                 if (data.new_game_code) {
                     // Navigate to the new game — Inertia router is not available here
                     // so use window.location for a full redirect
-                    window.location.href = `/games/${data.new_game_code}`;
+                    window.location.href = `/spill/${data.new_game_code}`;
                 }
             })
             .listen('.co_host.changed', (data) => {
@@ -579,6 +603,8 @@ export const useGameStore = defineStore('game', () => {
         endGame,
         keepalive,
         kickPlayer,
+        banPlayer,
+        unbanPlayer,
         toggleCoHost,
         updateVisibility,
         rematch,

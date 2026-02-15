@@ -1,5 +1,68 @@
 <template>
     <div class="max-w-md mx-auto px-4 py-12 sm:py-20">
+        <!-- Game invite banner -->
+        <div v-if="gamePreview" class="mb-6 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-center">
+            <p class="text-sm font-medium text-emerald-700 dark:text-emerald-300 mb-1">
+                {{ t('auth.joiningGame') }}
+            </p>
+            <p class="text-xl font-mono font-bold tracking-[0.3em] text-emerald-600 dark:text-emerald-400">
+                #{{ gamePreview.code }}
+            </p>
+            <p class="text-sm text-emerald-600 dark:text-emerald-400 mt-1">
+                {{ t('auth.gameWithPlayers').replace('{count}', gamePreview.player_count) }}
+            </p>
+            <div class="flex flex-wrap justify-center gap-1.5 mt-2">
+                <span
+                    v-for="name in gamePreview.players"
+                    :key="name"
+                    class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300"
+                >{{ name }}</span>
+            </div>
+        </div>
+
+        <!-- Quick join hint + guest section on top when from invite (and not converting) -->
+        <template v-if="gamePreview && !isConvertingGuest">
+            <p class="text-center text-sm text-slate-500 dark:text-slate-400 mb-4">
+                {{ t('auth.quickJoin') }}
+            </p>
+
+            <div class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 mb-6">
+                <h2 class="text-lg font-semibold mb-4 text-slate-800 dark:text-slate-200">
+                    {{ t('auth.guest.title') }}
+                </h2>
+                <form @submit.prevent="handleGuest" class="space-y-4">
+                    <div v-if="guestError" class="p-3 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-sm text-red-700 dark:text-red-300">
+                        {{ guestError }}
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                        <label for="guestNickname" class="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            {{ t('auth.guest.nickname') }}
+                        </label>
+                        <InputText
+                            id="guestNickname"
+                            v-model="guestNickname"
+                            class="w-full"
+                        />
+                    </div>
+
+                    <Button
+                        type="submit"
+                        :label="t('auth.guest.submit')"
+                        severity="success"
+                        :loading="guestLoading"
+                        class="w-full"
+                    />
+                </form>
+            </div>
+
+            <div class="flex items-center gap-4 mb-6">
+                <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
+                <span class="text-sm text-slate-400 dark:text-slate-500">{{ t('auth.or') }}</span>
+                <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
+            </div>
+        </template>
+
         <h1 class="text-3xl font-bold text-center mb-8 text-slate-800 dark:text-slate-200">
             {{ t('auth.register.title') }}
         </h1>
@@ -96,47 +159,48 @@
             />
         </form>
 
-        <!-- Divider -->
-        <div v-if="!isConvertingGuest" class="flex items-center gap-4 my-8">
-            <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
-            <span class="text-sm text-slate-400 dark:text-slate-500">{{ t('auth.or') }}</span>
-            <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
-        </div>
+        <!-- Guest section at bottom (when NOT from invite and NOT converting) -->
+        <template v-if="!gamePreview && !isConvertingGuest">
+            <div class="flex items-center gap-4 my-8">
+                <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
+                <span class="text-sm text-slate-400 dark:text-slate-500">{{ t('auth.or') }}</span>
+                <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
+            </div>
 
-        <!-- Guest section (hide when already a guest) -->
-        <div v-if="!isConvertingGuest" class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-            <h2 class="text-lg font-semibold mb-4 text-slate-800 dark:text-slate-200">
-                {{ t('auth.guest.title') }}
-            </h2>
-            <form @submit.prevent="handleGuest" class="space-y-4">
-                <div v-if="guestError" class="p-3 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-sm text-red-700 dark:text-red-300">
-                    {{ guestError }}
-                </div>
+            <div class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                <h2 class="text-lg font-semibold mb-4 text-slate-800 dark:text-slate-200">
+                    {{ t('auth.guest.title') }}
+                </h2>
+                <form @submit.prevent="handleGuest" class="space-y-4">
+                    <div v-if="guestError" class="p-3 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-sm text-red-700 dark:text-red-300">
+                        {{ guestError }}
+                    </div>
 
-                <div class="flex flex-col gap-2">
-                    <label for="guestNickname" class="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        {{ t('auth.guest.nickname') }}
-                    </label>
-                    <InputText
-                        id="guestNickname"
-                        v-model="guestNickname"
+                    <div class="flex flex-col gap-2">
+                        <label for="guestNickname2" class="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            {{ t('auth.guest.nickname') }}
+                        </label>
+                        <InputText
+                            id="guestNickname2"
+                            v-model="guestNickname"
+                            class="w-full"
+                        />
+                    </div>
+
+                    <Button
+                        type="submit"
+                        :label="t('auth.guest.submit')"
+                        severity="secondary"
+                        :loading="guestLoading"
                         class="w-full"
                     />
-                </div>
-
-                <Button
-                    type="submit"
-                    :label="t('auth.guest.submit')"
-                    severity="secondary"
-                    :loading="guestLoading"
-                    class="w-full"
-                />
-            </form>
-        </div>
+                </form>
+            </div>
+        </template>
 
         <p class="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
             {{ t('auth.register.hasAccount') }}
-            <Link href="/login" class="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">
+            <Link :href="loginUrl" class="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">
                 {{ t('auth.register.login') }}
             </Link>
         </p>
@@ -144,13 +208,17 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
 import Button from 'primevue/button';
 import { useAuthStore } from '../stores/authStore.js';
 import { useI18n } from '../composables/useI18n.js';
+
+const props = defineProps({
+    gamePreview: { type: Object, default: null },
+});
 
 const authStore = useAuthStore();
 const { t } = useI18n();
@@ -173,14 +241,26 @@ const guestNickname = ref('');
 const guestLoading = ref(false);
 const guestError = ref('');
 
-function getSafeRedirect() {
+function getRedirectParam() {
     const urlParams = new URLSearchParams(window.location.search);
-    const redirect = urlParams.get('redirect') || '/games';
+    return urlParams.get('redirect') || '';
+}
+
+function getSafeRedirect() {
+    const redirect = getRedirectParam() || '/spill';
     if (redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.includes('://')) {
         return redirect;
     }
-    return '/games';
+    return '/spill';
 }
+
+const loginUrl = computed(() => {
+    const redirect = getRedirectParam();
+    if (redirect) {
+        return `/logg-inn?redirect=${encodeURIComponent(redirect)}`;
+    }
+    return '/logg-inn';
+});
 
 async function handleRegister() {
     loading.value = true;

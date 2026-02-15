@@ -62,12 +62,18 @@
                             <p class="text-xl font-mono font-bold tracking-[0.4em] text-emerald-700 dark:text-emerald-300">
                                 {{ gameStore.gameCode }}
                             </p>
-                            <div class="flex items-center justify-center mt-3">
+                            <div class="flex items-center justify-center gap-2 mt-3">
                                 <Button
                                     :label="copiedLink ? t('lobby.copied') : t('lobby.shareLink')"
                                     size="small"
                                     severity="success"
                                     @click="copyLink"
+                                />
+                                <Button
+                                    :label="t('lobby.inviteEmail')"
+                                    size="small"
+                                    severity="secondary"
+                                    @click="inviteDialogVisible = true"
                                 />
                             </div>
                         </div>
@@ -100,39 +106,81 @@
                         </p>
 
                         <!-- Player list -->
-                        <div class="space-y-2 mb-6">
+                        <div class="space-y-1 mb-6">
                             <div
                                 v-for="player in gameStore.players"
                                 :key="player.id"
-                                class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
+                                class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
                             >
-                                <div class="flex items-center gap-2">
-                                    <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                                        {{ player.nickname?.charAt(0)?.toUpperCase() }}
-                                    </div>
-                                    <span class="font-medium text-slate-800 dark:text-slate-200">{{ player.nickname }}</span>
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="font-medium text-slate-800 dark:text-slate-200 truncate">{{ player.nickname }}</span>
+                                    <span v-if="player.id === gameStore.currentGame?.host_player_id" class="text-xs text-yellow-600 dark:text-yellow-400">{{ t('lobby.host') }}</span>
+                                    <span v-else-if="player.is_co_host" class="text-xs text-blue-500 dark:text-blue-400">{{ t('lobby.coHost') }}</span>
+                                    <span v-else-if="player.is_bot" class="text-xs text-slate-400">{{ t('lobby.bot') }}</span>
                                 </div>
-                                <div class="flex items-center gap-2">
-                                    <Badge v-if="player.is_bot" :value="t('lobby.bot')" severity="secondary" />
-                                    <Badge v-if="player.id === gameStore.currentGame?.host_player_id" :value="t('lobby.host')" severity="success" />
-                                    <Badge v-else-if="player.is_co_host" :value="t('lobby.coHost')" severity="info" />
-                                    <Button
-                                        v-if="gameStore.isActualHost && player.id !== gameStore.currentGame?.host_player_id"
-                                        :label="player.is_co_host ? t('lobby.removeCoHost') : t('lobby.makeCoHost')"
-                                        size="small"
-                                        :severity="player.is_co_host ? 'secondary' : 'info'"
-                                        variant="text"
-                                        @click="handleToggleCoHost(player.id)"
-                                    />
-                                    <Button
-                                        v-if="gameStore.isHost && player.id !== gameStore.currentGame?.host_player_id && player.id !== authStore.player?.id"
-                                        :label="t('lobby.kick')"
-                                        size="small"
-                                        severity="danger"
-                                        variant="text"
-                                        @click="handleKickPlayer(player.id, player.nickname)"
-                                    />
+                                <button
+                                    v-if="canManagePlayer(player)"
+                                    class="w-7 h-7 shrink-0 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+                                    @click="togglePlayerMenu($event, player)"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                                        <path d="M3 10a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM8.5 10a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM15.5 8.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <Popover ref="playerMenuRef">
+                            <div class="py-1 min-w-[10rem]">
+                                <button
+                                    v-if="gameStore.isActualHost && menuPlayer"
+                                    class="w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2 text-slate-700 dark:text-slate-300"
+                                    @click="handleMenuCoHost"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-blue-500">
+                                        <path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 00-13.074.003z" />
+                                    </svg>
+                                    {{ menuPlayer?.is_co_host ? t('lobby.removeCoHost') : t('lobby.makeCoHost') }}
+                                </button>
+                                <button
+                                    class="w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2 text-amber-600 dark:text-amber-400"
+                                    @click="handleMenuKick"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                                        <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                                    </svg>
+                                    {{ t('lobby.kick') }}
+                                </button>
+                                <button
+                                    class="w-full text-left px-3 py-2 text-sm hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center gap-2 text-red-600 dark:text-red-400"
+                                    @click="handleMenuBan"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                                    </svg>
+                                    {{ t('lobby.ban') }}
+                                </button>
+                            </div>
+                        </Popover>
+
+                        <!-- Banned players section (host/co-host only) -->
+                        <div v-if="gameStore.isHost && gameStore.currentGame?.banned_players?.length" class="space-y-2 mb-6">
+                            <h3 class="text-sm font-semibold text-slate-500 dark:text-slate-400">{{ t('lobby.bannedPlayers') }}</h3>
+                            <div
+                                v-for="bp in gameStore.currentGame.banned_players"
+                                :key="bp.id"
+                                class="flex items-center justify-between p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900"
+                            >
+                                <div>
+                                    <span class="font-medium text-slate-700 dark:text-slate-300">{{ bp.nickname }}</span>
+                                    <span class="text-xs text-slate-400 ml-2">{{ bp.ban_reason || t('lobby.noBanReason') }}</span>
                                 </div>
+                                <Button
+                                    :label="t('lobby.unban')"
+                                    size="small"
+                                    severity="secondary"
+                                    variant="text"
+                                    @click="handleUnbanPlayer(bp.id)"
+                                />
                             </div>
                         </div>
 
@@ -402,14 +450,14 @@
                                 :label="t('game.playAgain')"
                                 severity="success"
                                 class="flex-1"
-                                @click="router.visit('/games')"
+                                @click="router.visit('/spill')"
                             />
                             <Button
                                 :label="t('game.viewArchive')"
                                 severity="secondary"
                                 variant="outlined"
                                 class="flex-1"
-                                @click="router.visit(`/archive/${props.code}`)"
+                                @click="router.visit(`/arkiv/${props.code}`)"
                             />
                         </div>
                     </div>
@@ -442,13 +490,10 @@
                                 <span>{{ msg.message }}</span>
                             </template>
                             <template v-else-if="msg.action">
-                                <span class="text-slate-500">* </span>
-                                <span class="font-medium">{{ msg.nickname }}</span>
-                                <span> {{ msg.message }}</span>
+                                <span class="text-slate-500">* </span><span class="font-medium">{{ msg.nickname }}</span>{{ ' ' }}<span>{{ msg.message }}</span>
                             </template>
                             <template v-else>
-                                <span class="text-slate-500">&lt;</span><span class="font-medium text-emerald-600 dark:text-emerald-400">{{ msg.nickname }}</span><span class="text-slate-500">&gt;</span>
-                                <span class="text-slate-700 dark:text-slate-300"> {{ msg.message }}</span>
+                                <span class="text-slate-500">&lt;</span><span class="font-medium text-emerald-600 dark:text-emerald-400">{{ msg.nickname }}</span><span class="text-slate-500">&gt;</span>{{ ' ' }}<span class="text-slate-700 dark:text-slate-300">{{ msg.message }}</span>
                             </template>
                         </div>
                         <p v-if="gameStore.chatMessages.length === 0" class="text-slate-400 text-center py-2">
@@ -469,6 +514,47 @@
             </div>
         </div>
     </GameLayout>
+    <Dialog v-model:visible="inviteDialogVisible" :header="t('lobby.inviteTitle')" modal :style="{ width: '24rem' }">
+        <form @submit.prevent="handleInvite" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ t('lobby.inviteEmailLabel') }}</label>
+                <InputText
+                    v-model="inviteEmail"
+                    type="email"
+                    :placeholder="t('lobby.inviteEmailLabel')"
+                    class="w-full"
+                    :disabled="invitesRemaining <= 0"
+                />
+            </div>
+            <p v-if="inviteSent" class="text-sm text-emerald-600 dark:text-emerald-400 font-medium">{{ t('lobby.inviteSent') }}</p>
+            <p v-if="inviteError" class="text-sm text-red-500">{{ inviteError }}</p>
+            <p class="text-xs text-slate-400">{{ t('lobby.inviteLimit').replace('{n}', invitesRemaining) }}</p>
+            <Button
+                type="submit"
+                :label="t('lobby.inviteSend')"
+                severity="success"
+                class="w-full"
+                :loading="inviteLoading"
+                :disabled="!inviteEmail.trim() || invitesRemaining <= 0"
+            />
+        </form>
+    </Dialog>
+    <Dialog v-model:visible="banDialogVisible" :header="t('lobby.ban')" modal :style="{ width: '24rem' }">
+        <p class="mb-4 text-sm text-slate-700 dark:text-slate-300">{{ t('lobby.banConfirm').replace('{name}', banDialogNickname) }}</p>
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{{ t('lobby.banReason') }}</label>
+            <InputText
+                v-model="banReason"
+                :placeholder="t('lobby.banReason')"
+                class="w-full"
+                maxlength="200"
+            />
+        </div>
+        <div class="flex gap-2 justify-end">
+            <Button :label="t('common.cancel')" severity="secondary" variant="outlined" @click="banDialogVisible = false" />
+            <Button :label="t('lobby.ban')" severity="danger" @click="confirmBan" />
+        </div>
+    </Dialog>
     <ConfirmDialog />
 </template>
 
@@ -480,6 +566,8 @@ import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import Badge from 'primevue/badge';
 import ProgressBar from 'primevue/progressbar';
+import Dialog from 'primevue/dialog';
+import Popover from 'primevue/popover';
 import ConfirmDialog from 'primevue/confirmdialog';
 import { useConfirm } from 'primevue/useconfirm';
 import confetti from 'canvas-confetti';
@@ -487,6 +575,7 @@ import GameLayout from '../layouts/GameLayout.vue';
 import { useGameStore } from '../stores/gameStore.js';
 import { useAuthStore } from '../stores/authStore.js';
 import { useI18n } from '../composables/useI18n.js';
+import { api, getApiError } from '../services/api.js';
 
 defineOptions({ layout: false });
 
@@ -517,6 +606,18 @@ const isEditing = ref(false);
 const submitCount = ref(0);
 const rematchLoading = ref(false);
 const voteCount = ref(0);
+const banDialogVisible = ref(false);
+const banDialogPlayerId = ref(null);
+const banDialogNickname = ref('');
+const banReason = ref('');
+const playerMenuRef = ref(null);
+const menuPlayer = ref(null);
+const inviteDialogVisible = ref(false);
+const inviteEmail = ref('');
+const inviteLoading = ref(false);
+const inviteSent = ref(false);
+const inviteError = ref('');
+const invitesRemaining = ref(5);
 const MAX_SUBMISSIONS = 3;
 const MAX_VOTES = 3;
 const editsRemaining = computed(() => Math.max(0, MAX_SUBMISSIONS - submitCount.value));
@@ -631,6 +732,12 @@ function sanitizeAndValidate() {
 }
 
 async function initGame() {
+    // If not authenticated, redirect to login with this game URL as redirect target
+    if (!authStore.isAuthenticated) {
+        router.visit(`/logg-inn?redirect=${encodeURIComponent(`/spill/${props.code}`)}`);
+        return;
+    }
+
     loading.value = true;
     error.value = '';
 
@@ -652,7 +759,7 @@ async function initGame() {
         }
 
     } catch (err) {
-        error.value = err.response?.data?.message || t('common.error');
+        error.value = getApiError(err, t);
     } finally {
         loading.value = false;
     }
@@ -661,9 +768,9 @@ async function initGame() {
 async function handleLeave() {
     try {
         await gameStore.leaveGame(props.code);
-        router.visit('/games');
+        router.visit('/spill');
     } catch {
-        router.visit('/games');
+        router.visit('/spill');
     }
 }
 
@@ -695,7 +802,7 @@ function handleEndGame() {
         accept: async () => {
             try {
                 await gameStore.endGame(props.code);
-                router.visit('/games');
+                router.visit('/spill');
             } catch (err) {
                 error.value = err.response?.data?.error || t('common.error');
             }
@@ -835,6 +942,29 @@ async function handleSendChat() {
     }
 }
 
+async function handleInvite() {
+    if (!inviteEmail.value.trim()) return;
+
+    inviteLoading.value = true;
+    inviteError.value = '';
+    inviteSent.value = false;
+
+    try {
+        const { data } = await api.games.invite(props.code, inviteEmail.value.trim());
+        inviteSent.value = true;
+        invitesRemaining.value = data.invites_remaining ?? 0;
+        inviteEmail.value = '';
+        setTimeout(() => { inviteSent.value = false; }, 3000);
+    } catch (err) {
+        if (err.response?.status === 429) {
+            invitesRemaining.value = 0;
+        }
+        inviteError.value = err.response?.data?.error || t('lobby.inviteError');
+    } finally {
+        inviteLoading.value = false;
+    }
+}
+
 function celebrateWinner() {
     // Initial big burst
     confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
@@ -864,7 +994,7 @@ async function handleRematch() {
         await gameStore.rematch(props.code);
         const newCode = gameStore.gameCode;
         if (newCode) {
-            router.visit(`/games/${newCode}`);
+            router.visit(`/spill/${newCode}`);
         }
     } catch (err) {
         error.value = err.response?.data?.error || t('common.error');
@@ -879,6 +1009,32 @@ async function handleToggleCoHost(playerId) {
     } catch (err) {
         error.value = err.response?.data?.error || t('common.error');
     }
+}
+
+function canManagePlayer(player) {
+    if (player.id === gameStore.currentGame?.host_player_id) return false;
+    if (player.id === authStore.player?.id) return false;
+    return gameStore.isHost;
+}
+
+function togglePlayerMenu(event, player) {
+    menuPlayer.value = player;
+    playerMenuRef.value.toggle(event);
+}
+
+function handleMenuCoHost() {
+    playerMenuRef.value.hide();
+    if (menuPlayer.value) handleToggleCoHost(menuPlayer.value.id);
+}
+
+function handleMenuKick() {
+    playerMenuRef.value.hide();
+    if (menuPlayer.value) handleKickPlayer(menuPlayer.value.id, menuPlayer.value.nickname);
+}
+
+function handleMenuBan() {
+    playerMenuRef.value.hide();
+    if (menuPlayer.value) handleBanPlayer(menuPlayer.value.id, menuPlayer.value.nickname);
 }
 
 function handleKickPlayer(playerId, nickname) {
@@ -897,6 +1053,30 @@ function handleKickPlayer(playerId, nickname) {
     });
 }
 
+function handleBanPlayer(playerId, nickname) {
+    banReason.value = '';
+    banDialogPlayerId.value = playerId;
+    banDialogNickname.value = nickname;
+    banDialogVisible.value = true;
+}
+
+async function confirmBan() {
+    try {
+        await gameStore.banPlayer(props.code, banDialogPlayerId.value, banReason.value || null);
+        banDialogVisible.value = false;
+    } catch (err) {
+        error.value = err.response?.data?.error || t('common.error');
+    }
+}
+
+async function handleUnbanPlayer(playerId) {
+    try {
+        await gameStore.unbanPlayer(props.code, playerId);
+    } catch (err) {
+        error.value = err.response?.data?.error || t('common.error');
+    }
+}
+
 async function handleToggleVisibility() {
     try {
         await gameStore.updateVisibility(props.code, !gameStore.currentGame?.is_public);
@@ -913,7 +1093,7 @@ function copyCode() {
 
 function copyLink() {
     const code = gameStore.gameCode || props.code;
-    const url = `${window.location.origin}/games/${code}`;
+    const url = `${window.location.origin}/spill/${code}`;
     navigator.clipboard.writeText(url);
     copiedLink.value = true;
     setTimeout(() => { copiedLink.value = false; }, 2000);

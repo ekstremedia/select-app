@@ -104,8 +104,10 @@ class ArchiveTest extends TestCase
         }
 
         $finalScores = collect($players)->map(fn ($p, $i) => [
-            'nickname' => $p->nickname,
+            'player_id' => $p->id,
+            'player_name' => $p->nickname,
             'score' => 10 - ($i * 2),
+            'is_winner' => $i === 0,
         ])->values()->toArray();
 
         $result = GameResult::create([
@@ -174,6 +176,7 @@ class ArchiveTest extends TestCase
                         'nickname',
                         'score',
                         'rank',
+                        'is_winner',
                     ],
                 ],
                 'rounds' => [
@@ -894,5 +897,164 @@ class ArchiveTest extends TestCase
         $response = $this->getJson("/api/v1/archive/{$game->code}/rounds/99");
 
         $response->assertStatus(404);
+    }
+
+    // --- Bot/Guest Profile ---
+
+    public function test_bot_player_profile_returns_data(): void
+    {
+        $bot = Player::factory()->bot()->create(['nickname' => 'Botulf42']);
+
+        $response = $this->getJson('/api/v1/players/Botulf42');
+
+        $response->assertStatus(200)
+            ->assertJsonPath('player.nickname', 'Botulf42')
+            ->assertJsonPath('player.is_bot', true)
+            ->assertJsonPath('player.is_guest', true)
+            ->assertJsonPath('stats', null);
+    }
+
+    public function test_guest_player_profile_returns_data(): void
+    {
+        Player::factory()->create([
+            'nickname' => 'GuestPlayer99',
+            'is_guest' => true,
+            'is_bot' => false,
+        ]);
+
+        $response = $this->getJson('/api/v1/players/GuestPlayer99');
+
+        $response->assertStatus(200)
+            ->assertJsonPath('player.nickname', 'GuestPlayer99')
+            ->assertJsonPath('player.is_bot', false)
+            ->assertJsonPath('player.is_guest', true);
+    }
+
+    public function test_bot_player_sentences_returns_hall_of_fame_entries(): void
+    {
+        $bot = Player::factory()->bot()->create(['nickname' => 'Botulf55']);
+
+        $host = Player::factory()->create(['nickname' => 'BotSentHost']);
+        $game = Game::create([
+            'code' => 'BOTS01',
+            'host_player_id' => $host->id,
+            'status' => Game::STATUS_FINISHED,
+            'settings' => (new Game)->getDefaultSettings(),
+            'total_rounds' => 1,
+            'is_public' => false,
+        ]);
+
+        HallOfFame::create([
+            'game_id' => $game->id,
+            'game_code' => $game->code,
+            'round_number' => 1,
+            'acronym' => 'BOT',
+            'sentence' => 'Bots Often Think',
+            'author_nickname' => 'Botulf55',
+            'votes_count' => 2,
+            'voter_nicknames' => ['V1', 'V2'],
+            'is_round_winner' => true,
+        ]);
+
+        $response = $this->getJson('/api/v1/players/Botulf55/sentences');
+
+        $response->assertStatus(200);
+        $sentences = $response->json('sentences');
+        $this->assertCount(1, $sentences);
+        $this->assertEquals('Bots Often Think', $sentences[0]['text']);
+    }
+
+    public function test_bot_player_stats_returns_null_stats(): void
+    {
+        Player::factory()->bot()->create(['nickname' => 'Botulf77']);
+
+        $response = $this->getJson('/api/v1/players/Botulf77/stats');
+
+        $response->assertStatus(200)
+            ->assertJson(['stats' => null]);
+    }
+
+    public function test_archive_show_includes_is_winner_in_standings(): void
+    {
+        $data = $this->createFinishedGameWithResult('ArchiveWinner', 2, 1);
+        $game = $data['game'];
+
+        $response = $this->getJson("/api/v1/archive/{$game->code}");
+
+        $response->assertStatus(200);
+        $players = $response->json('players');
+
+        // First player should be the winner
+        $this->assertTrue($players[0]['is_winner']);
+        // Second player should not be the winner
+        $this->assertFalse($players[1]['is_winner']);
+    }
+
+    public function test_archive_show_tie_has_no_winner(): void
+    {
+        // Create a game where both players have the same score
+        $host = Player::factory()->create(['nickname' => 'TiePlayer1']);
+        $player2 = Player::factory()->create(['nickname' => 'TiePlayer2']);
+
+        $game = Game::create([
+            'code' => 'TIEGM',
+            'host_player_id' => $host->id,
+            'status' => Game::STATUS_FINISHED,
+            'settings' => (new Game)->getDefaultSettings(),
+            'total_rounds' => 1,
+            'current_round' => 1,
+            'is_public' => false,
+            'started_at' => now()->subMinutes(10),
+            'finished_at' => now(),
+            'duration_seconds' => 600,
+        ]);
+
+        // Both players have the same score
+        GamePlayer::create([
+            'game_id' => $game->id,
+            'player_id' => $host->id,
+            'score' => 5,
+            'is_active' => true,
+            'joined_at' => now()->subMinutes(15),
+        ]);
+
+        GamePlayer::create([
+            'game_id' => $game->id,
+            'player_id' => $player2->id,
+            'score' => 5,
+            'is_active' => true,
+            'joined_at' => now()->subMinutes(15),
+        ]);
+
+        // GameResult with no winner (tie)
+        GameResult::create([
+            'game_id' => $game->id,
+            'winner_nickname' => null,
+            'final_scores' => [
+                ['player_id' => $host->id, 'player_name' => 'TiePlayer1', 'score' => 5, 'is_winner' => false],
+                ['player_id' => $player2->id, 'player_name' => 'TiePlayer2', 'score' => 5, 'is_winner' => false],
+            ],
+            'rounds_played' => 1,
+            'player_count' => 2,
+            'duration_seconds' => 600,
+        ]);
+
+        $round = Round::create([
+            'game_id' => $game->id,
+            'round_number' => 1,
+            'acronym' => 'TIE',
+            'status' => Round::STATUS_COMPLETED,
+            'answer_deadline' => now()->subMinutes(5),
+            'vote_deadline' => now()->subMinutes(3),
+        ]);
+
+        $response = $this->getJson("/api/v1/archive/{$game->code}");
+
+        $response->assertStatus(200);
+        $players = $response->json('players');
+
+        // Neither player should be marked as winner
+        $this->assertFalse($players[0]['is_winner']);
+        $this->assertFalse($players[1]['is_winner']);
     }
 }

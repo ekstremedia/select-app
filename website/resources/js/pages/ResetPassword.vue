@@ -7,9 +7,9 @@
         <!-- Success message -->
         <div v-if="success" class="text-center">
             <div class="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-sm text-emerald-700 dark:text-emerald-300 mb-6">
-                {{ t('auth.forgotPassword.sent') }}
+                {{ t('auth.resetPassword.success') }}
             </div>
-            <Link href="/login" class="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">
+            <Link href="/logg-inn" class="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">
                 {{ t('auth.login.title') }}
             </Link>
         </div>
@@ -75,7 +75,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
 import Button from 'primevue/button';
@@ -109,6 +109,7 @@ async function handleReset() {
             password_confirmation: form.password_confirmation,
         });
         success.value = true;
+        setTimeout(() => router.visit('/logg-inn'), 3000);
     } catch (err) {
         const status = err.response?.status;
         const data = err.response?.data;

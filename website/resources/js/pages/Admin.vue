@@ -27,7 +27,7 @@
                     <Column field="nickname" header="Nickname">
                         <template #body="{ data }">
                             <Link
-                                :href="`/profile/${data.nickname}`"
+                                :href="`/profil/${data.nickname}`"
                                 class="font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
                             >
                                 {{ data.nickname }}
@@ -84,7 +84,7 @@
                     <Column field="code" header="Code">
                         <template #body="{ data }">
                             <Link
-                                :href="`/archive/${data.code}`"
+                                :href="`/arkiv/${data.code}`"
                                 class="font-mono font-bold text-emerald-600 dark:text-emerald-400 hover:underline tracking-widest"
                             >
                                 #{{ data.code }}

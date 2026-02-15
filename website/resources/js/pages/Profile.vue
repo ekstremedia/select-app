@@ -25,9 +25,17 @@
                     <h1 class="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-200">
                         {{ profile.nickname }}
                     </h1>
-                    <p v-if="profile.member_since" class="text-sm text-slate-500 dark:text-slate-400">
-                        {{ t('profile.memberSince') }} {{ formatDate(profile.member_since) }}
-                    </p>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span v-if="profile.is_bot" class="text-xs px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300">
+                            {{ t('profile.botPlayer') }}
+                        </span>
+                        <span v-else-if="profile.is_guest" class="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                            {{ t('profile.guestPlayer') }}
+                        </span>
+                        <p v-if="profile.member_since" class="text-sm text-slate-500 dark:text-slate-400">
+                            {{ t('profile.memberSince') }} {{ formatDate(profile.member_since) }}
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -87,7 +95,7 @@
                         <Link
                             v-for="game in games"
                             :key="game.code"
-                            :href="`/archive/${game.code}`"
+                            :href="`/arkiv/${game.code}`"
                             class="block p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors"
                         >
                             <div class="flex items-center justify-between">

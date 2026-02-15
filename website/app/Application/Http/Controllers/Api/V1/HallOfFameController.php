@@ -40,8 +40,15 @@ class HallOfFameController extends Controller
 
     public function random(): JsonResponse
     {
-        // Try to get a random classic sentence from gullkorn_clean
+        // Try to get a random classic sentence from gullkorn_clean (5+ votes, 3-6 words)
+        $driver = DB::connection()->getDriverName();
+        $wordCountFilter = $driver === 'pgsql'
+            ? "array_length(regexp_split_to_array(trim(setning), E'\\\\s+'), 1) BETWEEN 3 AND 6"
+            : "length(trim(setning)) - length(replace(trim(setning), ' ', '')) BETWEEN 2 AND 5";
+
         $gullkorn = DB::table('gullkorn_clean')
+            ->where('stemmer', '>', 4)
+            ->whereRaw($wordCountFilter)
             ->inRandomOrder()
             ->first();
 

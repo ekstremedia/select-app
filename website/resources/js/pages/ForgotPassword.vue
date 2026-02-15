@@ -40,7 +40,7 @@
         </form>
 
         <p class="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
-            <Link href="/login" class="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">
+            <Link href="/logg-inn" class="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">
                 {{ t('common.back') }}
             </Link>
         </p>

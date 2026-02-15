@@ -43,7 +43,7 @@
             <Link
                 v-for="game in games"
                 :key="game.code"
-                :href="`/archive/${game.code}`"
+                :href="`/arkiv/${game.code}`"
                 class="block p-5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors"
             >
                 <div class="flex items-center justify-between mb-3">
@@ -56,7 +56,7 @@
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <span class="text-sm text-slate-500 dark:text-slate-400">{{ t('game.winner') }}:</span>
-                        <span class="font-medium text-slate-800 dark:text-slate-200">{{ game.winner_nickname }}</span>
+                        <span class="font-medium text-slate-800 dark:text-slate-200">{{ game.winner_nickname || t('game.tie') }}</span>
                     </div>
                     <span class="text-sm text-slate-400">
                         {{ game.rounds_count }} {{ t('games.rounds') }}

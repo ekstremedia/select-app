@@ -44,14 +44,39 @@ client.interceptors.response.use(
         if (status === 401) {
             localStorage.removeItem('select-auth-token');
             localStorage.removeItem('select-guest-token');
-            if (window.location.pathname !== '/login' && window.location.pathname !== '/') {
-                window.location.href = '/login';
+            if (window.location.pathname !== '/logg-inn' && window.location.pathname !== '/') {
+                window.location.href = '/logg-inn';
             }
         }
 
         return Promise.reject(error);
     }
 );
+
+/**
+ * Extract a user-friendly error message from an Axios error.
+ * Falls back to status-based i18n keys when the server response is generic.
+ */
+export function getApiError(err, t) {
+    const status = err.response?.status;
+    const msg = err.response?.data?.error || err.response?.data?.message;
+
+    // If the server gave a specific error message (not the generic Laravel ones), use it
+    if (msg && msg !== 'Server Error' && msg !== 'Unauthenticated.') {
+        return msg;
+    }
+
+    // Map HTTP status codes to translated messages
+    if (t) {
+        if (!err.response) return t('common.networkError');
+        if (status === 500) return t('common.serverError');
+        if (status === 429) return t('common.tooManyRequests');
+        if (status === 403) return t('common.forbidden');
+        if (status === 404) return t('common.gameNotFound');
+    }
+
+    return msg || (t ? t('common.error') : 'Something went wrong');
+}
 
 export const api = {
     stats: () => client.get('/stats'),
@@ -89,8 +114,11 @@ export const api = {
         chat: (code, message, action = false) => client.post(`/games/${code}/chat`, { message, action }),
         toggleCoHost: (code, playerId) => client.post(`/games/${code}/co-host/${playerId}`),
         kick: (code, playerId) => client.post(`/games/${code}/kick/${playerId}`),
+        ban: (code, playerId, reason) => client.post(`/games/${code}/ban/${playerId}`, { reason }),
+        unban: (code, playerId) => client.post(`/games/${code}/unban/${playerId}`),
         updateVisibility: (code, isPublic) => client.patch(`/games/${code}/visibility`, { is_public: isPublic }),
         rematch: (code) => client.post(`/games/${code}/rematch`),
+        invite: (code, email) => client.post(`/games/${code}/invite`, { email }),
     },
     rounds: {
         submitAnswer: (id, text) => client.post(`/rounds/${id}/answer`, { text }),

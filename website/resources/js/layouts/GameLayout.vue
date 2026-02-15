@@ -3,7 +3,7 @@
         <!-- Minimal game header -->
         <header class="flex items-center justify-between px-4 py-2 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-950/90 backdrop-blur-sm shrink-0">
             <div class="flex items-center gap-3">
-                <Link href="/games" class="text-sm font-bold tracking-widest text-emerald-600 dark:text-emerald-400">
+                <Link href="/spill" class="text-sm font-bold tracking-widest text-emerald-600 dark:text-emerald-400">
                     SELECT
                 </Link>
                 <span class="text-sm font-mono font-bold text-slate-500 dark:text-slate-400">

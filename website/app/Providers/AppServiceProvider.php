@@ -20,7 +20,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         ResetPassword::createUrlUsing(function (object $notifiable, string $token) {
-            return config('app.frontend_url', config('app.url')).'/reset-password?token='.$token.'&email='.$notifiable->getEmailForPasswordReset();
+            return config('app.url').'/nytt-passord/'.$token.'?email='.urlencode($notifiable->getEmailForPasswordReset());
         });
     }
 }

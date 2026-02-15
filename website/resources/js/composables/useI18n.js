@@ -15,6 +15,8 @@ const translations = {
         'nav.profile': 'Profil',
         'nav.settings': 'Innstillinger',
         'nav.admin': 'Admin',
+        'nav.darkMode': 'Mørk modus',
+        'nav.lightMode': 'Lys modus',
 
         // Guest banner
         'guest.banner': 'Du spiller som gjest. Opprett en konto for å lagre statistikk.',
@@ -69,6 +71,7 @@ const translations = {
         'auth.resetPassword.newPassword': 'Nytt passord',
         'auth.resetPassword.confirmPassword': 'Bekreft passord',
         'auth.resetPassword.submit': 'Tilbakestill',
+        'auth.resetPassword.success': 'Passordet er endret! Du kan n\u00e5 logge inn.',
         'auth.guest.title': 'Spill som gjest',
         'auth.guest.nickname': 'Velg kallenavn',
         'auth.guest.submit': 'Start',
@@ -112,7 +115,7 @@ const translations = {
         'lobby.gameCode': 'Spillkode',
         'lobby.copyCode': 'Kopier kode',
         'lobby.copied': 'Kopiert!',
-        'lobby.shareLink': 'Del lenke',
+        'lobby.shareLink': 'Kopier spill-URL',
         'lobby.waitingForHost': 'Venter på at verten starter spillet...',
         'lobby.startGame': 'Start spill',
         'lobby.needMorePlayers': 'Trenger minst 2 spillere',
@@ -187,6 +190,8 @@ const translations = {
 
         // Profile
         'profile.memberSince': 'Medlem siden',
+        'profile.botPlayer': 'Bot-spiller',
+        'profile.guestPlayer': 'Gjestespiller',
         'profile.gamesPlayed': 'Spill spilt',
         'profile.gamesWon': 'Spill vunnet',
         'profile.winRate': 'Vinnprosent',
@@ -217,6 +222,8 @@ const translations = {
         'common.cancel': 'Avbryt',
         'common.confirm': 'Bekreft',
         'common.back': 'Tilbake',
+        'common.gameNotFound': 'Spillet ble ikke funnet',
+        'common.playerNotFound': 'Spilleren ble ikke funnet',
         'common.notFound': 'Siden ble ikke funnet',
         'common.notFoundDesc': 'Beklager, vi finner ikke denne siden.',
         'common.goHome': 'Gå til forsiden',
@@ -226,6 +233,9 @@ const translations = {
         'common.serverErrorDesc': 'Noe gikk galt på vår side.',
         'common.serviceUnavailable': 'Tjenesten er utilgjengelig',
         'common.serviceUnavailableDesc': 'Vi utfører vedlikehold. Prøv igjen senere.',
+        'common.serverError': 'En serverfeil oppstod. Prøv igjen senere.',
+        'common.networkError': 'Kunne ikke koble til serveren. Sjekk internettforbindelsen.',
+        'common.tooManyRequests': 'For mange forespørsler. Vent litt.',
 
         // Game - additional
         'game.finishedInactivity': 'Spillet ble avsluttet på grunn av manglende deltakelse.',
@@ -238,11 +248,31 @@ const translations = {
         // Lobby - additional
         'lobby.bot': 'Bot',
         'lobby.kick': 'Spark',
-        'lobby.kickConfirm': 'Er du sikker på at du vil sparke {name}? De kan ikke bli med igjen.',
+        'lobby.kickConfirm': 'Er du sikker på at du vil sparke {name}?',
+        'lobby.ban': 'Utesteng',
+        'lobby.banConfirm': 'Er du sikker på at du vil utestenge {name}?',
+        'lobby.banReason': 'Årsak (valgfritt)',
+        'lobby.bannedPlayers': 'Utestengte spillere',
+        'lobby.unban': 'Opphev',
+        'lobby.noBanReason': 'Ingen årsak oppgitt',
+        'lobby.kickedNotification': 'Du ble sparket fra spillet',
+        'lobby.bannedNotification': 'Du er utestengt fra spillet',
         'lobby.endGame': 'Avslutt spill',
         'lobby.endGameConfirm': 'Er du sikker på at du vil avslutte spillet?',
         'lobby.expiringWarning': 'Denne lobbyen stenges snart på grunn av inaktivitet.',
         'lobby.keepOpen': 'Hold åpen',
+        'lobby.inviteEmail': 'Inviter via e-post',
+        'lobby.inviteTitle': 'Inviter spiller',
+        'lobby.inviteEmailLabel': 'E-postadresse',
+        'lobby.inviteSend': 'Send invitasjon',
+        'lobby.inviteSent': 'Invitasjon sendt!',
+        'lobby.inviteLimit': '{n} invitasjoner igjen',
+        'lobby.inviteError': 'Kunne ikke sende invitasjon',
+
+        // Game invite context
+        'auth.joiningGame': 'Du er på vei inn i et spill',
+        'auth.gameWithPlayers': '{count} spillere venter',
+        'auth.quickJoin': 'Raskeste vei inn:',
     },
     en: {
         // Navigation
@@ -258,6 +288,8 @@ const translations = {
         'nav.profile': 'Profile',
         'nav.settings': 'Settings',
         'nav.admin': 'Admin',
+        'nav.darkMode': 'Dark mode',
+        'nav.lightMode': 'Light mode',
 
         // Guest banner
         'guest.banner': 'Playing as guest. Create an account to save your stats.',
@@ -312,6 +344,7 @@ const translations = {
         'auth.resetPassword.newPassword': 'New password',
         'auth.resetPassword.confirmPassword': 'Confirm password',
         'auth.resetPassword.submit': 'Reset',
+        'auth.resetPassword.success': 'Password changed! You can now log in.',
         'auth.guest.title': 'Play as guest',
         'auth.guest.nickname': 'Choose a nickname',
         'auth.guest.submit': 'Start',
@@ -355,7 +388,7 @@ const translations = {
         'lobby.gameCode': 'Game code',
         'lobby.copyCode': 'Copy code',
         'lobby.copied': 'Copied!',
-        'lobby.shareLink': 'Share link',
+        'lobby.shareLink': 'Copy game URL',
         'lobby.waitingForHost': 'Waiting for host to start the game...',
         'lobby.startGame': 'Start game',
         'lobby.needMorePlayers': 'Need at least 2 players',
@@ -430,6 +463,8 @@ const translations = {
 
         // Profile
         'profile.memberSince': 'Member since',
+        'profile.botPlayer': 'Bot player',
+        'profile.guestPlayer': 'Guest player',
         'profile.gamesPlayed': 'Games played',
         'profile.gamesWon': 'Games won',
         'profile.winRate': 'Win rate',
@@ -460,6 +495,8 @@ const translations = {
         'common.cancel': 'Cancel',
         'common.confirm': 'Confirm',
         'common.back': 'Back',
+        'common.gameNotFound': 'Game not found',
+        'common.playerNotFound': 'Player not found',
         'common.notFound': 'Page not found',
         'common.notFoundDesc': 'Sorry, we could not find this page.',
         'common.goHome': 'Go to home page',
@@ -469,6 +506,9 @@ const translations = {
         'common.serverErrorDesc': 'Something went wrong on our end.',
         'common.serviceUnavailable': 'Service Unavailable',
         'common.serviceUnavailableDesc': 'We are currently undergoing maintenance. Please try again later.',
+        'common.serverError': 'A server error occurred. Please try again later.',
+        'common.networkError': 'Could not connect to the server. Check your internet connection.',
+        'common.tooManyRequests': 'Too many requests. Please wait a moment.',
 
         // Game - additional
         'game.finishedInactivity': 'The game was ended due to inactivity.',
@@ -481,11 +521,31 @@ const translations = {
         // Lobby - additional
         'lobby.bot': 'Bot',
         'lobby.kick': 'Kick',
-        'lobby.kickConfirm': 'Are you sure you want to kick {name}? They cannot rejoin.',
+        'lobby.kickConfirm': 'Are you sure you want to kick {name}?',
+        'lobby.ban': 'Ban',
+        'lobby.banConfirm': 'Are you sure you want to ban {name}?',
+        'lobby.banReason': 'Reason (optional)',
+        'lobby.bannedPlayers': 'Banned players',
+        'lobby.unban': 'Unban',
+        'lobby.noBanReason': 'No reason given',
+        'lobby.kickedNotification': 'You were kicked from the game',
+        'lobby.bannedNotification': 'You have been banned from the game',
         'lobby.endGame': 'End game',
         'lobby.endGameConfirm': 'Are you sure you want to end this game?',
         'lobby.expiringWarning': 'This lobby will close soon due to inactivity.',
         'lobby.keepOpen': 'Keep open',
+        'lobby.inviteEmail': 'Invite via email',
+        'lobby.inviteTitle': 'Invite player',
+        'lobby.inviteEmailLabel': 'Email address',
+        'lobby.inviteSend': 'Send invitation',
+        'lobby.inviteSent': 'Invitation sent!',
+        'lobby.inviteLimit': '{n} invitations remaining',
+        'lobby.inviteError': 'Could not send invitation',
+
+        // Game invite context
+        'auth.joiningGame': 'You are joining a game',
+        'auth.gameWithPlayers': '{count} players waiting',
+        'auth.quickJoin': 'Quickest way in:',
     },
 };
 

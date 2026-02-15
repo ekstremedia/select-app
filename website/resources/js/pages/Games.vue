@@ -1,5 +1,15 @@
 <template>
     <div class="max-w-4xl mx-auto px-4 py-8 sm:py-12">
+        <!-- Kicked/Banned notification -->
+        <div v-if="kickNotice" class="mb-6 p-4 rounded-xl border text-center" :class="kickNotice === 'banned' ? 'bg-red-50 dark:bg-red-950/50 border-red-300 dark:border-red-700' : 'bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-700'">
+            <p class="font-medium" :class="kickNotice === 'banned' ? 'text-red-700 dark:text-red-300' : 'text-amber-700 dark:text-amber-300'">
+                {{ kickNotice === 'banned' ? t('lobby.bannedNotification') : t('lobby.kickedNotification') }}
+            </p>
+            <p v-if="banReason" class="text-sm mt-1" :class="kickNotice === 'banned' ? 'text-red-600 dark:text-red-400' : ''">
+                {{ banReason }}
+            </p>
+        </div>
+
         <h1 class="text-3xl font-bold mb-8 text-slate-800 dark:text-slate-200">
             {{ t('games.title') }}
         </h1>
@@ -62,7 +72,7 @@
                 severity="success"
                 size="large"
                 class="w-full"
-                @click="router.visit('/games/create')"
+                @click="router.visit('/spill/opprett')"
             />
 
             <!-- Join by code -->
@@ -71,7 +81,7 @@
                     v-model="joinCode"
                     :placeholder="t('games.code')"
                     maxlength="6"
-                    class="w-28 text-center uppercase tracking-[0.2em] font-mono"
+                    class="flex-1 min-w-0 text-center uppercase tracking-[0.2em] font-mono"
                     @input="joinCode = joinCode.toUpperCase().replace(/[^A-Z0-9]/g, '')"
                 />
                 <Button
@@ -93,7 +103,7 @@ import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import Skeleton from 'primevue/skeleton';
 import Badge from 'primevue/badge';
-import { api } from '../services/api.js';
+import { api, getApiError } from '../services/api.js';
 import { useGameStore } from '../stores/gameStore.js';
 import { useI18n } from '../composables/useI18n.js';
 
@@ -104,6 +114,19 @@ const openGames = ref([]);
 const loading = ref(true);
 const joinCode = ref('');
 const joinError = ref('');
+const kickNotice = ref(null);
+const banReason = ref(null);
+
+const apiErrorMap = {
+    'Game not found': 'common.gameNotFound',
+    'Player not found': 'common.playerNotFound',
+};
+
+function translateApiError(msg) {
+    if (!msg) return null;
+    const key = apiErrorMap[msg];
+    return key ? t(key) : msg;
+}
 
 async function loadGames() {
     try {
@@ -124,11 +147,11 @@ async function handleJoin(code) {
         // "Player already in game" is fine — just navigate to the game
         const msg = err.response?.data?.error || err.response?.data?.message || '';
         if (!msg.toLowerCase().includes('already in game')) {
-            joinError.value = msg || t('common.error');
+            joinError.value = translateApiError(msg) || getApiError(err, t);
             return;
         }
     }
-    router.visit(`/games/${code}`);
+    router.visit(`/spill/${code}`);
 }
 
 async function handleJoinByCode() {
@@ -139,6 +162,15 @@ async function handleJoinByCode() {
 let pollInterval = null;
 
 onMounted(() => {
+    // Check for kicked/banned notification
+    const kicked = sessionStorage.getItem('select-kicked');
+    if (kicked) {
+        kickNotice.value = kicked; // 'kicked' or 'banned'
+        banReason.value = sessionStorage.getItem('select-banned-reason');
+        sessionStorage.removeItem('select-kicked');
+        sessionStorage.removeItem('select-banned-reason');
+    }
+
     loadGames();
     pollInterval = setInterval(loadGames, 10000);
 });

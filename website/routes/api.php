@@ -90,8 +90,11 @@ Route::prefix('v1')->group(function () {
             Route::post('/{code}/chat', [GameController::class, 'chat']);
             Route::post('/{code}/co-host/{playerId}', [GameController::class, 'toggleCoHost']);
             Route::post('/{code}/kick/{playerId}', [GameController::class, 'kick']);
+            Route::post('/{code}/ban/{playerId}', [GameController::class, 'banPlayer']);
+            Route::post('/{code}/unban/{playerId}', [GameController::class, 'unbanPlayer']);
             Route::patch('/{code}/visibility', [GameController::class, 'updateVisibility']);
             Route::post('/{code}/rematch', [GameController::class, 'rematch']);
+            Route::post('/{code}/invite', [GameController::class, 'invite']);
             Route::get('/{code}/rounds/current', [RoundController::class, 'current']);
         });
 

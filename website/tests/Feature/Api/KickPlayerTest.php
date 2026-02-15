@@ -118,7 +118,7 @@ class KickPlayerTest extends TestCase
         $response->assertJson(['error' => 'Cannot kick the host']);
     }
 
-    public function test_kicked_player_cannot_rejoin(): void
+    public function test_kicked_player_can_rejoin(): void
     {
         $code = $this->createGameWithPlayers();
 
@@ -126,12 +126,18 @@ class KickPlayerTest extends TestCase
         $this->withHeaders(['X-Guest-Token' => $this->hostToken])
             ->postJson("/api/v1/games/{$code}/kick/{$this->guestPlayer->id}");
 
-        // Guest tries to rejoin
+        // Guest can rejoin (kick is soft removal, not ban)
         $response = $this->withHeaders(['X-Guest-Token' => $this->guestToken])
             ->postJson("/api/v1/games/{$code}/join");
 
-        $response->assertStatus(422);
-        $response->assertJson(['error' => 'You have been kicked from this game']);
+        $response->assertOk();
+
+        // Verify player is back in the active list
+        $stateResponse = $this->withHeaders(['X-Guest-Token' => $this->hostToken])
+            ->getJson("/api/v1/games/{$code}/state");
+
+        $playerIds = collect($stateResponse->json('game.players'))->pluck('id');
+        $this->assertContains($this->guestPlayer->id, $playerIds->toArray());
     }
 
     public function test_cannot_kick_from_finished_game(): void

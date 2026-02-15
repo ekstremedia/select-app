@@ -1,8 +1,8 @@
 import { router } from '@inertiajs/vue3';
 import { useAuthStore } from '../stores/authStore.js';
 
-const guestOnlyPaths = ['/login', '/register', '/forgot-password', '/reset-password'];
-const requiresPlayerPaths = ['/games'];
+const guestOnlyPaths = ['/logg-inn', '/registrer', '/glemt-passord', '/nytt-passord'];
+const requiresPlayerPaths = ['/spill'];
 const requiresAdminPaths = ['/admin'];
 
 function matchesAny(url, paths) {
@@ -25,16 +25,16 @@ export function setupAuthGuard() {
             return;
         }
 
-        // /profile exactly (settings) requires registered user
-        if (url === '/profile' && !auth.user) {
+        // /profil exactly (settings) requires registered user
+        if (url === '/profil' && !auth.user) {
             event.preventDefault();
-            router.visit(`/login?redirect=${encodeURIComponent(url)}`);
+            router.visit(`/logg-inn?redirect=${encodeURIComponent(url)}`);
             return;
         }
 
         if (matchesAny(url, requiresPlayerPaths) && !auth.isAuthenticated) {
             event.preventDefault();
-            router.visit(`/login?redirect=${encodeURIComponent(url)}`);
+            router.visit(`/logg-inn?redirect=${encodeURIComponent(url)}`);
             return;
         }
 

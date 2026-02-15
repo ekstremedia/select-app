@@ -2,7 +2,8 @@
 
 namespace App\Application\Mail;
 
-use App\Models\User;
+use App\Infrastructure\Models\Game;
+use App\Infrastructure\Models\Player;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -10,26 +11,27 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class AccountBannedMail extends Mailable implements ShouldQueue
+class GameInviteMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
     public function __construct(
-        public User $user,
-        public string $reason,
+        public Player $inviter,
+        public Game $game,
+        public string $gameUrl,
     ) {}
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Kontoen din er utestengt — SELECT',
+            subject: 'Du er invitert til et spill — SELECT',
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            html: 'emails.account-banned',
+            html: 'emails.game-invite',
         );
     }
 }

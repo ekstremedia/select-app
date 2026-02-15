@@ -32,7 +32,7 @@
         </nav>
 
         <!-- Hero section -->
-        <section class="flex flex-col items-center px-4 pt-12 pb-16 sm:pt-20 sm:pb-24 text-center">
+        <section class="flex flex-col items-center px-4 pt-2 pb-16 sm:pt-20 sm:pb-24 text-center">
             <h1 class="text-6xl sm:text-8xl font-bold tracking-[0.3em] text-emerald-600 dark:text-emerald-400 mb-4">
                 SELECT
             </h1>
@@ -41,7 +41,7 @@
             <div class="flex gap-2 sm:gap-3 mb-6">
                 <span
                     v-for="(letter, i) in acronymLetters"
-                    :key="i"
+                    :key="`${animationKey}-${i}`"
                     class="inline-flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 rounded-lg text-lg sm:text-2xl font-bold bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border-2 border-emerald-300 dark:border-emerald-700 transition-all duration-500"
                     :style="{ transitionDelay: `${i * 100}ms`, opacity: visibleLetters > i ? 1 : 0, transform: visibleLetters > i ? 'translateY(0)' : 'translateY(-10px)' }"
                 >
@@ -51,7 +51,7 @@
 
             <!-- Animated sentence -->
             <p
-                class="text-lg sm:text-xl text-slate-600 dark:text-slate-400 mb-2 h-8 transition-opacity duration-500"
+                class="text-lg sm:text-xl text-slate-600 dark:text-slate-400 mb-2 min-h-8 max-w-lg truncate transition-opacity duration-500"
                 :style="{ opacity: showSentence ? 1 : 0 }"
             >
                 {{ currentSentence }}
@@ -63,6 +63,11 @@
             <p class="text-sm text-slate-400 dark:text-slate-500 mt-2 max-w-sm">
                 {{ t('hero.description') }}
             </p>
+        </section>
+
+        <!-- Play now CTA -->
+        <section class="px-4 pb-12 sm:pb-16 text-center">
+            <Button :label="t('cta.play')" severity="success" size="large" raised @click="router.visit('/spill')" />
         </section>
 
         <!-- How it works -->
@@ -109,14 +114,6 @@
             </div>
         </section>
 
-        <!-- CTA section -->
-        <section class="px-4 pb-16 sm:pb-24 text-center">
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button :label="t('cta.play')" severity="success" size="large" raised @click="router.visit('/games')" />
-                <Button :label="t('cta.download')" severity="secondary" size="large" variant="outlined" @click="router.visit('/archive')" />
-            </div>
-        </section>
-
         <!-- Footer -->
         <footer class="px-4 py-8 text-center border-t border-slate-200 dark:border-slate-800">
             <p class="text-sm text-slate-400 dark:text-slate-500">
@@ -140,19 +137,31 @@ defineOptions({ layout: false });
 const { t, toggleLocale, isNorwegian } = useI18n();
 const { isDark, toggleDark } = useDarkMode();
 
-const gullkorn = usePage().props.gullkorn || '';
-const gullkornWords = gullkorn.split(/\s+/).filter(w => w.length > 0);
-const acronymLetters = gullkornWords.map(w => w.replace(/[^a-zA-ZæøåÆØÅ]/, '').charAt(0).toUpperCase());
-const gullkornSentence = gullkornWords.join(' ');
+// Use the initial gullkorn from Inertia for the first animation
+const initialGullkorn = usePage().props.gullkorn || '';
 
+const acronymLetters = ref([]);
 const visibleLetters = ref(0);
 const showSentence = ref(false);
 const currentSentence = ref('');
+const animationKey = ref(0);
 const stats = ref(null);
 
 let animationTimer = null;
+let cycleTimeout = null;
 
-function animateAcronym() {
+function parseSentence(sentence) {
+    const words = sentence.split(/\s+/).filter(w => w.length > 0);
+    return {
+        letters: words.map(w => w.replace(/[^a-zA-ZæøåÆØÅ]/, '').charAt(0).toUpperCase()),
+        text: words.join(' '),
+    };
+}
+
+function animateWithSentence(sentence) {
+    const parsed = parseSentence(sentence);
+    acronymLetters.value = parsed.letters;
+    animationKey.value++;
     visibleLetters.value = 0;
     showSentence.value = false;
     currentSentence.value = '';
@@ -160,16 +169,33 @@ function animateAcronym() {
     let count = 0;
     animationTimer = setInterval(() => {
         count++;
-        if (count <= acronymLetters.length) {
+        if (count <= parsed.letters.length) {
             visibleLetters.value = count;
-        } else if (count === acronymLetters.length + 2) {
-            currentSentence.value = gullkornSentence;
+        } else if (count === parsed.letters.length + 2) {
+            currentSentence.value = parsed.text;
             showSentence.value = true;
-        } else if (count > acronymLetters.length + 8) {
+        } else if (count > parsed.letters.length + 8) {
             clearInterval(animationTimer);
-            setTimeout(animateAcronym, 2000);
+            animationTimer = null;
+            cycleTimeout = setTimeout(fetchAndAnimate, 2000);
         }
     }, 300);
+}
+
+async function fetchAndAnimate() {
+    try {
+        const { data } = await api.hallOfFame.random();
+        if (data.sentence?.text) {
+            animateWithSentence(data.sentence.text);
+            return;
+        }
+    } catch {
+        // Fallback to initial if API fails
+    }
+
+    if (initialGullkorn) {
+        animateWithSentence(initialGullkorn);
+    }
 }
 
 onMounted(async () => {
@@ -177,13 +203,23 @@ onMounted(async () => {
     if (!authStore.isInitialized) {
         await authStore.loadFromStorage();
     }
-    animateAcronym();
+
+    // Start first animation with Inertia prop, then fetch new ones
+    if (initialGullkorn) {
+        animateWithSentence(initialGullkorn);
+    } else {
+        fetchAndAnimate();
+    }
+
     api.stats().then(res => { stats.value = res.data; }).catch(() => {});
 });
 
 onUnmounted(() => {
     if (animationTimer) {
         clearInterval(animationTimer);
+    }
+    if (cycleTimeout) {
+        clearTimeout(cycleTimeout);
     }
 });
 </script>

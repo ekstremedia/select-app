@@ -43,13 +43,13 @@
                 <p class="text-slate-800 dark:text-slate-200 mb-2">{{ sentence.text?.toLowerCase() }}</p>
                 <div class="flex items-center justify-between">
                     <Link
-                        :href="`/profile/${sentence.player_nickname}`"
+                        :href="`/profil/${sentence.player_nickname}`"
                         class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
                     >
                         {{ sentence.player_nickname }}
                     </Link>
                     <span v-if="sentence.game_code" class="text-xs text-slate-400">
-                        <Link :href="`/archive/${sentence.game_code}`" class="hover:underline">
+                        <Link :href="`/arkiv/${sentence.game_code}`" class="hover:underline">
                             #{{ sentence.game_code }}
                         </Link>
                     </span>

@@ -1,7 +1,7 @@
 <template>
     <div class="max-w-4xl mx-auto px-4 py-8 sm:py-12">
         <!-- Back link -->
-        <Link href="/archive" class="inline-flex items-center gap-1 text-sm text-emerald-600 dark:text-emerald-400 hover:underline mb-6">
+        <Link href="/arkiv" class="inline-flex items-center gap-1 text-sm text-emerald-600 dark:text-emerald-400 hover:underline mb-6">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
             {{ t('archive.backToArchive') }}
         </Link>
@@ -50,14 +50,14 @@
                         v-for="(player, i) in game.standings"
                         :key="player.player_id"
                         class="flex items-center justify-between p-3 rounded-xl"
-                        :class="i === 0 ? 'bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900' : 'border border-slate-200 dark:border-slate-800'"
+                        :class="player.is_winner ? 'bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900' : 'border border-slate-200 dark:border-slate-800'"
                     >
                         <div class="flex items-center gap-3">
-                            <span class="text-lg font-bold w-8 text-center" :class="i === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'">
+                            <span class="text-lg font-bold w-8 text-center" :class="player.is_winner ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'">
                                 {{ i + 1 }}
                             </span>
                             <Link
-                                :href="`/profile/${player.nickname}`"
+                                :href="`/profil/${player.nickname}`"
                                 class="font-medium text-slate-800 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400"
                             >
                                 {{ player.nickname }}
@@ -107,7 +107,7 @@
                                     <p class="text-slate-800 dark:text-slate-200">{{ answer.text?.toLowerCase() }}</p>
                                     <div class="flex items-center gap-2 mt-1">
                                         <Link
-                                            :href="`/profile/${answer.player_nickname}`"
+                                            :href="`/profil/${answer.player_nickname}`"
                                             class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
                                         >
                                             {{ answer.player_nickname }}
@@ -207,7 +207,7 @@ async function toggleRound(roundNumber) {
 }
 
 async function shareGame() {
-    const url = `${window.location.origin}/archive/${props.code}`;
+    const url = `${window.location.origin}/arkiv/${props.code}`;
     try {
         await navigator.clipboard.writeText(url);
     } catch {

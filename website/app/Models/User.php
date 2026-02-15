@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Application\Mail\PasswordResetMail;
 use App\Infrastructure\Models\Player;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -75,5 +77,12 @@ class User extends Authenticatable
     {
         return $this->two_factor_secret !== null
             && $this->two_factor_confirmed_at !== null;
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $url = config('app.url').'/nytt-passord/'.$token.'?email='.urlencode($this->email);
+
+        Mail::to($this)->send(new PasswordResetMail($this, $url));
     }
 }

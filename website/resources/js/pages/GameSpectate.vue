@@ -2,7 +2,7 @@
     <GameLayout
         :game-code="gameStore.gameCode || props.code"
         :player-count="gameStore.players.length"
-        @leave="router.visit('/games')"
+        @leave="router.visit('/spill')"
     >
         <div class="flex flex-col h-full overflow-hidden">
             <!-- Loading state -->
@@ -169,7 +169,7 @@
                             </div>
                         </div>
 
-                        <Button :label="t('game.viewArchive')" severity="secondary" variant="outlined" @click="router.visit(`/archive/${props.code}`)" />
+                        <Button :label="t('game.viewArchive')" severity="secondary" variant="outlined" @click="router.visit(`/arkiv/${props.code}`)" />
                     </div>
                 </div>
             </template>
