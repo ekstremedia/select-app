@@ -45,9 +45,9 @@
                                 :value="t('games.statusLobby')"
                                 severity="success"
                             />
-                            <Badge :value="`${game.player_count}/${game.max_players ?? 8}`" />
+                            <Badge :value="`${game.player_count}/${game.max_players ?? 10}`" />
                             <span class="text-xs text-slate-400">
-                                {{ game.rounds ?? 5 }} {{ t('games.rounds') }}
+                                {{ game.rounds ?? 8 }} {{ t('games.rounds') }}
                             </span>
                         </div>
                     </div>
@@ -69,7 +69,7 @@
             <form @submit.prevent="handleJoinByCode" class="flex gap-2 items-start">
                 <InputText
                     v-model="joinCode"
-                    placeholder="KODE"
+                    :placeholder="t('games.code')"
                     maxlength="6"
                     class="w-28 text-center uppercase tracking-[0.2em] font-mono"
                     @input="joinCode = joinCode.toUpperCase().replace(/[^A-Z0-9]/g, '')"

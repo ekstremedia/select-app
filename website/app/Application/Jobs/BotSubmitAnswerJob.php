@@ -51,7 +51,7 @@ class BotSubmitAnswerJob implements ShouldQueue
             $answersCount = $round->answers()->count();
             $totalPlayers = $game->activePlayers()->count();
             event(new AnswerSubmittedBroadcast($game, $answersCount, $totalPlayers));
-            Log::warning('Bot answer broadcast sent', [
+            Log::info('Bot answer broadcast sent', [
                 'game' => $game->code,
                 'bot' => $player->nickname,
                 'answers' => $answersCount,

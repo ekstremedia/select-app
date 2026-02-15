@@ -17,6 +17,7 @@ use App\Domain\Round\Actions\SubmitVoteAction;
 use App\Http\Controllers\Controller;
 use App\Infrastructure\Models\Answer;
 use App\Infrastructure\Models\Round;
+use App\Infrastructure\Models\Vote;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -106,7 +107,7 @@ class RoundController extends Controller
         // Broadcast vote submitted (just count)
         $game = $round->game;
         $totalVoters = $game->activePlayers()->count();
-        $uniqueVoters = \App\Infrastructure\Models\Vote::whereHas('answer', fn ($q) => $q->where('round_id', $round->id))->distinct('voter_id')->count('voter_id');
+        $uniqueVoters = Vote::whereHas('answer', fn ($q) => $q->where('round_id', $round->id))->distinct('voter_id')->count('voter_id');
         try {
             broadcast(new VoteSubmittedBroadcast($game, $uniqueVoters, $totalVoters));
         } catch (\Throwable $e) {

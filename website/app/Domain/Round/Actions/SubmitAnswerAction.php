@@ -44,7 +44,7 @@ class SubmitAnswerAction
         // Check for existing answer
         $existing = $round->getAnswerByPlayer($player->id);
         if ($existing) {
-            $existing->update(['text' => trim($text)]);
+            $existing->update(['text' => $text]);
 
             return $existing->fresh();
         }
@@ -52,7 +52,7 @@ class SubmitAnswerAction
         return Answer::create([
             'round_id' => $round->id,
             'player_id' => $player->id,
-            'text' => trim($text),
+            'text' => $text,
             'author_nickname' => $player->nickname,
         ]);
     }

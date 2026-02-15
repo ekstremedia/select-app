@@ -22,7 +22,7 @@ Route::get('/login', fn () => Inertia::render('Login'))->name('login');
 Route::get('/register', fn () => Inertia::render('Register'))->name('register');
 Route::get('/forgot-password', fn () => Inertia::render('ForgotPassword'))->name('forgot-password');
 Route::get('/reset-password/{token}', fn (string $token) => Inertia::render('ResetPassword', ['token' => $token]))->name('reset-password');
-Route::get('/profile', fn () => Inertia::render('ProfileSettings'))->name('profile-settings');
+Route::get('/profile', fn () => Inertia::render('ProfileSettings'))->middleware('auth')->name('profile-settings');
 Route::get('/profile/{nickname}', fn (string $nickname) => Inertia::render('Profile', ['nickname' => $nickname]))->name('profile');
 Route::get('/games', fn () => Inertia::render('Games'))->name('games');
 Route::get('/games/create', fn () => Inertia::render('CreateGame'))->name('games-create');

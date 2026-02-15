@@ -33,7 +33,7 @@ const title = computed(() => {
         500: t('common.serverError'),
         503: t('common.serviceUnavailable'),
     };
-    return titles[props.status] || 'Error';
+    return titles[props.status] || t('common.error');
 });
 
 const description = computed(() => {

@@ -41,6 +41,7 @@ class BotFeatureTest extends TestCase
 
         // Create guest player
         $guestResponse = $this->postJson('/api/v1/auth/guest', ['nickname' => 'GuestPlayer']);
+        $guestResponse->assertStatus(201);
         $this->guestPlayer = Player::find($guestResponse->json('player.id'));
         $this->guestToken = $guestResponse->json('player.guest_token');
     }

@@ -106,14 +106,14 @@ class AnonymousVotingTest extends TestCase
             ->postJson("/api/v1/rounds/{$round->id}/voting");
 
         $answers = $votingResponse->json('answers');
-        $player2AnswerText = implode(' ', $words2);
+        $player2AnswerText = mb_strtolower(implode(' ', $words2));
         $player2Answer = collect($answers)->firstWhere('text', $player2AnswerText);
 
         // Both vote
         $this->withHeaders(['X-Guest-Token' => $this->hostToken])
             ->postJson("/api/v1/rounds/{$round->id}/vote", ['answer_id' => $player2Answer['id']]);
 
-        $hostAnswerText = implode(' ', $words);
+        $hostAnswerText = mb_strtolower(implode(' ', $words));
         $hostAnswer = collect($answers)->firstWhere('text', $hostAnswerText);
         $this->withHeaders(['X-Guest-Token' => $this->player2Token])
             ->postJson("/api/v1/rounds/{$round->id}/vote", ['answer_id' => $hostAnswer['id']]);
@@ -130,11 +130,10 @@ class AnonymousVotingTest extends TestCase
 
         // After completion, answers should contain player_id and player_name
         $answersInState = $stateResponse->json('answers');
-        if ($answersInState) {
-            foreach ($answersInState as $answer) {
-                $this->assertArrayHasKey('player_id', $answer);
-                $this->assertArrayHasKey('player_name', $answer);
-            }
+        $this->assertNotEmpty($answersInState);
+        foreach ($answersInState as $answer) {
+            $this->assertArrayHasKey('player_id', $answer);
+            $this->assertArrayHasKey('player_name', $answer);
         }
     }
 }

@@ -130,6 +130,8 @@ import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import { getConnectionState, joinGame, leaveGame, disconnect } from '../services/websocket.js';
 
+const page = usePage();
+
 const logEntries = ref([]);
 const connectionState = ref('disconnected');
 const channelCode = ref('');
@@ -139,7 +141,7 @@ let statePoller = null;
 let activeChannel = null;
 
 const config = computed(() => {
-    const reverb = usePage().props?.reverb;
+    const reverb = page.props?.reverb;
     return {
         host: window.location.hostname,
         port: reverb?.port || document.querySelector('meta[name="reverb-port"]')?.content || '?',

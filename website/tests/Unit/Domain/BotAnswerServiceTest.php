@@ -52,7 +52,9 @@ class BotAnswerServiceTest extends TestCase
 
         $words = preg_split('/\s+/', trim($answer));
         $this->assertCount(3, $words);
-        $this->assertStringStartsWith('A', strtoupper($words[0]));
+        $this->assertStringStartsWith('a', $words[0]);
+        $this->assertStringStartsWith('b', $words[1]);
+        $this->assertStringStartsWith('c', $words[2]);
     }
 
     public function test_handles_uncommon_letters(): void

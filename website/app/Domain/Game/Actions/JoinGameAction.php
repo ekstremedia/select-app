@@ -46,7 +46,7 @@ class JoinGameAction
                 return $existing;
             }
 
-            $maxPlayers = $game->settings['max_players'] ?? 8;
+            $maxPlayers = $game->settings['max_players'] ?? 10;
             $currentCount = $game->gamePlayers()->where('is_active', true)->count();
 
             if ($currentCount >= $maxPlayers) {

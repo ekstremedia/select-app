@@ -12,14 +12,14 @@ use App\Application\Broadcasting\Events\PlayerJoinedBroadcast;
 use App\Application\Broadcasting\Events\PlayerKickedBroadcast;
 use App\Application\Broadcasting\Events\PlayerLeftBroadcast;
 use App\Application\Broadcasting\Events\RoundStartedBroadcast;
-use App\Application\Jobs\BotSubmitAnswerJob;
 use App\Application\Http\Requests\Api\V1\CreateGameRequest;
 use App\Application\Http\Requests\Api\V1\JoinGameRequest;
+use App\Application\Jobs\BotSubmitAnswerJob;
 use App\Domain\Game\Actions\CreateGameAction;
+use App\Domain\Game\Actions\EndGameAction;
 use App\Domain\Game\Actions\GetGameByCodeAction;
 use App\Domain\Game\Actions\JoinGameAction;
 use App\Domain\Game\Actions\KickPlayerAction;
-use App\Domain\Game\Actions\EndGameAction;
 use App\Domain\Game\Actions\LeaveGameAction;
 use App\Domain\Game\Actions\StartGameAction;
 use App\Domain\Player\Actions\CreateBotPlayerAction;
@@ -180,8 +180,8 @@ class GameController extends Controller
         // Dispatch bot answer jobs for round 1
         $botPlayers = $game->activePlayers()->where('players.is_bot', true)->get();
         $answerTime = $game->settings['answer_time'] ?? 60;
-        $minDelay = max(3, (int) ($answerTime * 0.2));
-        $maxDelay = max(8, (int) ($answerTime * 0.8));
+        $maxDelay = min(max(8, (int) ($answerTime * 0.8)), max(1, $answerTime - 1));
+        $minDelay = min(max(3, (int) ($answerTime * 0.2)), $maxDelay);
         foreach ($botPlayers as $bot) {
             $delay = rand($minDelay, $maxDelay);
             BotSubmitAnswerJob::dispatch($round->id, $bot->id)->delay(now()->addSeconds($delay));
@@ -421,11 +421,13 @@ class GameController extends Controller
 
         $kickedPlayer = \App\Infrastructure\Models\Player::find($playerId);
 
-        try {
-            broadcast(new PlayerKickedBroadcast($game, $kickedPlayer, $player->nickname));
-            broadcast(new ChatMessageBroadcast($game, 'Delectus', "{$kickedPlayer->nickname} ble sparket fra spillet av {$player->nickname}", true));
-        } catch (\Throwable $e) {
-            Log::error('Broadcast failed: player.kicked', ['game' => $code, 'error' => $e->getMessage()]);
+        if ($kickedPlayer) {
+            try {
+                broadcast(new PlayerKickedBroadcast($game, $kickedPlayer, $player->nickname));
+                broadcast(new ChatMessageBroadcast($game, 'Delectus', "{$kickedPlayer->nickname} ble sparket fra spillet av {$player->nickname}", true));
+            } catch (\Throwable $e) {
+                Log::error('Broadcast failed: player.kicked', ['game' => $code, 'error' => $e->getMessage()]);
+            }
         }
 
         return response()->json([

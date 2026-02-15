@@ -92,12 +92,12 @@ class DelectusService
                 }
 
                 // Answering phase deadline passed
-                if ($round->status === 'answering' && $round->answer_deadline <= now()) {
+                if ($round->status === 'answering' && $round->answer_deadline && $round->answer_deadline->isPast()) {
                     return true;
                 }
 
                 // Voting phase deadline passed
-                if ($round->status === 'voting' && $round->vote_deadline <= now()) {
+                if ($round->status === 'voting' && $round->vote_deadline && $round->vote_deadline->isPast()) {
                     return true;
                 }
 

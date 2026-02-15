@@ -88,7 +88,7 @@ class GameProcessor
 
             // User did keepalive after warning (updated_at is newer)
             if ($game->updated_at->gt($warningTime)) {
-                $settings = collect($settings)->except('lobby_warning_at')->all();
+                unset($settings['lobby_warning_at']);
                 DB::table('games')->where('id', $game->id)->update(['settings' => json_encode($settings)]);
 
                 return;
@@ -367,9 +367,9 @@ class GameProcessor
     {
         $botPlayers = $game->activePlayers()->where('players.is_bot', true)->get();
         $answerTime = $game->settings['answer_time'] ?? 60;
-        // Bots answer between 20%-80% of answer time, spread out
-        $minDelay = max(3, (int) ($answerTime * 0.2));
-        $maxDelay = max(8, (int) ($answerTime * 0.8));
+        // Bots answer between 20%-80% of answer time, capped to stay within deadline
+        $maxDelay = min(max(8, (int) ($answerTime * 0.8)), max(1, $answerTime - 1));
+        $minDelay = min(max(3, (int) ($answerTime * 0.2)), $maxDelay);
 
         foreach ($botPlayers as $bot) {
             $delay = rand($minDelay, $maxDelay);

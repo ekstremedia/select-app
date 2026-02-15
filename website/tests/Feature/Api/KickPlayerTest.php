@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Api;
 
+use App\Infrastructure\Models\Game;
 use App\Infrastructure\Models\Player;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -139,7 +139,7 @@ class KickPlayerTest extends TestCase
         $code = $this->createGameWithPlayers();
 
         // Manually set game to finished
-        $game = \App\Infrastructure\Models\Game::where('code', $code)->first();
+        $game = Game::where('code', $code)->first();
         $game->update(['status' => 'finished', 'finished_at' => now()]);
 
         $response = $this->withHeaders(['X-Guest-Token' => $this->hostToken])

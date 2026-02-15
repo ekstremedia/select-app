@@ -53,5 +53,8 @@ class CreateBotPlayerActionTest extends TestCase
 
         // All players should be saved in DB
         $this->assertEquals(10, Player::where('is_bot', true)->count());
+
+        // Verify all IDs are unique
+        $this->assertCount(10, array_unique($names));
     }
 }

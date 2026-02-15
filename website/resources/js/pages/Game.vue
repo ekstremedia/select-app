@@ -266,7 +266,7 @@
                                             ? 'border-emerald-500 dark:border-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 cursor-pointer'
                                             : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-emerald-300 dark:hover:border-emerald-700 cursor-pointer'
                                 "
-                                @click="!answer.is_own && !voteLoading && canVote(answer.id) && handleDirectVote(answer.id)"
+                                @click="onAnswerClick(answer)"
                             >
                                 <div class="flex items-start justify-between gap-2">
                                     <p class="select-none text-slate-800 dark:text-slate-200">{{ answer.text?.toLowerCase() }}</p>
@@ -582,7 +582,6 @@ const showTimer = computed(() => {
 });
 
 const timerPercent = computed(() => {
-    if (!gameStore.deadline) return 100;
     let total;
     if (phase.value === 'results') {
         total = gameStore.currentGame?.settings?.time_between_rounds ?? 15;
@@ -735,6 +734,11 @@ async function handleSubmitAnswer() {
     } finally {
         submitLoading.value = false;
     }
+}
+
+function onAnswerClick(answer) {
+    if (answer.is_own || voteLoading.value || !canVote(answer.id)) return;
+    handleDirectVote(answer.id);
 }
 
 async function handleDirectVote(answerId) {

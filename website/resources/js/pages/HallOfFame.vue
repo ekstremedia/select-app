@@ -147,7 +147,7 @@ async function loadSentences() {
         const { data } = await api.hallOfFame.list(params);
         const newItems = data.sentences ?? data.data ?? [];
         sentences.value = page.value === 1 ? newItems : [...sentences.value, ...newItems];
-        hasMore.value = data.meta?.has_more ?? (data.next_page_url != null) ?? false;
+        hasMore.value = data.meta?.has_more ?? (data.next_page_url != null);
     } catch {
         // Keep existing
     } finally {

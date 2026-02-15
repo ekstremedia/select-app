@@ -62,7 +62,7 @@ class BotSubmitVoteJob implements ShouldQueue
                 ->distinct('voter_id')
                 ->count('voter_id');
             event(new VoteSubmittedBroadcast($game, $uniqueVoters, $totalVoters));
-            Log::warning('Bot vote broadcast sent', [
+            Log::info('Bot vote broadcast sent', [
                 'game' => $game->code,
                 'bot' => $player->nickname,
                 'votes' => $uniqueVoters,

@@ -25,9 +25,10 @@ class ResolvePlayer
             $user = Auth::guard('sanctum')->user();
             if ($user) {
                 $player = Player::where('user_id', $user->id)->first();
-                // Set the authenticated user on the request so $request->user() works
-                // in downstream controllers (e.g. AuthController::me returns user data)
-                Auth::setUser($user);
+                // Set the authenticated user so $request->user() works downstream.
+                // Scoped to sanctum guard to avoid leaking into session state.
+                Auth::guard('sanctum')->setUser($user);
+                app('auth')->shouldUse('sanctum');
             }
         }
 

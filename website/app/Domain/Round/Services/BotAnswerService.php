@@ -46,13 +46,16 @@ class BotAnswerService
             }
 
             // Pick a random one from the top 20 most-voted matches
-            $candidate = $query
+            $results = $query
                 ->orderByDesc('stemmer')
                 ->limit(20)
-                ->get()
-                ->random();
+                ->get();
 
-            return mb_strtolower($candidate->setning);
+            if ($results->isEmpty()) {
+                return null;
+            }
+
+            return mb_strtolower($results->random()->setning);
         } catch (\Throwable $e) {
             Log::warning('BotAnswerService: gullkorn_clean query failed', ['error' => $e->getMessage()]);
 
@@ -96,7 +99,7 @@ class BotAnswerService
 
         $words = [];
         foreach ($letters as $letter) {
-            $options = $wordBank[$letter] ?? [$letter . 'ord'];
+            $options = $wordBank[$letter] ?? [$letter.'ord'];
             $words[] = $options[array_rand($options)];
         }
 

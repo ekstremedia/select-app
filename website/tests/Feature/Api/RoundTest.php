@@ -173,7 +173,7 @@ class RoundTest extends TestCase
             ->postJson("/api/v1/rounds/{$round->id}/voting");
 
         $answers = $votingResponse->json('answers');
-        $player2AnswerText = implode(' ', $words2);
+        $player2AnswerText = mb_strtolower(implode(' ', $words2));
         $player2Answer = collect($answers)->firstWhere('text', $player2AnswerText);
 
         // Host votes for player2's answer
@@ -205,7 +205,7 @@ class RoundTest extends TestCase
             ->postJson("/api/v1/rounds/{$round->id}/voting");
 
         $answers = $votingResponse->json('answers');
-        $hostAnswerText = implode(' ', $words);
+        $hostAnswerText = mb_strtolower(implode(' ', $words));
         $hostAnswer = collect($answers)->firstWhere('text', $hostAnswerText);
 
         // Host tries to vote for own answer

@@ -10,6 +10,7 @@ use App\Infrastructure\Models\Game;
 use App\Infrastructure\Models\GameResult;
 use App\Infrastructure\Models\HallOfFame;
 use App\Infrastructure\Models\PlayerStat;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class EndGameAction
@@ -88,7 +89,7 @@ class EndGameAction
         ]);
 
         // Clear archive cache so fresh data is served
-        \Illuminate\Support\Facades\Cache::forget("archive:{$game->code}");
+        Cache::forget("archive:{$game->code}");
 
         try {
             broadcast(new GameFinishedBroadcast($game, $finalScores));

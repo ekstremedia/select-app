@@ -31,7 +31,11 @@ class ProcessAnswerDeadlineJob implements ShouldQueue
         try {
             $action->execute($round);
         } catch (\Throwable $e) {
-            Log::error('ProcessAnswerDeadlineJob: Failed to start voting', ['error' => $e->getMessage()]);
+            Log::error('ProcessAnswerDeadlineJob: Failed to start voting', [
+                'round_id' => $this->roundId,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
         }
     }
 }
