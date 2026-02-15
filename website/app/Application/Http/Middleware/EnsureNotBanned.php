@@ -25,11 +25,15 @@ class EnsureNotBanned
         // Check IP ban for guests
         $player = $request->attributes->get('player');
         if ($player && $player->isGuest()) {
-            $ipBanned = BannedIp::where('ip_address', $request->ip())->exists();
-            if ($ipBanned) {
-                return response()->json([
-                    'error' => 'Your IP address has been banned.',
-                ], 403);
+            try {
+                $ipBanned = BannedIp::where('ip_address', $request->ip())->exists();
+                if ($ipBanned) {
+                    return response()->json([
+                        'error' => 'Your IP address has been banned.',
+                    ], 403);
+                }
+            } catch (\Illuminate\Database\QueryException $e) {
+                // Table may not exist yet — skip IP ban check
             }
         }
 
