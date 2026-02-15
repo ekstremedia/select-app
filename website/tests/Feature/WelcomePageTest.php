@@ -32,15 +32,15 @@ class WelcomePageTest extends TestCase
     {
         $response = $this->get('/');
 
-        $response->assertSee('the classic acronym sentence game', false);
+        $response->assertSee('akronym-spillet', false);
     }
 
-    public function test_welcome_page_loads_instrument_sans_font(): void
+    public function test_welcome_page_loads_source_sans_font(): void
     {
         $response = $this->get('/');
 
         $response->assertSee('fonts.bunny.net', false);
-        $response->assertSee('instrument-sans', false);
+        $response->assertSee('source-sans-3', false);
     }
 
     public function test_welcome_page_has_correct_title(): void

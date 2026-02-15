@@ -26,31 +26,38 @@
                             {{ t('game.round') }} {{ gameStore.currentRound?.round_number ?? 1 }} {{ t('game.of') }} {{ totalRounds }}
                         </span>
                         <div class="flex items-center gap-2">
-                            <!-- Host live controls -->
-                            <template v-if="gameStore.isHost">
-                                <button
-                                    @click="handleToggleChat"
-                                    class="text-xs px-1.5 py-0.5 rounded border transition-colors"
-                                    :class="chatEnabled
-                                        ? 'border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50'
-                                        : 'border-slate-300 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'"
-                                    :title="chatEnabled ? t('game.disableChat') : t('game.enableChat')"
-                                >
-                                    {{ t('game.chat') }}
-                                </button>
-                                <button
-                                    @click="handleToggleVisibility"
-                                    class="text-xs px-1.5 py-0.5 rounded border transition-colors"
-                                    :class="gameStore.currentGame?.is_public
-                                        ? 'border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50'
-                                        : 'border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/50'"
-                                    :title="gameStore.currentGame?.is_public ? t('game.makePrivate') : t('game.makePublic')"
-                                >
-                                    <svg v-if="!gameStore.currentGame?.is_public" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3 h-3 inline -mt-0.5"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg>
-                                    <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3 h-3 inline -mt-0.5"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clip-rule="evenodd" /></svg>
-                                    {{ gameStore.currentGame?.is_public ? t('create.public') : t('create.private') }}
-                                </button>
-                            </template>
+                            <!-- Host settings cog -->
+                            <button
+                                v-if="gameStore.isHost"
+                                @click="toggleHostMenu"
+                                class="w-6 h-6 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4"><path fill-rule="evenodd" d="M7.84 1.804A1 1 0 018.82 1h2.36a1 1 0 01.98.804l.331 1.652a6.993 6.993 0 011.929 1.115l1.598-.54a1 1 0 011.186.447l1.18 2.044a1 1 0 01-.205 1.251l-1.267 1.113a7.047 7.047 0 010 2.228l1.267 1.113a1 1 0 01.206 1.25l-1.18 2.045a1 1 0 01-1.187.447l-1.598-.54a6.993 6.993 0 01-1.929 1.115l-.33 1.652a1 1 0 01-.98.804H8.82a1 1 0 01-.98-.804l-.331-1.652a6.993 6.993 0 01-1.929-1.115l-1.598.54a1 1 0 01-1.186-.447l-1.18-2.044a1 1 0 01.205-1.251l1.267-1.114a7.05 7.05 0 010-2.227L1.821 7.773a1 1 0 01-.206-1.25l1.18-2.045a1 1 0 011.187-.447l1.598.54A6.993 6.993 0 017.51 3.456l.33-1.652zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
+                            </button>
+                            <Popover ref="hostMenuRef">
+                                <div class="py-1 min-w-[11rem]">
+                                    <button
+                                        class="w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-between gap-3"
+                                        @click="handleToggleChat"
+                                    >
+                                        <span class="text-slate-700 dark:text-slate-300">{{ t('game.chat') }}</span>
+                                        <span class="text-xs font-medium" :class="chatEnabled ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'">
+                                            {{ chatEnabled ? t('common.on') : t('common.off') }}
+                                        </span>
+                                    </button>
+                                    <button
+                                        class="w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-between gap-3"
+                                        @click="handleToggleVisibility"
+                                    >
+                                        <span class="text-slate-700 dark:text-slate-300">{{ t('create.visibility') }}</span>
+                                        <span class="text-xs font-medium flex items-center gap-1" :class="gameStore.currentGame?.is_public ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'">
+                                            <svg v-if="!gameStore.currentGame?.is_public" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3 h-3"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg>
+                                            <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3 h-3"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clip-rule="evenodd" /></svg>
+                                            {{ gameStore.currentGame?.is_public ? t('create.public') : t('create.private') }}
+                                        </span>
+                                    </button>
+                                </div>
+                            </Popover>
                             <span class="text-sm font-mono font-bold" :class="gameStore.timeRemaining <= 10 ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'">
                                 {{ gameStore.timeRemaining }}s
                             </span>
@@ -890,6 +897,7 @@ const banDialogNickname = ref('');
 const banReason = ref('');
 const playerMenuRef = ref(null);
 const menuPlayer = ref(null);
+const hostMenuRef = ref(null);
 const inviteDialogVisible = ref(false);
 const inviteEmail = ref('');
 const inviteLoading = ref(false);
@@ -1459,6 +1467,10 @@ async function handleUnbanPlayer(playerId) {
     } catch (err) {
         error.value = err.response?.data?.error || t('common.error');
     }
+}
+
+function toggleHostMenu(event) {
+    hostMenuRef.value.toggle(event);
 }
 
 async function handleToggleChat() {
