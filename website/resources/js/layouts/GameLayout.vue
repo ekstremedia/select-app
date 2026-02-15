@@ -12,7 +12,7 @@
             </div>
             <div class="flex items-center gap-3">
                 <span class="text-xs text-slate-500">
-                    {{ playerCount }} {{ playerCount === 1 ? 'player' : 'players' }}
+                    {{ playerCount }} {{ t(playerCount === 1 ? 'common.player' : 'common.players') }}
                 </span>
                 <Button
                     :label="t('game.leave')"

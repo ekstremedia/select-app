@@ -3,6 +3,8 @@
 namespace App\Application\Jobs;
 
 use App\Application\Broadcasting\Events\AnswerSubmittedBroadcast;
+use App\Application\Broadcasting\Events\PlayerReadyBroadcast;
+use App\Domain\Round\Actions\MarkReadyAction;
 use App\Domain\Round\Actions\SubmitAnswerAction;
 use App\Domain\Round\Services\BotAnswerService;
 use App\Infrastructure\Models\Player;
@@ -23,7 +25,7 @@ class BotSubmitAnswerJob implements ShouldQueue
         public string $playerId,
     ) {}
 
-    public function handle(SubmitAnswerAction $submitAction, BotAnswerService $botAnswerService): void
+    public function handle(SubmitAnswerAction $submitAction, BotAnswerService $botAnswerService, MarkReadyAction $markReadyAction): void
     {
         $round = Round::find($this->roundId);
         $player = Player::find($this->playerId);
@@ -34,7 +36,7 @@ class BotSubmitAnswerJob implements ShouldQueue
 
         try {
             $text = $botAnswerService->findAnswer($round->acronym);
-            $submitAction->execute($round, $player, $text);
+            $answer = $submitAction->execute($round, $player, $text);
         } catch (\Throwable $e) {
             Log::warning('Bot failed to submit answer', [
                 'player_id' => $this->playerId,
@@ -45,24 +47,35 @@ class BotSubmitAnswerJob implements ShouldQueue
             return;
         }
 
+        $game = $round->game;
+        $totalPlayers = $game->activePlayers()->count();
+
         // Broadcast like a normal user — use event() for reliable dispatch from queue context
         try {
-            $game = $round->game;
             $answersCount = $round->answers()->count();
-            $totalPlayers = $game->activePlayers()->count();
             event(new AnswerSubmittedBroadcast($game, $answersCount, $totalPlayers));
-            Log::info('Bot answer broadcast sent', [
-                'game' => $game->code,
-                'bot' => $player->nickname,
-                'answers' => $answersCount,
-                'total' => $totalPlayers,
-            ]);
         } catch (\Throwable $e) {
             Log::error('Bot answer broadcast failed', [
                 'player_id' => $this->playerId,
                 'round_id' => $this->roundId,
                 'error' => $e->getMessage(),
             ]);
+        }
+
+        // Auto-ready: bots are always satisfied with their answer
+        if ($game->settings['allow_ready_check'] ?? true) {
+            try {
+                $answer->update(['is_ready' => true]);
+                $markReadyAction->checkAutoAdvance($round->fresh());
+                $readyCount = $round->answers()->where('is_ready', true)->count();
+                event(new PlayerReadyBroadcast($game, $readyCount, $totalPlayers));
+            } catch (\Throwable $e) {
+                Log::warning('Bot failed to mark ready', [
+                    'player_id' => $this->playerId,
+                    'round_id' => $this->roundId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
     }
 }

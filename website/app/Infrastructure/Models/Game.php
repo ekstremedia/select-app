@@ -136,10 +136,14 @@ class Game extends Model
             'rounds' => 8,
             'answer_time' => 120,
             'vote_time' => 60,
-            'time_between_rounds' => 15,
+            'time_between_rounds' => 30,
             'acronym_length_min' => 5,
             'acronym_length_max' => 5,
             'excluded_letters' => '',
+            'chat_enabled' => true,
+            'max_edits' => 0,
+            'max_vote_changes' => 0,
+            'allow_ready_check' => true,
         ];
     }
 

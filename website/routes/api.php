@@ -89,10 +89,13 @@ Route::prefix('v1')->group(function () {
             Route::post('/{code}/keepalive', [GameController::class, 'keepalive']);
             Route::post('/{code}/chat', [GameController::class, 'chat']);
             Route::post('/{code}/co-host/{playerId}', [GameController::class, 'toggleCoHost']);
+            Route::post('/{code}/add-bot', [GameController::class, 'addBot']);
+            Route::delete('/{code}/bot/{playerId}', [GameController::class, 'removeBot']);
             Route::post('/{code}/kick/{playerId}', [GameController::class, 'kick']);
             Route::post('/{code}/ban/{playerId}', [GameController::class, 'banPlayer']);
             Route::post('/{code}/unban/{playerId}', [GameController::class, 'unbanPlayer']);
             Route::patch('/{code}/visibility', [GameController::class, 'updateVisibility']);
+            Route::patch('/{code}/settings', [GameController::class, 'updateSettings']);
             Route::post('/{code}/rematch', [GameController::class, 'rematch']);
             Route::post('/{code}/invite', [GameController::class, 'invite']);
             Route::get('/{code}/rounds/current', [RoundController::class, 'current']);
@@ -102,6 +105,7 @@ Route::prefix('v1')->group(function () {
         Route::prefix('rounds')->group(function () {
             Route::post('/{id}/answer', [RoundController::class, 'submitAnswer']);
             Route::post('/{id}/vote', [RoundController::class, 'submitVote']);
+            Route::post('/{id}/ready', [RoundController::class, 'markReady']);
             Route::post('/{id}/voting', [RoundController::class, 'startVoting']);
             Route::post('/{id}/complete', [RoundController::class, 'complete']);
         });

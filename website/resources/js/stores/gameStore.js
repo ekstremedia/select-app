@@ -19,6 +19,8 @@ export const useGameStore = defineStore('game', () => {
     const chatMessages = ref([]);
     const roundResults = ref(null);
     const lobbyExpiring = ref(false);
+    const readyCount = ref(0);
+    const totalPlayersForReady = ref(0);
     const wsChannel = ref(null);
 
     let countdownInterval = null;
@@ -110,6 +112,13 @@ export const useGameStore = defineStore('game', () => {
         return data;
     }
 
+    async function markReady(roundId, ready) {
+        const { data } = await api.rounds.markReady(roundId, ready);
+        readyCount.value = data.ready_count;
+        totalPlayersForReady.value = data.total_players;
+        return data;
+    }
+
     async function endGame(code) {
         const { data } = await api.games.end(code);
         resetState();
@@ -119,6 +128,20 @@ export const useGameStore = defineStore('game', () => {
     async function keepalive(code) {
         await api.games.keepalive(code);
         lobbyExpiring.value = false;
+    }
+
+    async function addBot(code) {
+        const { data } = await api.games.addBot(code);
+        if (data.player) {
+            players.value.push(data.player);
+        }
+        return data;
+    }
+
+    async function removeBot(code, playerId) {
+        const { data } = await api.games.removeBot(code, playerId);
+        players.value = players.value.filter(p => p.id !== data.player_id);
+        return data;
     }
 
     async function kickPlayer(code, playerId) {
@@ -163,6 +186,15 @@ export const useGameStore = defineStore('game', () => {
         return data;
     }
 
+    async function updateSettings(code, payload) {
+        const { data } = await api.games.updateSettings(code, payload);
+        if (currentGame.value) {
+            currentGame.value.settings = data.settings;
+            currentGame.value.is_public = data.is_public;
+        }
+        return data;
+    }
+
     async function rematch(code) {
         const { data } = await api.games.rematch(code);
         // Reset and set up the new game
@@ -198,6 +230,10 @@ export const useGameStore = defineStore('game', () => {
         }
         if (data.my_answer) {
             myAnswer.value = data.my_answer;
+        }
+        if (data.round?.ready_count !== undefined) {
+            readyCount.value = data.round.ready_count;
+            totalPlayersForReady.value = data.round.total_players;
         }
         if (data.my_vote) {
             myVote.value = data.my_vote;
@@ -328,6 +364,8 @@ export const useGameStore = defineStore('game', () => {
                 myVote.value = null;
                 answers.value = [];
                 roundResults.value = null;
+                readyCount.value = 0;
+                totalPlayersForReady.value = 0;
                 _setRound(data);
                 useSoundStore().play('round-start');
             })
@@ -337,6 +375,10 @@ export const useGameStore = defineStore('game', () => {
                     currentRound.value.answers_count = data.answers_count;
                     currentRound.value.total_players = data.total_players;
                 }
+            })
+            .listen('.player.ready', (data) => {
+                readyCount.value = data.ready_count;
+                totalPlayersForReady.value = data.total_players;
             })
             .listen('.voting.started', (data) => {
                 phase.value = 'voting';
@@ -395,8 +437,13 @@ export const useGameStore = defineStore('game', () => {
                 }
             })
             .listen('.game.settings_changed', (data) => {
-                if (currentGame.value && data.is_public !== undefined) {
-                    currentGame.value.is_public = data.is_public;
+                if (currentGame.value) {
+                    if (data.settings) {
+                        currentGame.value.settings = data.settings;
+                    }
+                    if (data.is_public !== undefined) {
+                        currentGame.value.is_public = data.is_public;
+                    }
                 }
             })
             .listen('.lobby.expiring', (data) => {
@@ -571,6 +618,8 @@ export const useGameStore = defineStore('game', () => {
         chatMessages.value = [];
         roundResults.value = null;
         lobbyExpiring.value = false;
+        readyCount.value = 0;
+        totalPlayersForReady.value = 0;
     }
 
     return {
@@ -588,6 +637,8 @@ export const useGameStore = defineStore('game', () => {
         chatMessages,
         roundResults,
         lobbyExpiring,
+        readyCount,
+        totalPlayersForReady,
         isHost,
         isActualHost,
         hasSubmittedAnswer,
@@ -602,12 +653,16 @@ export const useGameStore = defineStore('game', () => {
         submitVote,
         endGame,
         keepalive,
+        addBot,
+        removeBot,
         kickPlayer,
         banPlayer,
         unbanPlayer,
         toggleCoHost,
         updateVisibility,
+        updateSettings,
         rematch,
+        markReady,
         sendChatMessage,
         fetchGameState,
         fetchCurrentRound,

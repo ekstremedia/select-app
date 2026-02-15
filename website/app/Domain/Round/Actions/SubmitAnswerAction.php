@@ -44,7 +44,17 @@ class SubmitAnswerAction
         // Check for existing answer
         $existing = $round->getAnswerByPlayer($player->id);
         if ($existing) {
-            $existing->update(['text' => $text]);
+            // Enforce max_edits (0 = unlimited)
+            $maxEdits = $round->game->settings['max_edits'] ?? 0;
+            if ($maxEdits > 0 && $existing->edit_count >= $maxEdits) {
+                throw new \InvalidArgumentException('Maximum edits reached');
+            }
+
+            $existing->update([
+                'text' => $text,
+                'edit_count' => $existing->edit_count + 1,
+                'is_ready' => false,
+            ]);
 
             return $existing->fresh();
         }

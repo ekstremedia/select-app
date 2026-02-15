@@ -18,10 +18,14 @@ class Answer extends Model
         'text',
         'author_nickname',
         'votes_count',
+        'edit_count',
+        'is_ready',
     ];
 
     protected $casts = [
         'votes_count' => 'integer',
+        'edit_count' => 'integer',
+        'is_ready' => 'boolean',
     ];
 
     public function round(): BelongsTo

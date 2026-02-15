@@ -38,7 +38,7 @@ class CreateGameAction
     {
         $attempts = 0;
         do {
-            $code = strtoupper(Str::random(4));
+            $code = strtoupper(Str::random(5));
             // Avoid confusing characters
             $code = str_replace(['0', 'O', 'I', '1', 'L'], ['A', 'B', 'C', 'D', 'E'], $code);
             $attempts++;

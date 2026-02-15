@@ -15,7 +15,7 @@
                     <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
                         {{ t('create.rounds') }}: {{ settings.rounds }}
                     </label>
-                    <Slider v-model="settings.rounds" :min="1" :max="20" :step="1" class="w-full" />
+                    <Slider v-model="settings.rounds" :min="1" :max="20" :step="1" class="w-full px-3" />
                 </div>
 
                 <!-- Answer time -->
@@ -23,7 +23,7 @@
                     <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
                         {{ t('create.answerTime') }}: {{ settings.answer_time }} {{ t('create.seconds') }}
                     </label>
-                    <Slider v-model="settings.answer_time" :min="15" :max="180" :step="5" class="w-full" />
+                    <Slider v-model="settings.answer_time" :min="15" :max="180" :step="5" class="w-full px-3" />
                 </div>
 
                 <!-- Vote time -->
@@ -31,7 +31,7 @@
                     <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
                         {{ t('create.voteTime') }}: {{ settings.vote_time }} {{ t('create.seconds') }}
                     </label>
-                    <Slider v-model="settings.vote_time" :min="10" :max="120" :step="5" class="w-full" />
+                    <Slider v-model="settings.vote_time" :min="10" :max="120" :step="5" class="w-full px-3" />
                 </div>
 
                 <!-- Time between rounds -->
@@ -39,7 +39,44 @@
                     <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
                         {{ t('create.timeBetweenRounds') }}: {{ settings.time_between_rounds }} {{ t('create.seconds') }}
                     </label>
-                    <Slider v-model="settings.time_between_rounds" :min="3" :max="30" :step="1" class="w-full" />
+                    <Slider v-model="settings.time_between_rounds" :min="3" :max="120" :step="1" class="w-full px-3" />
+                </div>
+
+                <!-- Max edits -->
+                <div>
+                    <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">
+                        {{ t('create.maxEdits') }}: {{ settings.max_edits === 0 ? t('create.unlimited') : settings.max_edits }}
+                    </label>
+                    <p class="text-xs text-slate-400 mb-2">{{ t('create.maxEditsDesc') }}</p>
+                    <Slider v-model="settings.max_edits" :min="0" :max="10" :step="1" class="w-full px-3" />
+                </div>
+
+                <!-- Max vote changes -->
+                <div>
+                    <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">
+                        {{ t('create.maxVoteChanges') }}: {{ settings.max_vote_changes === 0 ? t('create.unlimited') : settings.max_vote_changes }}
+                    </label>
+                    <p class="text-xs text-slate-400 mb-2">{{ t('create.maxVoteChangesDesc') }}</p>
+                    <Slider v-model="settings.max_vote_changes" :min="0" :max="10" :step="1" class="w-full px-3" />
+                </div>
+
+                <!-- Ready check -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <label for="readyCheck" class="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                            {{ t('create.readyCheck') }}
+                        </label>
+                        <p class="text-xs text-slate-400">{{ t('create.readyCheckDesc') }}</p>
+                    </div>
+                    <ToggleSwitch v-model="settings.allow_ready_check" inputId="readyCheck" />
+                </div>
+
+                <!-- Chat -->
+                <div class="flex items-center justify-between">
+                    <label for="chatEnabled" class="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                        {{ t('create.chat') }}
+                    </label>
+                    <ToggleSwitch v-model="settings.chat_enabled" inputId="chatEnabled" />
                 </div>
             </div>
 
@@ -49,7 +86,7 @@
                     <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
                         {{ t('create.acronymLength') }}: {{ settings.acronym_length }}
                     </label>
-                    <Slider v-model="settings.acronym_length" :min="1" :max="6" :step="1" class="w-full" />
+                    <Slider v-model="settings.acronym_length" :min="1" :max="6" :step="1" class="w-full px-3" />
                 </div>
 
                 <!-- Max players -->
@@ -57,7 +94,7 @@
                     <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
                         {{ t('create.maxPlayers') }}: {{ settings.max_players }}
                     </label>
-                    <Slider v-model="settings.max_players" :min="2" :max="16" :step="1" class="w-full" />
+                    <Slider v-model="settings.max_players" :min="2" :max="16" :step="1" class="w-full px-3" />
                 </div>
 
                 <!-- Excluded letters -->
@@ -151,6 +188,7 @@ import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import Slider from 'primevue/slider';
 import Checkbox from 'primevue/checkbox';
+import ToggleSwitch from 'primevue/toggleswitch';
 import { useGameStore } from '../stores/gameStore.js';
 import { useAuthStore } from '../stores/authStore.js';
 import { useI18n } from '../composables/useI18n.js';
@@ -163,12 +201,16 @@ const settings = reactive({
     rounds: 8,
     answer_time: 60,
     vote_time: 30,
-    time_between_rounds: 15,
+    time_between_rounds: 30,
     acronym_length: 5,
     max_players: 8,
     excluded_letters: '',
     is_private: false,
     password: '',
+    chat_enabled: true,
+    allow_ready_check: true,
+    max_edits: 0,
+    max_vote_changes: 0,
     add_bots: false,
 });
 
@@ -188,6 +230,10 @@ async function handleCreate() {
             acronym_length_min: settings.acronym_length,
             acronym_length_max: settings.acronym_length,
             max_players: settings.max_players,
+            chat_enabled: settings.chat_enabled,
+            allow_ready_check: settings.allow_ready_check,
+            max_edits: settings.max_edits,
+            max_vote_changes: settings.max_vote_changes,
         };
         if (settings.excluded_letters) {
             gameSettings.excluded_letters = settings.excluded_letters;

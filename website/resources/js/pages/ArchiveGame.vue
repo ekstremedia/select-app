@@ -102,22 +102,18 @@
                             class="p-4 border-b last:border-b-0 border-slate-100 dark:border-slate-800"
                             :class="j === 0 ? 'bg-emerald-50/50 dark:bg-emerald-950/30' : ''"
                         >
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <p class="text-slate-800 dark:text-slate-200">{{ answer.text?.toLowerCase() }}</p>
-                                    <div class="flex items-center gap-2 mt-1">
-                                        <Link
-                                            :href="`/profil/${answer.player_nickname}`"
-                                            class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
-                                        >
-                                            {{ answer.player_nickname }}
-                                        </Link>
-                                        <span v-if="answer.voted_by?.length" class="text-xs text-slate-400">
-                                            {{ t('archive.votedBy') }}: {{ answer.voted_by.join(', ') }}
-                                        </span>
-                                    </div>
-                                </div>
-                                <Badge :value="answer.votes_count" severity="success" />
+                            <p class="text-slate-800 dark:text-slate-200 break-words">{{ answer.text?.toLowerCase() }}</p>
+                            <div class="flex items-center gap-2 mt-1">
+                                <Link
+                                    :href="`/profil/${answer.player_nickname}`"
+                                    class="text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
+                                >
+                                    {{ answer.player_nickname }}
+                                </Link>
+                                <span class="text-xs text-slate-400">{{ answer.votes_count }} {{ t('game.votes') }}</span>
+                                <span v-if="answer.voted_by?.length" class="text-xs text-slate-400">
+                                    ({{ answer.voted_by.join(', ') }})
+                                </span>
                             </div>
                         </div>
                         <div v-if="!round.answers?.length" class="p-4 text-sm text-slate-400 text-center">

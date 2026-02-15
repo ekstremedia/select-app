@@ -75,15 +75,13 @@
                             :key="sentence.id"
                             class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
                         >
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <span class="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 tracking-widest">
-                                        {{ sentence.acronym }}
-                                    </span>
-                                    <p class="text-slate-800 dark:text-slate-200 mt-1">{{ sentence.text?.toLowerCase() }}</p>
-                                </div>
-                                <Badge :value="`${sentence.votes_count} ${t('game.votes')}`" severity="success" />
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 tracking-widest">
+                                    {{ sentence.acronym }}
+                                </span>
+                                <span class="text-xs text-slate-400">{{ sentence.votes_count }} {{ t('game.votes') }}</span>
                             </div>
+                            <p class="text-slate-800 dark:text-slate-200 break-words">{{ sentence.text?.toLowerCase() }}</p>
                         </div>
                     </div>
                 </TabPanel>

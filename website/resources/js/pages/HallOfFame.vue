@@ -91,7 +91,7 @@
                     </span>
                 </div>
                 <Button
-                    label="Shuffle"
+                    :label="t('hallOfFame.shuffle')"
                     severity="secondary"
                     variant="text"
                     size="small"

@@ -12,7 +12,7 @@
             <button
                 @click="toggleDark"
                 class="p-2 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                :title="isDark ? 'Light mode' : 'Dark mode'"
+                :title="isDark ? t('nav.lightMode') : t('nav.darkMode')"
             >
                 <svg v-if="isDark" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="5"/>
@@ -51,7 +51,7 @@
 
             <!-- Animated sentence -->
             <p
-                class="text-lg sm:text-xl text-slate-600 dark:text-slate-400 mb-2 min-h-8 max-w-lg truncate transition-opacity duration-500"
+                class="text-lg sm:text-xl text-slate-600 dark:text-slate-400 mb-2 min-h-8 max-w-lg line-clamp-2 transition-opacity duration-500"
                 :style="{ opacity: showSentence ? 1 : 0 }"
             >
                 {{ currentSentence }}

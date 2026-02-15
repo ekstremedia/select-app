@@ -131,36 +131,63 @@
                         </div>
                         <Popover ref="playerMenuRef">
                             <div class="py-1 min-w-[10rem]">
-                                <button
-                                    v-if="gameStore.isActualHost && menuPlayer"
-                                    class="w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2 text-slate-700 dark:text-slate-300"
-                                    @click="handleMenuCoHost"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-blue-500">
-                                        <path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 00-13.074.003z" />
-                                    </svg>
-                                    {{ menuPlayer?.is_co_host ? t('lobby.removeCoHost') : t('lobby.makeCoHost') }}
-                                </button>
-                                <button
-                                    class="w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2 text-amber-600 dark:text-amber-400"
-                                    @click="handleMenuKick"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
-                                        <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-                                    </svg>
-                                    {{ t('lobby.kick') }}
-                                </button>
-                                <button
-                                    class="w-full text-left px-3 py-2 text-sm hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center gap-2 text-red-600 dark:text-red-400"
-                                    @click="handleMenuBan"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
-                                    </svg>
-                                    {{ t('lobby.ban') }}
-                                </button>
+                                <!-- Bot: just remove -->
+                                <template v-if="menuPlayer?.is_bot">
+                                    <button
+                                        class="w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2 text-amber-600 dark:text-amber-400"
+                                        @click="handleMenuRemoveBot"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                                            <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                                        </svg>
+                                        {{ t('lobby.removeBot') }}
+                                    </button>
+                                </template>
+                                <!-- Human: co-host, kick, ban -->
+                                <template v-else>
+                                    <button
+                                        v-if="gameStore.isActualHost && menuPlayer"
+                                        class="w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2 text-slate-700 dark:text-slate-300"
+                                        @click="handleMenuCoHost"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-blue-500">
+                                            <path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 00-13.074.003z" />
+                                        </svg>
+                                        {{ menuPlayer?.is_co_host ? t('lobby.removeCoHost') : t('lobby.makeCoHost') }}
+                                    </button>
+                                    <button
+                                        class="w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2 text-amber-600 dark:text-amber-400"
+                                        @click="handleMenuKick"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                                            <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                                        </svg>
+                                        {{ t('lobby.kick') }}
+                                    </button>
+                                    <button
+                                        class="w-full text-left px-3 py-2 text-sm hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors flex items-center gap-2 text-red-600 dark:text-red-400"
+                                        @click="handleMenuBan"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+                                        </svg>
+                                        {{ t('lobby.ban') }}
+                                    </button>
+                                </template>
                             </div>
                         </Popover>
+
+                        <!-- Add bot button (host only, in lobby) -->
+                        <div v-if="gameStore.isHost" class="mb-6">
+                            <Button
+                                :label="t('lobby.addBot')"
+                                severity="secondary"
+                                variant="outlined"
+                                size="small"
+                                :loading="addBotLoading"
+                                @click="handleAddBot"
+                            />
+                        </div>
 
                         <!-- Banned players section (host/co-host only) -->
                         <div v-if="gameStore.isHost && gameStore.currentGame?.banned_players?.length" class="space-y-2 mb-6">
@@ -184,27 +211,44 @@
                             </div>
                         </div>
 
-                        <!-- Visibility toggle (host/co-host) -->
-                        <div v-if="gameStore.isHost" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 mb-6">
-                            <span class="text-sm text-slate-700 dark:text-slate-300">{{ t('create.visibility') }}</span>
-                            <Button
-                                :label="gameStore.currentGame?.is_public ? t('create.public') : t('create.private')"
-                                :severity="gameStore.currentGame?.is_public ? 'success' : 'secondary'"
-                                size="small"
-                                @click="handleToggleVisibility"
-                            />
-                        </div>
-
                         <!-- Settings summary -->
                         <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left mb-6">
-                            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{{ t('lobby.settings') }}</h3>
-                            <div class="grid grid-cols-2 gap-2 text-sm text-slate-500 dark:text-slate-400">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300">{{ t('lobby.settings') }}</h3>
+                                <button
+                                    v-if="gameStore.isHost"
+                                    class="w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+                                    @click="openSettingsDialog"
+                                    :title="t('lobby.editSettings')"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                                        <path fill-rule="evenodd" d="M7.84 1.804A1 1 0 018.82 1h2.36a1 1 0 01.98.804l.331 1.652a6.993 6.993 0 011.929 1.115l1.598-.54a1 1 0 011.186.447l1.18 2.044a1 1 0 01-.205 1.251l-1.267 1.113a7.047 7.047 0 010 2.228l1.267 1.113a1 1 0 01.206 1.25l-1.18 2.045a1 1 0 01-1.187.447l-1.598-.54a6.993 6.993 0 01-1.929 1.115l-.33 1.652a1 1 0 01-.98.804H8.82a1 1 0 01-.98-.804l-.331-1.652a6.993 6.993 0 01-1.929-1.115l-1.598.54a1 1 0 01-1.186-.447l-1.18-2.044a1 1 0 01.205-1.251l1.267-1.114a7.05 7.05 0 010-2.227L1.821 7.773a1 1 0 01-.206-1.25l1.18-2.045a1 1 0 011.187-.447l1.598.54A6.993 6.993 0 017.51 3.456l.33-1.652zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
                                 <span>{{ t('create.rounds') }}:</span>
                                 <span class="font-medium text-slate-700 dark:text-slate-300">{{ gameStore.currentGame?.settings?.rounds ?? 5 }}</span>
                                 <span>{{ t('create.answerTime') }}:</span>
                                 <span class="font-medium text-slate-700 dark:text-slate-300">{{ gameStore.currentGame?.settings?.answer_time ?? 60 }}s</span>
                                 <span>{{ t('create.voteTime') }}:</span>
                                 <span class="font-medium text-slate-700 dark:text-slate-300">{{ gameStore.currentGame?.settings?.vote_time ?? 30 }}s</span>
+                                <span>{{ t('create.timeBetweenRounds') }}:</span>
+                                <span class="font-medium text-slate-700 dark:text-slate-300">{{ gameStore.currentGame?.settings?.time_between_rounds ?? 30 }}s</span>
+                                <span>{{ t('create.acronymLength') }}:</span>
+                                <span class="font-medium text-slate-700 dark:text-slate-300">{{ gameStore.currentGame?.settings?.acronym_length_min ?? 5 }}</span>
+                                <span>{{ t('create.maxPlayers') }}:</span>
+                                <span class="font-medium text-slate-700 dark:text-slate-300">{{ gameStore.currentGame?.settings?.max_players ?? 8 }}</span>
+                                <span>{{ t('create.maxEditsShort') }}:</span>
+                                <span class="font-medium text-slate-700 dark:text-slate-300">{{ (gameStore.currentGame?.settings?.max_edits ?? 0) === 0 ? t('create.unlimited') : gameStore.currentGame?.settings?.max_edits }}</span>
+                                <span>{{ t('create.maxVoteChangesShort') }}:</span>
+                                <span class="font-medium text-slate-700 dark:text-slate-300">{{ (gameStore.currentGame?.settings?.max_vote_changes ?? 0) === 0 ? t('create.unlimited') : gameStore.currentGame?.settings?.max_vote_changes }}</span>
+                                <span>{{ t('create.readyCheck') }}:</span>
+                                <span class="font-medium text-slate-700 dark:text-slate-300">{{ (gameStore.currentGame?.settings?.allow_ready_check ?? true) ? t('common.yes') : t('common.no') }}</span>
+                                <span>{{ t('game.chat') }}:</span>
+                                <span class="font-medium text-slate-700 dark:text-slate-300">{{ (gameStore.currentGame?.settings?.chat_enabled ?? true) ? t('common.yes') : t('common.no') }}</span>
+                                <span>{{ t('create.visibility') }}:</span>
+                                <span class="font-medium text-slate-700 dark:text-slate-300">{{ gameStore.currentGame?.is_public ? t('create.public') : t('create.private') }}</span>
                             </div>
                         </div>
 
@@ -215,7 +259,7 @@
                 <div v-else-if="phase === 'playing'" class="flex-1 overflow-y-auto">
                     <div class="max-w-lg mx-auto px-4 py-6 text-center">
                         <!-- Acronym display (reactive — letters change color as you type) -->
-                        <div class="flex justify-center gap-2 sm:gap-3 mb-6">
+                        <div class="flex justify-center gap-1.5 sm:gap-3 mb-6">
                             <span
                                 v-for="(match, i) in letterMatches"
                                 :key="i"
@@ -233,14 +277,26 @@
                         <!-- Submitted + can edit -->
                         <div v-if="gameStore.hasSubmittedAnswer && !isEditing" class="space-y-4">
                             <div class="p-6 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900">
-                                <p class="text-emerald-700 dark:text-emerald-300 font-medium mb-2">{{ gameStore.myAnswer?.text?.toLowerCase() }}</p>
+                                <p class="text-emerald-700 dark:text-emerald-300 font-medium mb-2 break-words">{{ gameStore.myAnswer?.text?.toLowerCase() }}</p>
                                 <p v-if="gameStore.currentRound" class="text-xs text-slate-400 mt-2">
                                     {{ gameStore.currentRound.answers_count ?? 0 }}/{{ gameStore.currentRound.total_players ?? gameStore.players.length }} {{ t('game.submitted') }}
                                 </p>
                             </div>
+                            <!-- Ready check -->
+                            <div v-if="allowReadyCheck" class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                                <div class="flex items-center gap-3">
+                                    <Checkbox v-model="isReady" :binary="true" inputId="readyCheck" @change="handleReadyToggle" />
+                                    <label for="readyCheck" class="text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                                        {{ t('game.readyLabel') }}
+                                    </label>
+                                </div>
+                                <span class="text-xs text-slate-400">
+                                    {{ gameStore.readyCount }}/{{ gameStore.totalPlayersForReady || gameStore.players.length }} {{ t('game.readyCount') }}
+                                </span>
+                            </div>
                             <Button
                                 v-if="editsRemaining > 0"
-                                :label="`${t('game.edit')} (${editsRemaining} ${t('game.remaining')})`"
+                                :label="editsRemaining === Infinity ? t('game.edit') : `${t('game.edit')} (${editsRemaining} ${t('game.remaining')})`"
                                 severity="secondary"
                                 variant="outlined"
                                 size="small"
@@ -317,7 +373,7 @@
                                 @click="onAnswerClick(answer)"
                             >
                                 <div class="flex items-start justify-between gap-2">
-                                    <p class="select-none text-slate-800 dark:text-slate-200">{{ answer.text?.toLowerCase() }}</p>
+                                    <p class="select-none text-slate-800 dark:text-slate-200 break-words">{{ answer.text?.toLowerCase() }}</p>
                                     <span v-if="gameStore.myVote?.answer_id === answer.id" class="shrink-0 text-emerald-500 dark:text-emerald-400 text-xs font-medium">
                                         {{ t('game.yourVote') }}
                                     </span>
@@ -327,7 +383,7 @@
                         </div>
 
                         <p v-if="gameStore.hasVoted" class="text-center text-xs text-slate-400 mt-4">
-                            {{ voteChangesLeft > 0 ? `${t('game.tapToChangeVote')} (${voteChangesLeft} ${t('game.voteChangesRemaining')})` : t('game.tapToChangeVote') }}
+                            {{ voteChangesLeft > 0 ? (voteChangesLeft === Infinity ? t('game.tapToChangeVote') : `${t('game.tapToChangeVote')} (${voteChangesLeft} ${t('game.voteChangesRemaining')})`) : '' }}
                         </p>
                     </div>
                 </div>
@@ -349,12 +405,11 @@
                             >
                                 <div class="flex items-start justify-between gap-3">
                                     <div>
-                                        <p class="select-none font-medium text-slate-800 dark:text-slate-200">{{ (result.answer || result.text)?.toLowerCase() }}</p>
+                                        <p class="select-none font-medium text-slate-800 dark:text-slate-200 break-words">{{ (result.answer || result.text)?.toLowerCase() }}</p>
                                         <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ result.player_name || result.player_nickname }}</p>
                                     </div>
                                     <div class="text-right shrink-0">
-                                        <Badge :value="result.votes ?? result.votes_count ?? 0" severity="success" />
-                                        <p class="text-xs text-slate-400 mt-1">{{ result.votes ?? result.votes_count ?? 0 }} {{ t('game.votes') }}</p>
+                                        <p class="text-xs text-slate-400">{{ result.votes ?? result.votes_count ?? 0 }} {{ t('game.votes') }}</p>
                                     </div>
                                 </div>
                                 <Badge v-if="isRoundWinner(result) && !roundHasTie" :value="t('game.winner')" severity="success" class="mt-2" />
@@ -465,7 +520,7 @@
             </template>
 
             <!-- Chat panel toggle -->
-            <div class="shrink-0 border-t border-slate-200 dark:border-slate-800">
+            <div v-if="chatEnabled" class="shrink-0 border-t border-slate-200 dark:border-slate-800">
                 <button
                     @click="chatOpen = !chatOpen"
                     class="w-full px-4 py-2 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
@@ -555,11 +610,163 @@
             <Button :label="t('lobby.ban')" severity="danger" @click="confirmBan" />
         </div>
     </Dialog>
+    <Dialog v-model:visible="passwordDialogVisible" :header="t('lobby.enterPassword')" modal :style="{ width: '24rem' }" :closable="false">
+        <form @submit.prevent="handlePasswordSubmit" class="space-y-4">
+            <p class="text-sm text-slate-600 dark:text-slate-400">{{ t('lobby.passwordRequired') }}</p>
+            <div v-if="passwordError" class="p-3 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-sm text-red-700 dark:text-red-300">
+                {{ passwordError }}
+            </div>
+            <InputText
+                v-model="gamePassword"
+                type="text"
+                :placeholder="t('create.password')"
+                class="w-full"
+                autofocus
+            />
+            <div class="flex gap-2 justify-end">
+                <Button :label="t('common.back')" severity="secondary" variant="outlined" @click="router.visit('/spill')" />
+                <Button type="submit" :label="t('games.join')" severity="success" :loading="passwordLoading" :disabled="!gamePassword.trim()" />
+            </div>
+        </form>
+    </Dialog>
+    <Dialog v-model:visible="settingsDialogVisible" :header="t('lobby.editSettings')" modal :style="{ width: '28rem' }" class="max-h-[90vh]">
+        <div class="space-y-5 overflow-y-auto max-h-[70vh] px-1 py-2">
+            <div v-if="settingsError" class="p-3 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-sm text-red-700 dark:text-red-300">
+                {{ settingsError }}
+            </div>
+
+            <div>
+                <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
+                    {{ t('create.rounds') }}: {{ settingsForm.rounds }}
+                </label>
+                <Slider v-model="settingsForm.rounds" :min="1" :max="20" :step="1" class="w-full px-3" />
+            </div>
+
+            <div>
+                <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
+                    {{ t('create.answerTime') }}: {{ settingsForm.answer_time }} {{ t('create.seconds') }}
+                </label>
+                <Slider v-model="settingsForm.answer_time" :min="15" :max="180" :step="5" class="w-full px-3" />
+            </div>
+
+            <div>
+                <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
+                    {{ t('create.voteTime') }}: {{ settingsForm.vote_time }} {{ t('create.seconds') }}
+                </label>
+                <Slider v-model="settingsForm.vote_time" :min="10" :max="120" :step="5" class="w-full px-3" />
+            </div>
+
+            <div>
+                <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
+                    {{ t('create.timeBetweenRounds') }}: {{ settingsForm.time_between_rounds }} {{ t('create.seconds') }}
+                </label>
+                <Slider v-model="settingsForm.time_between_rounds" :min="3" :max="120" :step="1" class="w-full px-3" />
+            </div>
+
+            <div>
+                <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
+                    {{ t('create.acronymLength') }}: {{ settingsForm.acronym_length }}
+                </label>
+                <Slider v-model="settingsForm.acronym_length" :min="1" :max="6" :step="1" class="w-full px-3" />
+            </div>
+
+            <div>
+                <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
+                    {{ t('create.maxPlayers') }}: {{ settingsForm.max_players }}
+                </label>
+                <Slider v-model="settingsForm.max_players" :min="2" :max="16" :step="1" class="w-full px-3" />
+            </div>
+
+            <div>
+                <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
+                    {{ t('create.excludeLetters') }}
+                </label>
+                <InputText
+                    v-model="settingsForm.excluded_letters"
+                    class="w-full uppercase tracking-[0.2em] font-mono"
+                    :placeholder="'XZQ'"
+                    @input="settingsForm.excluded_letters = settingsForm.excluded_letters.toUpperCase().replace(/[^A-Z]/g, '')"
+                />
+            </div>
+
+            <div>
+                <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">
+                    {{ t('create.maxEditsShort') }}: {{ settingsForm.max_edits === 0 ? t('create.unlimited') : settingsForm.max_edits }}
+                </label>
+                <p class="text-xs text-slate-400 mb-2">{{ t('create.maxEditsDesc') }}</p>
+                <Slider v-model="settingsForm.max_edits" :min="0" :max="10" :step="1" class="w-full px-3" />
+            </div>
+
+            <div>
+                <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">
+                    {{ t('create.maxVoteChangesShort') }}: {{ settingsForm.max_vote_changes === 0 ? t('create.unlimited') : settingsForm.max_vote_changes }}
+                </label>
+                <p class="text-xs text-slate-400 mb-2">{{ t('create.maxVoteChangesDesc') }}</p>
+                <Slider v-model="settingsForm.max_vote_changes" :min="0" :max="10" :step="1" class="w-full px-3" />
+            </div>
+
+            <div class="flex items-center justify-between">
+                <div>
+                    <label for="settingsReadyCheck" class="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                        {{ t('create.readyCheck') }}
+                    </label>
+                    <p class="text-xs text-slate-400">{{ t('create.readyCheckDesc') }}</p>
+                </div>
+                <ToggleSwitch v-model="settingsForm.allow_ready_check" inputId="settingsReadyCheck" />
+            </div>
+
+            <div class="flex items-center justify-between">
+                <label for="settingsChat" class="text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                    {{ t('create.chat') }}
+                </label>
+                <ToggleSwitch v-model="settingsForm.chat_enabled" inputId="settingsChat" />
+            </div>
+
+            <div>
+                <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 block">
+                    {{ t('create.visibility') }}
+                </label>
+                <div class="flex gap-3">
+                    <Button
+                        :label="t('create.public')"
+                        :severity="!settingsForm.is_private ? 'success' : 'secondary'"
+                        :variant="!settingsForm.is_private ? undefined : 'outlined'"
+                        size="small"
+                        @click="settingsForm.is_private = false"
+                    />
+                    <Button
+                        :label="t('create.private')"
+                        :severity="settingsForm.is_private ? 'success' : 'secondary'"
+                        :variant="settingsForm.is_private ? undefined : 'outlined'"
+                        size="small"
+                        @click="settingsForm.is_private = true"
+                    />
+                </div>
+            </div>
+
+            <div v-if="settingsForm.is_private">
+                <label class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 block">
+                    {{ t('create.password') }}
+                </label>
+                <p class="text-xs text-slate-400 mb-2">{{ t('lobby.passwordHint') }}</p>
+                <InputText
+                    v-model="settingsForm.password"
+                    type="text"
+                    class="w-full"
+                />
+            </div>
+        </div>
+
+        <div class="flex gap-2 justify-end mt-4">
+            <Button :label="t('common.cancel')" severity="secondary" variant="outlined" @click="settingsDialogVisible = false" />
+            <Button :label="t('common.save')" severity="success" :loading="settingsLoading" @click="handleSaveSettings" />
+        </div>
+    </Dialog>
     <ConfirmDialog />
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { storeToRefs } from 'pinia';
 import InputText from 'primevue/inputtext';
@@ -568,6 +775,9 @@ import Badge from 'primevue/badge';
 import ProgressBar from 'primevue/progressbar';
 import Dialog from 'primevue/dialog';
 import Popover from 'primevue/popover';
+import Slider from 'primevue/slider';
+import ToggleSwitch from 'primevue/toggleswitch';
+import Checkbox from 'primevue/checkbox';
 import ConfirmDialog from 'primevue/confirmdialog';
 import { useConfirm } from 'primevue/useconfirm';
 import confetti from 'canvas-confetti';
@@ -618,10 +828,36 @@ const inviteLoading = ref(false);
 const inviteSent = ref(false);
 const inviteError = ref('');
 const invitesRemaining = ref(5);
-const MAX_SUBMISSIONS = 3;
-const MAX_VOTES = 3;
-const editsRemaining = computed(() => Math.max(0, MAX_SUBMISSIONS - submitCount.value));
-const voteChangesLeft = computed(() => Math.max(0, MAX_VOTES - voteCount.value));
+const addBotLoading = ref(false);
+const settingsDialogVisible = ref(false);
+const settingsForm = reactive({
+    rounds: 8,
+    answer_time: 60,
+    vote_time: 30,
+    time_between_rounds: 30,
+    acronym_length: 5,
+    max_players: 8,
+    excluded_letters: '',
+    chat_enabled: true,
+    allow_ready_check: true,
+    max_edits: 0,
+    max_vote_changes: 0,
+    is_private: false,
+    password: '',
+});
+const settingsLoading = ref(false);
+const settingsError = ref('');
+const passwordDialogVisible = ref(false);
+const gamePassword = ref('');
+const passwordError = ref('');
+const passwordLoading = ref(false);
+const isReady = ref(false);
+const allowReadyCheck = computed(() => gameStore.currentGame?.settings?.allow_ready_check ?? true);
+const maxEdits = computed(() => gameStore.currentGame?.settings?.max_edits ?? 0);
+const maxVoteChanges = computed(() => gameStore.currentGame?.settings?.max_vote_changes ?? 0);
+const chatEnabled = computed(() => gameStore.currentGame?.settings?.chat_enabled ?? true);
+const editsRemaining = computed(() => maxEdits.value === 0 ? Infinity : Math.max(0, maxEdits.value - submitCount.value));
+const voteChangesLeft = computed(() => maxVoteChanges.value === 0 ? Infinity : Math.max(0, maxVoteChanges.value - voteCount.value));
 
 const totalRounds = computed(() => gameStore.currentGame?.settings?.rounds ?? 5);
 
@@ -748,7 +984,21 @@ async function initGame() {
         const myId = authStore.player?.id;
         const isInGame = gameStore.players.some((p) => p.id === myId);
         if (!isInGame && phase.value !== 'finished') {
-            await gameStore.joinGame(props.code);
+            try {
+                await gameStore.joinGame(props.code);
+            } catch (joinErr) {
+                const msg = joinErr.response?.data?.error || '';
+                if (msg.includes('password') || msg.includes('Incorrect')) {
+                    // Keep loading true so game content doesn't render behind dialog
+                    gameStore.resetState();
+                    passwordDialogVisible.value = true;
+                    return;
+                }
+                // "Player already in game" is fine
+                if (!msg.toLowerCase().includes('already in game')) {
+                    throw joinErr;
+                }
+            }
         }
 
         gameStore.connectWebSocket(props.code);
@@ -761,7 +1011,9 @@ async function initGame() {
     } catch (err) {
         error.value = getApiError(err, t);
     } finally {
-        loading.value = false;
+        if (!passwordDialogVisible.value) {
+            loading.value = false;
+        }
     }
 }
 
@@ -810,9 +1062,20 @@ function handleEndGame() {
     });
 }
 
+async function handleReadyToggle() {
+    if (!gameStore.currentRound) return;
+    try {
+        await gameStore.markReady(gameStore.currentRound.id, isReady.value);
+    } catch {
+        // Revert on failure
+        isReady.value = !isReady.value;
+    }
+}
+
 function startEditing() {
     answerText.value = gameStore.myAnswer?.text || '';
     isEditing.value = true;
+    isReady.value = false;
 }
 
 async function handleSubmitAnswer() {
@@ -1037,6 +1300,30 @@ function handleMenuBan() {
     if (menuPlayer.value) handleBanPlayer(menuPlayer.value.id, menuPlayer.value.nickname);
 }
 
+function handleMenuRemoveBot() {
+    playerMenuRef.value.hide();
+    if (menuPlayer.value) handleRemoveBot(menuPlayer.value.id);
+}
+
+async function handleAddBot() {
+    addBotLoading.value = true;
+    try {
+        await gameStore.addBot(props.code);
+    } catch (err) {
+        error.value = err.response?.data?.error || t('common.error');
+    } finally {
+        addBotLoading.value = false;
+    }
+}
+
+async function handleRemoveBot(playerId) {
+    try {
+        await gameStore.removeBot(props.code, playerId);
+    } catch (err) {
+        error.value = err.response?.data?.error || t('common.error');
+    }
+}
+
 function handleKickPlayer(playerId, nickname) {
     confirm.require({
         message: t('lobby.kickConfirm').replace('{name}', nickname),
@@ -1085,6 +1372,76 @@ async function handleToggleVisibility() {
     }
 }
 
+async function handlePasswordSubmit() {
+    passwordLoading.value = true;
+    passwordError.value = '';
+    try {
+        await gameStore.joinGame(props.code, gamePassword.value);
+        passwordDialogVisible.value = false;
+        gamePassword.value = '';
+        // Re-fetch full game data and continue normal init
+        await gameStore.fetchGame(props.code);
+        gameStore.connectWebSocket(props.code);
+        if (phase.value !== 'lobby') {
+            await gameStore.fetchGameState(props.code);
+        }
+        loading.value = false;
+    } catch (err) {
+        passwordError.value = err.response?.data?.error || t('common.error');
+    } finally {
+        passwordLoading.value = false;
+    }
+}
+
+function openSettingsDialog() {
+    const s = gameStore.currentGame?.settings ?? {};
+    settingsForm.rounds = s.rounds ?? 8;
+    settingsForm.answer_time = s.answer_time ?? 60;
+    settingsForm.vote_time = s.vote_time ?? 30;
+    settingsForm.time_between_rounds = s.time_between_rounds ?? 30;
+    settingsForm.acronym_length = s.acronym_length_min ?? 5;
+    settingsForm.max_players = s.max_players ?? 8;
+    settingsForm.excluded_letters = s.excluded_letters ?? '';
+    settingsForm.chat_enabled = s.chat_enabled ?? true;
+    settingsForm.allow_ready_check = s.allow_ready_check ?? true;
+    settingsForm.max_edits = s.max_edits ?? 0;
+    settingsForm.max_vote_changes = s.max_vote_changes ?? 0;
+    settingsForm.is_private = !gameStore.currentGame?.is_public;
+    settingsForm.password = '';
+    settingsError.value = '';
+    settingsDialogVisible.value = true;
+}
+
+async function handleSaveSettings() {
+    settingsLoading.value = true;
+    settingsError.value = '';
+    try {
+        await gameStore.updateSettings(props.code, {
+            settings: {
+                rounds: settingsForm.rounds,
+                answer_time: settingsForm.answer_time,
+                vote_time: settingsForm.vote_time,
+                time_between_rounds: settingsForm.time_between_rounds,
+                acronym_length_min: settingsForm.acronym_length,
+                acronym_length_max: settingsForm.acronym_length,
+                max_players: settingsForm.max_players,
+                excluded_letters: settingsForm.excluded_letters || undefined,
+                chat_enabled: settingsForm.chat_enabled,
+                allow_ready_check: settingsForm.allow_ready_check,
+                max_edits: settingsForm.max_edits,
+                max_vote_changes: settingsForm.max_vote_changes,
+            },
+            is_public: !settingsForm.is_private,
+            password: settingsForm.is_private && settingsForm.password ? settingsForm.password : undefined,
+        });
+        settingsDialogVisible.value = false;
+    } catch (err) {
+        settingsError.value = err.response?.data?.error || err.response?.data?.message || t('common.error');
+    } finally {
+        settingsLoading.value = false;
+    }
+}
+
 function copyCode() {
     navigator.clipboard.writeText(gameStore.gameCode || props.code);
     copied.value = true;
@@ -1123,11 +1480,19 @@ watch(chatOpen, (open) => {
     }
 });
 
+// Restore isReady from server state (e.g. after fetchGameState)
+watch(() => gameStore.myAnswer?.is_ready, (val) => {
+    if (val !== undefined) {
+        isReady.value = val;
+    }
+});
+
 // Reset state when phase changes
 watch(phase, (newPhase, oldPhase) => {
     if (newPhase === 'playing') {
         answerText.value = '';
         isEditing.value = false;
+        isReady.value = false;
         submitCount.value = 0;
         voteCount.value = 0;
     }

@@ -140,7 +140,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <ToggleSwitch v-model="banIp" />
-                    <span class="text-sm text-slate-700 dark:text-slate-300">Ban IP address</span>
+                    <span class="text-sm text-slate-700 dark:text-slate-300">{{ t('admin.banIp') }}</span>
                 </div>
             </div>
             <template #footer>
@@ -196,11 +196,11 @@ let debounceTimer = null;
 const statsCards = computed(() => [
     { label: t('admin.players'), value: statsData.value.total_players ?? 0 },
     { label: t('admin.games'), value: statsData.value.total_games ?? 0 },
-    { label: 'Active today', value: statsData.value.active_today ?? 0 },
-    { label: 'Games today', value: statsData.value.games_today ?? 0 },
-    { label: 'Finished', value: statsData.value.games_finished ?? 0 },
-    { label: 'Answers', value: statsData.value.total_answers ?? 0 },
-    { label: 'Banned', value: statsData.value.banned_players ?? 0 },
+    { label: t('admin.activeToday'), value: statsData.value.active_today ?? 0 },
+    { label: t('admin.gamesToday'), value: statsData.value.games_today ?? 0 },
+    { label: t('admin.finished'), value: statsData.value.games_finished ?? 0 },
+    { label: t('admin.answers'), value: statsData.value.total_answers ?? 0 },
+    { label: t('admin.banned'), value: statsData.value.banned_players ?? 0 },
 ]);
 
 function formatDate(dateStr) {

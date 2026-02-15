@@ -15,6 +15,11 @@ class Vote extends Model
         'answer_id',
         'voter_id',
         'voter_nickname',
+        'change_count',
+    ];
+
+    protected $casts = [
+        'change_count' => 'integer',
     ];
 
     public function answer(): BelongsTo

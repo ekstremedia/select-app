@@ -14,6 +14,62 @@
             {{ t('games.title') }}
         </h1>
 
+        <!-- Game started notification -->
+        <div v-if="gameStartedNotice" class="mb-6 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-700 flex items-center justify-between">
+            <div>
+                <p class="font-medium text-emerald-700 dark:text-emerald-300">{{ t('games.gameStarted') }}</p>
+                <p class="text-sm text-emerald-600 dark:text-emerald-400">
+                    #{{ gameStartedNotice.code }} — {{ t('game.round') }} {{ gameStartedNotice.current_round }}/{{ gameStartedNotice.total_rounds }}
+                </p>
+            </div>
+            <Button
+                :label="t('games.rejoin')"
+                severity="success"
+                size="small"
+                @click="router.visit(`/spill/${gameStartedNotice.code}`)"
+            />
+        </div>
+
+        <!-- My active games -->
+        <div v-if="myGames.length > 0" class="mb-8">
+            <h2 class="text-lg font-semibold mb-3 text-slate-800 dark:text-slate-200">
+                {{ t('games.myGames') }}
+            </h2>
+            <div class="space-y-3">
+                <div
+                    v-for="game in myGames"
+                    :key="game.code"
+                    class="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 hover:border-emerald-400 dark:hover:border-emerald-600 transition-colors cursor-pointer"
+                    @click="router.visit(`/spill/${game.code}`)"
+                >
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400 tracking-widest">
+                                #{{ game.code }}
+                            </span>
+                            <Badge v-if="game.has_password" :value="t('create.private')" severity="warn" />
+                            <span class="text-sm text-slate-500 dark:text-slate-400">
+                                {{ game.host_nickname }}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <Badge
+                                v-if="game.status && game.status !== 'lobby'"
+                                :value="game.status === 'voting' ? t('games.statusVoting') : `${t('game.round')} ${game.current_round}/${game.total_rounds}`"
+                                :severity="game.status === 'voting' ? 'warn' : 'info'"
+                            />
+                            <Badge
+                                v-else
+                                :value="t('games.statusLobby')"
+                                severity="success"
+                            />
+                            <Badge :value="`${game.player_count}/${game.max_players ?? 10}`" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Open games list -->
         <div class="mb-8">
             <h2 class="text-lg font-semibold mb-3 text-slate-800 dark:text-slate-200">
@@ -36,11 +92,12 @@
                     @click="handleJoin(game.code)"
                 >
                     <div class="flex items-center justify-between">
-                        <div>
+                        <div class="flex items-center gap-2">
                             <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400 tracking-widest">
                                 #{{ game.code }}
                             </span>
-                            <span class="ml-3 text-sm text-slate-500 dark:text-slate-400">
+                            <Badge v-if="game.has_password" :value="t('create.private')" severity="warn" />
+                            <span class="text-sm text-slate-500 dark:text-slate-400">
                                 {{ game.host_nickname }}
                             </span>
                         </div>
@@ -111,11 +168,13 @@ const gameStore = useGameStore();
 const { t } = useI18n();
 
 const openGames = ref([]);
+const myGames = ref([]);
 const loading = ref(true);
 const joinCode = ref('');
 const joinError = ref('');
 const kickNotice = ref(null);
 const banReason = ref(null);
+const gameStartedNotice = ref(null);
 
 const apiErrorMap = {
     'Game not found': 'common.gameNotFound',
@@ -132,6 +191,13 @@ async function loadGames() {
     try {
         const { data } = await api.games.list();
         openGames.value = data.games ?? data.data ?? [];
+        myGames.value = data.my_games ?? [];
+
+        // Check if any of my games just started
+        const started = myGames.value.find(g => g.status !== 'lobby');
+        if (started && !gameStartedNotice.value) {
+            gameStartedNotice.value = started;
+        }
     } catch {
         // Keep existing list on error during polling
     } finally {

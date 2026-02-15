@@ -44,11 +44,18 @@ class SubmitVoteAction
             ->first();
 
         if ($existingVote) {
+            // Enforce max_vote_changes (0 = unlimited)
+            $maxVoteChanges = $round->game->settings['max_vote_changes'] ?? 0;
+            if ($maxVoteChanges > 0 && $existingVote->change_count >= $maxVoteChanges) {
+                throw new \InvalidArgumentException('Maximum vote changes reached');
+            }
+
             // Change vote
             $oldAnswer = $existingVote->answer;
             $existingVote->update([
                 'answer_id' => $answer->id,
                 'voter_nickname' => $voter->nickname,
+                'change_count' => $existingVote->change_count + 1,
             ]);
             $oldAnswer->recalculateVotes();
             $answer->recalculateVotes();

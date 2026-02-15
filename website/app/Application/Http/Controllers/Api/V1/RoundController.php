@@ -4,6 +4,7 @@ namespace App\Application\Http\Controllers\Api\V1;
 
 use App\Application\Broadcasting\Events\AnswerSubmittedBroadcast;
 use App\Application\Broadcasting\Events\GameFinishedBroadcast;
+use App\Application\Broadcasting\Events\PlayerReadyBroadcast;
 use App\Application\Broadcasting\Events\RoundCompletedBroadcast;
 use App\Application\Broadcasting\Events\RoundStartedBroadcast;
 use App\Application\Broadcasting\Events\VoteSubmittedBroadcast;
@@ -11,6 +12,7 @@ use App\Application\Http\Requests\Api\V1\SubmitAnswerRequest;
 use App\Application\Http\Requests\Api\V1\SubmitVoteRequest;
 use App\Domain\Game\Actions\GetGameByCodeAction;
 use App\Domain\Round\Actions\CompleteRoundAction;
+use App\Domain\Round\Actions\MarkReadyAction;
 use App\Domain\Round\Actions\StartVotingAction;
 use App\Domain\Round\Actions\SubmitAnswerAction;
 use App\Domain\Round\Actions\SubmitVoteAction;
@@ -50,13 +52,20 @@ class RoundController extends Controller
         ];
 
         // Include answers if voting or completed
-        if ($round->isVoting() || $round->isCompleted()) {
+        if ($round->isVoting()) {
+            // Hide player identity during voting (anonymous)
+            $response['answers'] = $round->answers()->get()->shuffle(crc32($round->id))->map(fn ($a) => [
+                'id' => $a->id,
+                'text' => $a->text,
+                'votes_count' => null,
+            ]);
+        } elseif ($round->isCompleted()) {
             $response['answers'] = $round->answers()->with('player')->get()->map(fn ($a) => [
                 'id' => $a->id,
                 'player_id' => $a->player_id,
                 'player_name' => $a->author_nickname ?? $a->player->nickname,
                 'text' => $a->text,
-                'votes_count' => $round->isCompleted() ? $a->votes_count : null,
+                'votes_count' => $a->votes_count,
             ]);
         }
 
@@ -122,6 +131,38 @@ class RoundController extends Controller
                 'id' => $vote->id,
                 'answer_id' => $vote->answer_id,
             ],
+        ]);
+    }
+
+    public function markReady(Request $request, string $roundId, MarkReadyAction $action): JsonResponse
+    {
+        $player = $request->attributes->get('player');
+        $round = Round::findOrFail($roundId);
+
+        $request->validate([
+            'ready' => ['required', 'boolean'],
+        ]);
+
+        try {
+            $answer = $action->execute($round, $player, $request->boolean('ready'));
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+
+        $game = $round->game;
+        $readyCount = $round->answers()->where('is_ready', true)->count();
+        $totalPlayers = $game->activePlayers()->count();
+
+        try {
+            broadcast(new PlayerReadyBroadcast($game, $readyCount, $totalPlayers));
+        } catch (\Throwable $e) {
+            Log::error('Broadcast failed: player.ready', ['error' => $e->getMessage()]);
+        }
+
+        return response()->json([
+            'ready' => $answer->is_ready,
+            'ready_count' => $readyCount,
+            'total_players' => $totalPlayers,
         ]);
     }
 

@@ -93,6 +93,9 @@ const translations = {
         'games.statusPlaying': 'Pågår',
         'games.statusVoting': 'Stemming',
         'games.statusLobby': 'Lobby',
+        'games.myGames': 'Mine spill',
+        'games.gameStarted': 'Spillet ditt har startet!',
+        'games.rejoin': 'Bli med',
 
         // Create game
         'create.title': 'Opprett spill',
@@ -138,6 +141,8 @@ const translations = {
         'game.yourAnswer': 'Ditt svar',
         'game.waitingForOthers': 'Venter på andre...',
         'game.submitted': 'innsendt',
+        'game.readyLabel': 'Ok, jeg er fornøyd',
+        'game.readyCount': 'er klare',
         'game.wordsMatch': 'ord matcher',
         'game.voting': 'Stemming',
         'game.vote': 'Stem',
@@ -187,6 +192,7 @@ const translations = {
         'hallOfFame.title': 'Hall of Fame',
         'hallOfFame.classic': 'Klassiker fra IRC',
         'hallOfFame.noSentences': 'Ingen setninger ennå.',
+        'hallOfFame.shuffle': 'Tilfeldig',
 
         // Profile
         'profile.memberSince': 'Medlem siden',
@@ -204,6 +210,8 @@ const translations = {
         'profile.settings.twoFactor': 'Totrinnsverifisering',
         'profile.settings.sound': 'Lyd',
         'profile.settings.deleteAccount': 'Slett konto',
+        'profile.settings.darkMode': 'Mørk modus',
+        'profile.settings.deleteWarning': 'Denne handlingen kan ikke angres. Alle dine data vil bli permanent slettet.',
 
         // Admin
         'admin.title': 'Administrasjon',
@@ -213,6 +221,12 @@ const translations = {
         'admin.ban': 'Utesteng',
         'admin.unban': 'Opphev utestengelse',
         'admin.banReason': 'Årsak',
+        'admin.banIp': 'Utesteng IP-adresse',
+        'admin.activeToday': 'Aktive i dag',
+        'admin.gamesToday': 'Spill i dag',
+        'admin.finished': 'Fullført',
+        'admin.answers': 'Svar',
+        'admin.banned': 'Utestengt',
 
         // Common
         'common.loading': 'Laster...',
@@ -222,6 +236,10 @@ const translations = {
         'common.cancel': 'Avbryt',
         'common.confirm': 'Bekreft',
         'common.back': 'Tilbake',
+        'common.yes': 'Ja',
+        'common.no': 'Nei',
+        'common.player': 'spiller',
+        'common.players': 'spillere',
         'common.gameNotFound': 'Spillet ble ikke funnet',
         'common.playerNotFound': 'Spilleren ble ikke funnet',
         'common.notFound': 'Siden ble ikke funnet',
@@ -229,11 +247,10 @@ const translations = {
         'common.goHome': 'Gå til forsiden',
         'common.forbidden': 'Forbudt',
         'common.forbiddenDesc': 'Du har ikke tilgang til denne siden.',
-        'common.serverError': 'Serverfeil',
+        'common.serverError': 'En serverfeil oppstod. Prøv igjen senere.',
         'common.serverErrorDesc': 'Noe gikk galt på vår side.',
         'common.serviceUnavailable': 'Tjenesten er utilgjengelig',
         'common.serviceUnavailableDesc': 'Vi utfører vedlikehold. Prøv igjen senere.',
-        'common.serverError': 'En serverfeil oppstod. Prøv igjen senere.',
         'common.networkError': 'Kunne ikke koble til serveren. Sjekk internettforbindelsen.',
         'common.tooManyRequests': 'For mange forespørsler. Vent litt.',
 
@@ -242,11 +259,23 @@ const translations = {
         'game.voteChangesRemaining': 'stemmeendringer igjen',
 
         // Create - additional
+        'create.readyCheck': 'Klar-sjekk',
+        'create.readyCheckDesc': 'Spillere kan markere seg som klare for å hoppe over timeren',
+        'create.chat': 'Chat aktivert',
+        'create.maxEdits': 'Maks redigeringer av innsendt svar',
+        'create.maxEditsShort': 'Maks redigeringer',
+        'create.maxEditsDesc': 'Antall ganger en spiller kan endre svaret sitt etter innsending. 0 = ubegrenset.',
+        'create.maxVoteChanges': 'Maks endringer av innsendt stemme',
+        'create.maxVoteChangesShort': 'Maks stemmeendringer',
+        'create.maxVoteChangesDesc': 'Antall ganger en spiller kan endre stemmen sin etter at den er avgitt. 0 = ubegrenset.',
+        'create.unlimited': 'Ubegrenset',
         'create.addBots': 'Legg til boter',
         'create.addBotsDesc': '3-5 AI-spillere med tilfeldige navn',
 
         // Lobby - additional
         'lobby.bot': 'Bot',
+        'lobby.addBot': 'Legg til bot',
+        'lobby.removeBot': 'Fjern bot',
         'lobby.kick': 'Spark',
         'lobby.kickConfirm': 'Er du sikker på at du vil sparke {name}?',
         'lobby.ban': 'Utesteng',
@@ -261,6 +290,10 @@ const translations = {
         'lobby.endGameConfirm': 'Er du sikker på at du vil avslutte spillet?',
         'lobby.expiringWarning': 'Denne lobbyen stenges snart på grunn av inaktivitet.',
         'lobby.keepOpen': 'Hold åpen',
+        'lobby.editSettings': 'Endre innstillinger',
+        'lobby.passwordHint': 'La stå tomt for å beholde gjeldende passord.',
+        'lobby.enterPassword': 'Skriv inn passord',
+        'lobby.passwordRequired': 'Dette spillet er passordbeskyttet.',
         'lobby.inviteEmail': 'Inviter via e-post',
         'lobby.inviteTitle': 'Inviter spiller',
         'lobby.inviteEmailLabel': 'E-postadresse',
@@ -366,6 +399,9 @@ const translations = {
         'games.statusPlaying': 'Playing',
         'games.statusVoting': 'Voting',
         'games.statusLobby': 'Lobby',
+        'games.myGames': 'My games',
+        'games.gameStarted': 'Your game has started!',
+        'games.rejoin': 'Rejoin',
 
         // Create game
         'create.title': 'Create game',
@@ -411,6 +447,8 @@ const translations = {
         'game.yourAnswer': 'Your answer',
         'game.waitingForOthers': 'Waiting for others...',
         'game.submitted': 'submitted',
+        'game.readyLabel': 'Ok, I\'m satisfied',
+        'game.readyCount': 'are ready',
         'game.wordsMatch': 'words match',
         'game.voting': 'Voting',
         'game.vote': 'Vote',
@@ -460,6 +498,7 @@ const translations = {
         'hallOfFame.title': 'Hall of Fame',
         'hallOfFame.classic': 'Classic from IRC',
         'hallOfFame.noSentences': 'No sentences yet.',
+        'hallOfFame.shuffle': 'Shuffle',
 
         // Profile
         'profile.memberSince': 'Member since',
@@ -477,6 +516,8 @@ const translations = {
         'profile.settings.twoFactor': 'Two-factor authentication',
         'profile.settings.sound': 'Sound',
         'profile.settings.deleteAccount': 'Delete account',
+        'profile.settings.darkMode': 'Dark mode',
+        'profile.settings.deleteWarning': 'This action is irreversible. All your data will be permanently deleted.',
 
         // Admin
         'admin.title': 'Administration',
@@ -486,6 +527,12 @@ const translations = {
         'admin.ban': 'Ban',
         'admin.unban': 'Unban',
         'admin.banReason': 'Reason',
+        'admin.banIp': 'Ban IP address',
+        'admin.activeToday': 'Active today',
+        'admin.gamesToday': 'Games today',
+        'admin.finished': 'Finished',
+        'admin.answers': 'Answers',
+        'admin.banned': 'Banned',
 
         // Common
         'common.loading': 'Loading...',
@@ -495,6 +542,10 @@ const translations = {
         'common.cancel': 'Cancel',
         'common.confirm': 'Confirm',
         'common.back': 'Back',
+        'common.yes': 'Yes',
+        'common.no': 'No',
+        'common.player': 'player',
+        'common.players': 'players',
         'common.gameNotFound': 'Game not found',
         'common.playerNotFound': 'Player not found',
         'common.notFound': 'Page not found',
@@ -502,11 +553,10 @@ const translations = {
         'common.goHome': 'Go to home page',
         'common.forbidden': 'Forbidden',
         'common.forbiddenDesc': 'You do not have permission to access this page.',
-        'common.serverError': 'Server Error',
+        'common.serverError': 'A server error occurred. Please try again later.',
         'common.serverErrorDesc': 'Something went wrong on our end.',
         'common.serviceUnavailable': 'Service Unavailable',
         'common.serviceUnavailableDesc': 'We are currently undergoing maintenance. Please try again later.',
-        'common.serverError': 'A server error occurred. Please try again later.',
         'common.networkError': 'Could not connect to the server. Check your internet connection.',
         'common.tooManyRequests': 'Too many requests. Please wait a moment.',
 
@@ -515,11 +565,23 @@ const translations = {
         'game.voteChangesRemaining': 'vote changes remaining',
 
         // Create - additional
+        'create.readyCheck': 'Ready check',
+        'create.readyCheckDesc': 'Players can mark themselves as ready to skip the timer',
+        'create.chat': 'Chat enabled',
+        'create.maxEdits': 'Max edits of submitted answer',
+        'create.maxEditsShort': 'Max edits',
+        'create.maxEditsDesc': 'How many times a player can change their answer after submitting. 0 = unlimited.',
+        'create.maxVoteChanges': 'Max changes of submitted vote',
+        'create.maxVoteChangesShort': 'Max vote changes',
+        'create.maxVoteChangesDesc': 'How many times a player can change their vote after casting it. 0 = unlimited.',
+        'create.unlimited': 'Unlimited',
         'create.addBots': 'Add bots',
         'create.addBotsDesc': '3-5 AI players with random names',
 
         // Lobby - additional
         'lobby.bot': 'Bot',
+        'lobby.addBot': 'Add bot',
+        'lobby.removeBot': 'Remove bot',
         'lobby.kick': 'Kick',
         'lobby.kickConfirm': 'Are you sure you want to kick {name}?',
         'lobby.ban': 'Ban',
@@ -534,6 +596,10 @@ const translations = {
         'lobby.endGameConfirm': 'Are you sure you want to end this game?',
         'lobby.expiringWarning': 'This lobby will close soon due to inactivity.',
         'lobby.keepOpen': 'Keep open',
+        'lobby.editSettings': 'Edit settings',
+        'lobby.passwordHint': 'Leave empty to keep current password.',
+        'lobby.enterPassword': 'Enter password',
+        'lobby.passwordRequired': 'This game is password protected.',
         'lobby.inviteEmail': 'Invite via email',
         'lobby.inviteTitle': 'Invite player',
         'lobby.inviteEmailLabel': 'Email address',

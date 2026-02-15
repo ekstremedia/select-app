@@ -113,7 +113,7 @@
                     <!-- Dark mode -->
                     <div class="flex items-center justify-between">
                         <span class="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            Dark mode
+                            {{ t('nav.darkMode') }}
                         </span>
                         <ToggleSwitch v-model="isDark" @update:modelValue="toggleDark" />
                     </div>
@@ -140,7 +140,7 @@
                     {{ t('profile.settings.deleteAccount') }}
                 </h2>
                 <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                    This action is irreversible. All your data will be permanently deleted.
+                    {{ t('profile.settings.deleteWarning') }}
                 </p>
                 <Button
                     :label="t('profile.settings.deleteAccount')"

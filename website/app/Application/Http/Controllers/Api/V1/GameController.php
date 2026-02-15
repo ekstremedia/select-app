@@ -37,8 +37,22 @@ use Illuminate\Support\Facades\RateLimiter;
 
 class GameController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
+        $player = $request->attributes->get('player');
+
+        $formatGame = fn ($game) => [
+            'code' => $game->code,
+            'host_nickname' => $game->host?->nickname,
+            'player_count' => $game->player_count,
+            'max_players' => $game->settings['max_players'] ?? 10,
+            'rounds' => $game->settings['rounds'] ?? 8,
+            'has_password' => ! is_null($game->password),
+            'status' => $game->status,
+            'current_round' => $game->current_round,
+            'total_rounds' => $game->total_rounds,
+        ];
+
         $games = Game::publicJoinable()
             ->withCount(['gamePlayers as player_count' => function ($q) {
                 $q->where('is_active', true);
@@ -47,19 +61,28 @@ class GameController extends Controller
             ->latest()
             ->limit(20)
             ->get()
-            ->map(fn ($game) => [
-                'code' => $game->code,
-                'host_nickname' => $game->host?->nickname,
-                'player_count' => $game->player_count,
-                'max_players' => $game->settings['max_players'] ?? 10,
-                'rounds' => $game->settings['rounds'] ?? 8,
-                'has_password' => ! is_null($game->password),
-                'status' => $game->status,
-                'current_round' => $game->current_round,
-                'total_rounds' => $game->total_rounds,
-            ]);
+            ->filter(fn ($game) => $game->player_count > 0)
+            ->values()
+            ->map($formatGame);
 
-        return response()->json(['games' => $games]);
+        // Include the player's own active games (even private ones)
+        $myGames = collect();
+        if ($player) {
+            $myGames = Game::whereIn('status', [Game::STATUS_LOBBY, Game::STATUS_PLAYING, Game::STATUS_VOTING])
+                ->whereHas('gamePlayers', fn ($q) => $q->where('player_id', $player->id)->where('is_active', true))
+                ->withCount(['gamePlayers as player_count' => fn ($q) => $q->where('is_active', true)])
+                ->with('host')
+                ->where('updated_at', '>=', now()->subHours(2))
+                ->latest()
+                ->limit(10)
+                ->get()
+                ->map($formatGame);
+        }
+
+        return response()->json([
+            'games' => $games,
+            'my_games' => $myGames,
+        ]);
     }
 
     public function store(CreateGameRequest $request, CreateGameAction $action, CreateBotPlayerAction $createBot, JoinGameAction $joinAction): JsonResponse
@@ -120,6 +143,9 @@ class GameController extends Controller
             return response()->json(['error' => $e->getMessage()], 422);
         }
 
+        // Touch game so lobby inactivity timer resets
+        $game->touch();
+
         try {
             broadcast(new PlayerJoinedBroadcast($game, $player))->toOthers();
         } catch (\Throwable $e) {
@@ -145,6 +171,8 @@ class GameController extends Controller
         } catch (\InvalidArgumentException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
         }
+
+        $game->touch();
 
         try {
             broadcast(new PlayerLeftBroadcast($game, $player))->toOthers();
@@ -273,7 +301,14 @@ class GameController extends Controller
                 $response['my_answer'] = [
                     'id' => $myAnswer->id,
                     'text' => $myAnswer->text,
+                    'is_ready' => $myAnswer->is_ready,
                 ];
+            }
+
+            // Include ready count during answering phase
+            if ($round->isAnswering() && ($game->settings['allow_ready_check'] ?? true)) {
+                $response['round']['ready_count'] = $round->answers()->where('is_ready', true)->count();
+                $response['round']['total_players'] = $game->activePlayers()->count();
             }
 
             // Include answers if voting or completed
@@ -337,8 +372,12 @@ class GameController extends Controller
             return response()->json(['error' => 'Game not found'], 404);
         }
 
+        if (! ($game->settings['chat_enabled'] ?? true)) {
+            return response()->json(['error' => 'Chat is disabled for this game'], 403);
+        }
+
         // Rate limit: 1 message per 2 seconds per player
-        $rateLimitKey = 'chat:'.$player->id;
+        $rateLimitKey = 'chat:'.$player->id.':'.$code;
         if (RateLimiter::tooManyAttempts($rateLimitKey, 1)) {
             return response()->json(['error' => 'Too many messages. Wait a moment.'], 429);
         }
@@ -351,6 +390,11 @@ class GameController extends Controller
 
         $message = $request->input('message');
         $isAction = $request->boolean('action');
+
+        // Touch game so lobby inactivity timer resets on chat activity
+        if ($game->isInLobby()) {
+            $game->touch();
+        }
 
         try {
             broadcast(new ChatMessageBroadcast($game, $player->nickname, $message, false, $isAction))->toOthers();
@@ -395,6 +439,7 @@ class GameController extends Controller
         }
 
         $gamePlayer->update(['is_co_host' => ! $gamePlayer->is_co_host]);
+        $game->touch();
 
         try {
             broadcast(new CoHostChangedBroadcast($game, $playerId, $gamePlayer->is_co_host));
@@ -423,6 +468,7 @@ class GameController extends Controller
             return response()->json(['error' => $e->getMessage()], 422);
         }
 
+        $game->touch();
         $kickedPlayer = \App\Infrastructure\Models\Player::find($playerId);
 
         if ($kickedPlayer) {
@@ -480,6 +526,7 @@ class GameController extends Controller
             'banned_by' => $player->id,
             'ban_reason' => $request->input('reason'),
         ]);
+        $game->touch();
 
         $bannedPlayer = Player::find($playerId);
 
@@ -529,6 +576,97 @@ class GameController extends Controller
             'ban_reason' => null,
             'kicked_by' => null,
         ]);
+        $game->touch();
+
+        return response()->json([
+            'success' => true,
+            'player_id' => $playerId,
+        ]);
+    }
+
+    public function addBot(Request $request, string $code, GetGameByCodeAction $getGame, CreateBotPlayerAction $createBot, JoinGameAction $joinAction): JsonResponse
+    {
+        $player = $request->attributes->get('player');
+        $game = $getGame->execute($code);
+
+        if (! $game) {
+            return response()->json(['error' => 'Game not found'], 404);
+        }
+
+        if (! $game->isInLobby()) {
+            return response()->json(['error' => 'Can only add bots in the lobby'], 422);
+        }
+
+        if (! $game->isHostOrCoHost($player)) {
+            return response()->json(['error' => 'Only host or co-host can add bots'], 403);
+        }
+
+        try {
+            $bot = $createBot->execute();
+            $joinAction->execute($game, $bot);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => 'Failed to add bot: '.$e->getMessage()], 422);
+        }
+
+        $game->touch();
+
+        try {
+            broadcast(new PlayerJoinedBroadcast($game, $bot))->toOthers();
+        } catch (\Throwable $e) {
+            Log::error('Broadcast failed: player.joined (bot)', ['game' => $code, 'error' => $e->getMessage()]);
+        }
+
+        return response()->json([
+            'player' => [
+                'id' => $bot->id,
+                'nickname' => $bot->nickname,
+                'is_bot' => true,
+                'score' => 0,
+                'is_host' => false,
+                'is_co_host' => false,
+            ],
+        ]);
+    }
+
+    public function removeBot(Request $request, string $code, string $playerId, GetGameByCodeAction $getGame): JsonResponse
+    {
+        $player = $request->attributes->get('player');
+        $game = $getGame->execute($code);
+
+        if (! $game) {
+            return response()->json(['error' => 'Game not found'], 404);
+        }
+
+        if (! $game->isInLobby()) {
+            return response()->json(['error' => 'Can only remove bots in the lobby'], 422);
+        }
+
+        if (! $game->isHostOrCoHost($player)) {
+            return response()->json(['error' => 'Only host or co-host can remove bots'], 403);
+        }
+
+        $botPlayer = Player::find($playerId);
+        if (! $botPlayer || ! $botPlayer->is_bot) {
+            return response()->json(['error' => 'Player is not a bot'], 422);
+        }
+
+        $gamePlayer = $game->gamePlayers()
+            ->where('player_id', $playerId)
+            ->where('is_active', true)
+            ->first();
+
+        if (! $gamePlayer) {
+            return response()->json(['error' => 'Bot not found in this game'], 404);
+        }
+
+        $gamePlayer->update(['is_active' => false]);
+        $game->touch();
+
+        try {
+            broadcast(new PlayerLeftBroadcast($game, $botPlayer))->toOthers();
+        } catch (\Throwable $e) {
+            Log::error('Broadcast failed: player.left (bot)', ['game' => $code, 'error' => $e->getMessage()]);
+        }
 
         return response()->json([
             'success' => true,
@@ -626,6 +764,71 @@ class GameController extends Controller
         }
 
         return response()->json([
+            'is_public' => $game->is_public,
+        ]);
+    }
+
+    public function updateSettings(Request $request, string $code, GetGameByCodeAction $getGame): JsonResponse
+    {
+        $player = $request->attributes->get('player');
+        $game = $getGame->execute($code);
+
+        if (! $game) {
+            return response()->json(['error' => 'Game not found'], 404);
+        }
+
+        if (! $game->isInLobby()) {
+            return response()->json(['error' => 'Settings can only be changed in the lobby'], 422);
+        }
+
+        if (! $game->isHostOrCoHost($player)) {
+            return response()->json(['error' => 'Only host or co-host can change settings'], 403);
+        }
+
+        $validated = $request->validate([
+            'settings' => ['required', 'array'],
+            'settings.rounds' => ['nullable', 'integer', 'min:1', 'max:20'],
+            'settings.answer_time' => ['nullable', 'integer', 'min:15', 'max:300'],
+            'settings.vote_time' => ['nullable', 'integer', 'min:10', 'max:120'],
+            'settings.time_between_rounds' => ['nullable', 'integer', 'min:3', 'max:120'],
+            'settings.max_players' => ['nullable', 'integer', 'min:2', 'max:16'],
+            'settings.acronym_length_min' => ['nullable', 'integer', 'min:1', 'max:6'],
+            'settings.acronym_length_max' => ['nullable', 'integer', 'min:1', 'max:6'],
+            'settings.excluded_letters' => ['nullable', 'string', 'max:26'],
+            'settings.chat_enabled' => ['nullable', 'boolean'],
+            'settings.max_edits' => ['nullable', 'integer', 'min:0', 'max:20'],
+            'settings.max_vote_changes' => ['nullable', 'integer', 'min:0', 'max:20'],
+            'settings.allow_ready_check' => ['nullable', 'boolean'],
+            'is_public' => ['nullable', 'boolean'],
+            'password' => ['nullable', 'string', 'min:4', 'max:50'],
+        ]);
+
+        $currentSettings = $game->settings ?? [];
+        $newSettings = array_merge($currentSettings, array_filter($validated['settings'], fn ($v) => $v !== null));
+        $game->settings = $newSettings;
+        $game->total_rounds = $newSettings['rounds'] ?? $game->total_rounds;
+
+        if (array_key_exists('is_public', $validated) && $validated['is_public'] !== null) {
+            $game->is_public = $validated['is_public'];
+        }
+
+        if (! empty($validated['password'])) {
+            $game->password = \Illuminate\Support\Facades\Hash::make($validated['password']);
+        }
+
+        $game->save();
+
+        try {
+            broadcast(new GameSettingsChangedBroadcast($game->fresh(), [
+                'settings' => $game->settings,
+                'is_public' => $game->is_public,
+            ]))->toOthers();
+        } catch (\Throwable $e) {
+            Log::error('Broadcast failed: game.settings_changed', ['game' => $code, 'error' => $e->getMessage()]);
+        }
+
+        return response()->json([
+            'settings' => $game->settings,
             'is_public' => $game->is_public,
         ]);
     }
