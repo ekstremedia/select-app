@@ -87,6 +87,10 @@ jobs:
 
       - name: Run Vitest
         run: yarn test
+        env:
+          LARAVEL_BYPASS_ENV_CHECK: 1
 
       - name: Build frontend
         run: yarn build
+        env:
+          LARAVEL_BYPASS_ENV_CHECK: 1
