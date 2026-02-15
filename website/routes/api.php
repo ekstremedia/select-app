@@ -41,6 +41,7 @@ Route::prefix('v1')->group(function () {
 
     // Profile routes (Sanctum-protected)
     Route::prefix('profile')->middleware('auth:sanctum')->group(function () {
+        Route::patch('/', [AuthController::class, 'updateProfile']);
         Route::patch('/password', [AuthController::class, 'updatePassword']);
         Route::delete('/', [AuthController::class, 'deleteAccount']);
     });

@@ -10,6 +10,7 @@ use App\Application\Http\Requests\Api\V1\RegisterRequest;
 use App\Application\Http\Requests\Api\V1\ResetPasswordRequest;
 use App\Application\Http\Requests\Api\V1\UpdateNicknameRequest;
 use App\Application\Http\Requests\Api\V1\UpdatePasswordRequest;
+use App\Application\Http\Requests\Api\V1\UpdateProfileRequest;
 use App\Application\Mail\WelcomeMail;
 use App\Domain\Player\Actions\ConvertGuestToUserAction;
 use App\Domain\Player\Actions\CreateGuestPlayerAction;
@@ -291,6 +292,23 @@ class AuthController extends Controller
 
         throw ValidationException::withMessages([
             'email' => [__($status)],
+        ]);
+    }
+
+    public function updateProfile(UpdateProfileRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $validated = $request->validated();
+
+        $user->update($validated);
+
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ],
         ]);
     }
 

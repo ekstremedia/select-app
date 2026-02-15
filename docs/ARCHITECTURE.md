@@ -342,7 +342,7 @@ games
   settings (JSON), is_public, password, started_at, finished_at
 
 game_players
-  game_id, player_id, score, is_active, joined_at
+  game_id, player_id, score, is_active, is_co_host, joined_at, kicked_by, ban_reason
 
 rounds
   id, game_id, round_number, acronym, status,
@@ -488,7 +488,7 @@ cd website && yarn build                    # Yarn/Vite → host machine
 ### Adding a New Vue Page
 
 1. Create component in `resources/js/pages/`
-2. Add route in `resources/js/router.js` with appropriate guard
+2. Add route in `routes/web.php` using `Inertia::render('PageName')`
 3. Add navigation link in `resources/js/layouts/AppLayout.vue`
 4. Add translations to `resources/js/composables/useI18n.js` (both NO and EN)
 5. Build: `yarn build`

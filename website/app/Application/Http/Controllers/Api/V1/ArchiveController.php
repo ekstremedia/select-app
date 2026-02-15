@@ -34,7 +34,6 @@ class ArchiveController extends Controller
             'code' => $result->game?->code,
             'winner_nickname' => $result->winner_nickname,
             'rounds_played' => $result->rounds_played,
-            'rounds_count' => $result->rounds_played,
             'player_count' => $result->player_count,
             'duration_seconds' => $result->duration_seconds,
             'final_scores' => $result->final_scores,

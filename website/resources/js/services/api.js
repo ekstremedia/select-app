@@ -96,6 +96,7 @@ export const api = {
         },
     },
     profile: {
+        update: (data) => client.patch('/profile', data),
         updateNickname: (nickname) => client.patch('/profile/nickname', { nickname }),
         updatePassword: (data) => client.patch('/profile/password', data),
         deleteAccount: () => client.delete('/profile'),

@@ -21,6 +21,8 @@ const translations = {
         // Guest banner
         'guest.banner': 'Du spiller som gjest. Opprett en konto for å lagre statistikk.',
         'guest.createAccount': 'Opprett konto',
+        'guest.changeNickname': 'Endre kallenavn',
+        'guest.newNickname': 'Nytt kallenavn',
 
         // Hero / Welcome
         'hero.title': 'SELECT',
@@ -206,7 +208,16 @@ const translations = {
         'profile.bestSentences': 'Beste setninger',
         'profile.gameHistory': 'Spillhistorikk',
         'profile.settings.title': 'Innstillinger',
+        'profile.settings.account': 'Konto',
+        'profile.settings.name': 'Navn',
+        'profile.settings.email': 'E-post',
+        'profile.settings.nickname': 'Kallenavn',
+        'profile.settings.preferences': 'Preferanser',
+        'profile.settings.saved': 'Lagret!',
         'profile.settings.changePassword': 'Endre passord',
+        'profile.settings.currentPassword': 'Nåværende passord',
+        'profile.settings.newPassword': 'Nytt passord',
+        'profile.settings.confirmPassword': 'Bekreft passord',
         'profile.settings.twoFactor': 'Totrinnsverifisering',
         'profile.settings.sound': 'Lyd',
         'profile.settings.deleteAccount': 'Slett konto',
@@ -302,6 +313,11 @@ const translations = {
         'lobby.inviteLimit': '{n} invitasjoner igjen',
         'lobby.inviteError': 'Kunne ikke sende invitasjon',
 
+        // Spectate
+        'spectate.join': 'Bli med i dette spillet',
+        'spectate.watching': 'Tilskuer',
+        'spectate.gameFull': 'Spillet er fullt',
+
         // Game invite context
         'auth.joiningGame': 'Du er på vei inn i et spill',
         'auth.gameWithPlayers': '{count} spillere venter',
@@ -327,6 +343,8 @@ const translations = {
         // Guest banner
         'guest.banner': 'Playing as guest. Create an account to save your stats.',
         'guest.createAccount': 'Create account',
+        'guest.changeNickname': 'Change nickname',
+        'guest.newNickname': 'New nickname',
 
         // Hero / Welcome
         'hero.title': 'SELECT',
@@ -512,7 +530,16 @@ const translations = {
         'profile.bestSentences': 'Best sentences',
         'profile.gameHistory': 'Game history',
         'profile.settings.title': 'Settings',
+        'profile.settings.account': 'Account',
+        'profile.settings.name': 'Name',
+        'profile.settings.email': 'Email',
+        'profile.settings.nickname': 'Nickname',
+        'profile.settings.preferences': 'Preferences',
+        'profile.settings.saved': 'Saved!',
         'profile.settings.changePassword': 'Change password',
+        'profile.settings.currentPassword': 'Current password',
+        'profile.settings.newPassword': 'New password',
+        'profile.settings.confirmPassword': 'Confirm password',
         'profile.settings.twoFactor': 'Two-factor authentication',
         'profile.settings.sound': 'Sound',
         'profile.settings.deleteAccount': 'Delete account',
@@ -607,6 +634,11 @@ const translations = {
         'lobby.inviteSent': 'Invitation sent!',
         'lobby.inviteLimit': '{n} invitations remaining',
         'lobby.inviteError': 'Could not send invitation',
+
+        // Spectate
+        'spectate.join': 'Join this game',
+        'spectate.watching': 'Spectating',
+        'spectate.gameFull': 'Game is full',
 
         // Game invite context
         'auth.joiningGame': 'You are joining a game',

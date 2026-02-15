@@ -15,7 +15,7 @@
                     {{ playerCount }} {{ t(playerCount === 1 ? 'common.player' : 'common.players') }}
                 </span>
                 <Button
-                    :label="t('game.leave')"
+                    :label="leaveLabel || t('game.leave')"
                     size="small"
                     severity="secondary"
                     variant="text"
@@ -43,6 +43,7 @@ const { t } = useI18n();
 defineProps({
     gameCode: { type: String, default: '' },
     playerCount: { type: Number, default: 0 },
+    leaveLabel: { type: String, default: '' },
 });
 
 defineEmits(['leave']);

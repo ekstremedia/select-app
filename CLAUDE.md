@@ -415,7 +415,7 @@ base64 -i select-release.keystore | pbcopy
   "vote_time": 30,
   "acronym_length_min": 3,
   "acronym_length_max": 6,
-  "max_answer_edits": 0,
+  "max_edits": 0,
   "max_vote_changes": 0,
   "allow_ready_check": true
 }

@@ -82,17 +82,7 @@ class PlayerProfileController extends Controller
 
         return response()->json([
             'player' => $playerInfo,
-            'stats' => $stat ? [
-                'games_played' => $stat->games_played,
-                'games_won' => $stat->games_won,
-                'win_rate' => $stat->win_rate,
-                'rounds_played' => $stat->rounds_played,
-                'rounds_won' => $stat->rounds_won,
-                'votes_received' => $stat->total_votes_received,
-                'total_sentences_submitted' => $stat->total_sentences_submitted,
-                'best_sentence' => $stat->best_sentence,
-                'best_sentence_votes' => $stat->best_sentence_votes,
-            ] : null,
+            'stats' => $this->formatStats($stat),
             'recent_wins' => $recentWins->map(fn ($entry) => [
                 'acronym' => $entry->acronym,
                 'sentence' => $entry->sentence,
@@ -117,18 +107,28 @@ class PlayerProfileController extends Controller
         }
 
         return response()->json([
-            'stats' => $stat ? [
-                'games_played' => $stat->games_played,
-                'games_won' => $stat->games_won,
-                'win_rate' => $stat->win_rate,
-                'rounds_played' => $stat->rounds_played,
-                'rounds_won' => $stat->rounds_won,
-                'votes_received' => $stat->total_votes_received,
-                'total_sentences_submitted' => $stat->total_sentences_submitted,
-                'best_sentence' => $stat->best_sentence,
-                'best_sentence_votes' => $stat->best_sentence_votes,
-            ] : null,
+            'stats' => $this->formatStats($stat),
         ]);
+    }
+
+    /** @return array<string, mixed>|null */
+    private function formatStats(?PlayerStat $stat): ?array
+    {
+        if (! $stat) {
+            return null;
+        }
+
+        return [
+            'games_played' => $stat->games_played,
+            'games_won' => $stat->games_won,
+            'win_rate' => $stat->win_rate,
+            'rounds_played' => $stat->rounds_played,
+            'rounds_won' => $stat->rounds_won,
+            'votes_received' => $stat->total_votes_received,
+            'total_sentences_submitted' => $stat->total_sentences_submitted,
+            'best_sentence' => $stat->best_sentence,
+            'best_sentence_votes' => $stat->best_sentence_votes,
+        ];
     }
 
     public function sentences(string $nickname, Request $request): JsonResponse

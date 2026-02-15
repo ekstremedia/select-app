@@ -98,7 +98,7 @@ class GameController extends Controller
 
         // Add bots if requested (admin only)
         if ($request->validated('add_bots') && $player->user?->isAdmin()) {
-            $botCount = rand(3, 5);
+            $botCount = random_int(3, 5);
             for ($i = 0; $i < $botCount; $i++) {
                 try {
                     $bot = $createBot->execute();
@@ -215,7 +215,7 @@ class GameController extends Controller
         $maxDelay = min(max(8, (int) ($answerTime * 0.8)), max(1, $answerTime - 1));
         $minDelay = min(max(3, (int) ($answerTime * 0.2)), $maxDelay);
         foreach ($botPlayers as $bot) {
-            $delay = rand($minDelay, $maxDelay);
+            $delay = random_int($minDelay, $maxDelay);
             BotSubmitAnswerJob::dispatch($round->id, $bot->id)->delay(now()->addSeconds($delay));
         }
 
@@ -315,7 +315,11 @@ class GameController extends Controller
             // Include answers if voting or completed
             if ($round->isVoting() || $round->isCompleted()) {
                 $isCompleted = $round->isCompleted();
-                $allAnswers = $round->answers()->with('player')->get();
+                $query = $round->answers()->with('player');
+                if ($isCompleted) {
+                    $query->withCount('votes');
+                }
+                $allAnswers = $query->get();
 
                 // Shuffle during voting for anonymous presentation (seeded for stable order)
                 if (! $isCompleted) {
@@ -347,7 +351,7 @@ class GameController extends Controller
         // Include completed rounds results
         $completedRounds = $game->rounds()
             ->where('status', 'completed')
-            ->with(['answers.player'])
+            ->with(['answers' => fn ($q) => $q->withCount('votes')->with('player')])
             ->orderBy('round_number')
             ->get()
             ->map(fn ($r) => [
@@ -713,11 +717,13 @@ class GameController extends Controller
             return response()->json(['error' => 'Only host or co-host can start a rematch'], 403);
         }
 
-        // Create new game with same settings
+        // Create new game with same settings (forward hashed password)
         $newGame = $createAction->execute(
             $player,
             $oldGame->settings,
             $oldGame->is_public,
+            $oldGame->password,
+            true,
         );
 
         // Auto-join all other active players from the old game

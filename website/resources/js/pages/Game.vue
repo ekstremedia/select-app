@@ -1501,9 +1501,9 @@ watch(() => gameStore.myVote?.change_count, (val) => {
     }
 });
 
-// Reset state when phase changes
+// Reset state when phase changes (guard: skip initial hydration from null)
 watch(phase, (newPhase, oldPhase) => {
-    if (newPhase === 'playing') {
+    if (newPhase === 'playing' && oldPhase) {
         answerText.value = '';
         isEditing.value = false;
         isReady.value = false;

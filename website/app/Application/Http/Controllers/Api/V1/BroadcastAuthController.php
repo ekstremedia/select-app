@@ -76,12 +76,7 @@ class BroadcastAuthController extends Controller
             return null;
         }
 
-        // Check if player is in the game
         $isInGame = $game->activePlayers()->where('players.id', $player->id)->exists();
-
-        if (! $isInGame) {
-            return null;
-        }
 
         // Generate Pusher auth signature for presence channel
         $userData = [
@@ -89,6 +84,7 @@ class BroadcastAuthController extends Controller
             'user_info' => [
                 'id' => $player->id,
                 'name' => $player->nickname,
+                'is_spectator' => ! $isInGame,
             ],
         ];
 

@@ -60,6 +60,24 @@ export const useGameStore = defineStore('game', () => {
         return _authStoreRef;
     }
 
+    function _resetRoundState() {
+        currentRound.value = null;
+        acronym.value = '';
+        answers.value = [];
+        myAnswer.value = null;
+        myVote.value = null;
+        scores.value = [];
+        roundResults.value = null;
+        readyCount.value = 0;
+        totalPlayersForReady.value = 0;
+        chatMessages.value = [];
+        lobbyExpiring.value = false;
+        _stopCountdown();
+        _stopResultsCountdown();
+        deadline.value = null;
+        timeRemaining.value = 0;
+    }
+
     async function fetchGame(code) {
         const { data } = await api.games.get(code);
         currentGame.value = data.game;
@@ -69,6 +87,7 @@ export const useGameStore = defineStore('game', () => {
     }
 
     async function createGame(settings) {
+        _resetRoundState();
         const { data } = await api.games.create(settings);
         currentGame.value = data.game;
         players.value = data.game.players || [];
@@ -77,6 +96,7 @@ export const useGameStore = defineStore('game', () => {
     }
 
     async function joinGameAction(code, password) {
+        _resetRoundState();
         const { data } = await api.games.join(code, password);
         currentGame.value = data.game;
         players.value = data.game.players || [];
@@ -91,6 +111,7 @@ export const useGameStore = defineStore('game', () => {
     }
 
     async function startGame(code) {
+        _resetRoundState();
         const { data } = await api.games.start(code);
         currentGame.value = data.game;
         if (data.round) {
@@ -350,6 +371,7 @@ export const useGameStore = defineStore('game', () => {
                 }
             })
             .listen('.game.started', (data) => {
+                _resetRoundState();
                 phase.value = 'playing';
                 if (currentGame.value) {
                     currentGame.value.status = 'playing';
@@ -601,25 +623,11 @@ export const useGameStore = defineStore('game', () => {
 
     function resetState() {
         disconnectWebSocket();
-        _stopCountdown();
-        _stopResultsCountdown();
         if (_pollTimer) { clearTimeout(_pollTimer); _pollTimer = null; }
+        _resetRoundState();
         currentGame.value = null;
         players.value = [];
-        currentRound.value = null;
         phase.value = null;
-        acronym.value = '';
-        answers.value = [];
-        myAnswer.value = null;
-        myVote.value = null;
-        scores.value = [];
-        deadline.value = null;
-        timeRemaining.value = 0;
-        chatMessages.value = [];
-        roundResults.value = null;
-        lobbyExpiring.value = false;
-        readyCount.value = 0;
-        totalPlayersForReady.value = 0;
     }
 
     return {

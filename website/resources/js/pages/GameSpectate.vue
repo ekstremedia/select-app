@@ -2,6 +2,7 @@
     <GameLayout
         :game-code="gameStore.gameCode || props.code"
         :player-count="gameStore.players.length"
+        :leave-label="t('common.back')"
         @leave="router.visit('/spill')"
     >
         <div class="flex flex-col h-full overflow-hidden">
@@ -28,6 +29,44 @@
                         </span>
                     </div>
                     <ProgressBar :value="timerPercent" :showValue="false" style="height: 4px" />
+                </div>
+
+                <!-- Join bar (top) -->
+                <div v-if="showJoinBar" class="shrink-0 px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+                    <div class="max-w-lg mx-auto flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <Badge :value="t('spectate.watching')" severity="info" />
+                            <span class="text-sm text-slate-500 dark:text-slate-400">
+                                {{ gameStore.players.length }}/{{ gameStore.currentGame?.settings?.max_players ?? 8 }} {{ t('common.players') }}
+                            </span>
+                        </div>
+                        <!-- Not authenticated: show login -->
+                        <Button
+                            v-if="!authStore.isAuthenticated"
+                            :label="t('nav.login')"
+                            severity="success"
+                            size="small"
+                            @click="router.visit(`/logg-inn?redirect=/spill/${props.code}/se`)"
+                        />
+                        <!-- Game full -->
+                        <Button
+                            v-else-if="isGameFull"
+                            :label="t('spectate.gameFull')"
+                            severity="secondary"
+                            size="small"
+                            disabled
+                        />
+                        <!-- Can join -->
+                        <Button
+                            v-else
+                            :label="t('spectate.join')"
+                            severity="success"
+                            size="small"
+                            :loading="joining"
+                            @click="handleJoin"
+                        />
+                    </div>
+                    <small v-if="joinError" class="block text-center text-red-500 mt-2">{{ joinError }}</small>
                 </div>
 
                 <!-- Phase: Lobby -->
@@ -172,34 +211,60 @@
                         <Button :label="t('game.viewArchive')" severity="secondary" variant="outlined" @click="router.visit(`/arkiv/${props.code}`)" />
                     </div>
                 </div>
+
             </template>
         </div>
+
+        <!-- Password dialog -->
+        <Dialog v-model:visible="showPasswordDialog" :header="t('lobby.passwordRequired')" modal class="w-80">
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">{{ t('lobby.enterPassword') }}</p>
+            <form @submit.prevent="submitWithPassword">
+                <InputText
+                    v-model="password"
+                    type="password"
+                    class="w-full mb-4"
+                    autofocus
+                />
+                <div class="flex justify-end gap-2">
+                    <Button :label="t('common.cancel')" severity="secondary" variant="text" @click="showPasswordDialog = false" />
+                    <Button :label="t('games.join')" severity="success" type="submit" :loading="joining" />
+                </div>
+            </form>
+        </Dialog>
     </GameLayout>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { router } from '@inertiajs/vue3';
 import { storeToRefs } from 'pinia';
 import Button from 'primevue/button';
 import Badge from 'primevue/badge';
 import ProgressBar from 'primevue/progressbar';
+import Dialog from 'primevue/dialog';
+import InputText from 'primevue/inputtext';
 import GameLayout from '../layouts/GameLayout.vue';
 import { useGameStore } from '../stores/gameStore.js';
+import { useAuthStore } from '../stores/authStore.js';
 import { useI18n } from '../composables/useI18n.js';
-import { listenToGame, leaveGame as wsLeaveGame } from '../services/websocket.js';
+import { api } from '../services/api.js';
 
 defineOptions({ layout: false });
 
 const props = defineProps({ code: String });
 
 const gameStore = useGameStore();
+const authStore = useAuthStore();
 const { t } = useI18n();
 
 const { phase } = storeToRefs(gameStore);
 
 const loading = ref(true);
 const error = ref('');
+const joining = ref(false);
+const joinError = ref('');
+const showPasswordDialog = ref(false);
+const password = ref('');
 
 const totalRounds = computed(() => gameStore.currentGame?.settings?.rounds ?? 5);
 const acronymLetters = computed(() => gameStore.acronym ? gameStore.acronym.split('') : []);
@@ -213,15 +278,76 @@ const timerPercent = computed(() => {
     return Math.max(0, (gameStore.timeRemaining / total) * 100);
 });
 
+const isGameFull = computed(() => {
+    const max = gameStore.currentGame?.settings?.max_players ?? 8;
+    return gameStore.players.length >= max;
+});
+
+const showJoinBar = computed(() => {
+    return phase.value && phase.value !== 'finished';
+});
+
+async function handleJoin() {
+    joinError.value = '';
+    if (gameStore.currentGame?.has_password) {
+        password.value = '';
+        showPasswordDialog.value = true;
+        return;
+    }
+    await doJoin();
+}
+
+async function submitWithPassword() {
+    await doJoin(password.value);
+}
+
+async function doJoin(pw) {
+    joining.value = true;
+    joinError.value = '';
+    try {
+        await api.games.join(props.code, pw);
+        showPasswordDialog.value = false;
+        router.visit(`/spill/${props.code}`);
+    } catch (err) {
+        const msg = err.response?.data?.error || err.response?.data?.message || '';
+        if (msg.toLowerCase().includes('already in game')) {
+            showPasswordDialog.value = false;
+            router.visit(`/spill/${props.code}`);
+            return;
+        }
+        joinError.value = msg || t('common.error');
+    } finally {
+        joining.value = false;
+    }
+}
+
 async function initSpectate() {
     loading.value = true;
     error.value = '';
+    let redirecting = false;
 
     try {
+        // Init auth store if needed (for guest token detection)
+        if (!authStore.isInitialized) {
+            await authStore.loadFromStorage();
+        }
+
         await gameStore.fetchGame(props.code);
 
-        // Use listen-only channel (not presence join) for spectating
-        gameStore.connectWebSocket(props.code);
+        // Auto-redirect if already in the game
+        if (authStore.player && gameStore.players.some(p => p.id === authStore.player.id)) {
+            redirecting = true;
+            router.visit(`/spill/${props.code}`);
+            return;
+        }
+
+        // Join presence channel for real-time updates (spectators are authorized)
+        if (authStore.isAuthenticated) {
+            gameStore.connectWebSocket(props.code);
+        } else {
+            // Unauthenticated: fall back to polling
+            startPolling();
+        }
 
         if (phase.value === 'playing' || phase.value === 'voting') {
             await gameStore.fetchCurrentRound(props.code);
@@ -229,7 +355,30 @@ async function initSpectate() {
     } catch (err) {
         error.value = err.response?.data?.message || t('common.error');
     } finally {
-        loading.value = false;
+        if (!redirecting) {
+            loading.value = false;
+        }
+    }
+}
+
+let pollInterval = null;
+function startPolling() {
+    stopPolling();
+    pollInterval = setInterval(async () => {
+        try {
+            await gameStore.fetchGame(props.code);
+            if (phase.value === 'playing' || phase.value === 'voting') {
+                await gameStore.fetchCurrentRound(props.code);
+            }
+        } catch {
+            // ignore polling errors
+        }
+    }, 5000);
+}
+function stopPolling() {
+    if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
     }
 }
 
@@ -237,5 +386,6 @@ onMounted(initSpectate);
 
 onUnmounted(() => {
     gameStore.disconnectWebSocket();
+    stopPolling();
 });
 </script>

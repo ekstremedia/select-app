@@ -255,8 +255,8 @@ function getSafeRedirect() {
 }
 
 const loginUrl = computed(() => {
-    const redirect = getRedirectParam();
-    if (redirect) {
+    const redirect = getSafeRedirect();
+    if (redirect && redirect !== '/spill') {
         return `/logg-inn?redirect=${encodeURIComponent(redirect)}`;
     }
     return '/logg-inn';

@@ -42,28 +42,40 @@
                     class="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 hover:border-emerald-400 dark:hover:border-emerald-600 transition-colors cursor-pointer"
                     @click="router.visit(`/spill/${game.code}`)"
                 >
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400 tracking-widest">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400 tracking-widest shrink-0">
                                 #{{ game.code }}
                             </span>
-                            <Badge v-if="game.has_password" :value="t('create.private')" severity="warn" />
-                            <span class="text-sm text-slate-500 dark:text-slate-400">
+                            <span class="text-sm text-slate-500 dark:text-slate-400 truncate">
                                 {{ game.host_nickname }}
                             </span>
                         </div>
-                        <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <Badge v-if="game.has_password" value="🔒" severity="warn" />
                             <Badge
-                                v-if="game.status && game.status !== 'lobby'"
-                                :value="game.status === 'voting' ? t('games.statusVoting') : `${t('game.round')} ${game.current_round}/${game.total_rounds}`"
-                                :severity="game.status === 'voting' ? 'warn' : 'info'"
+                                v-if="game.status === 'voting'"
+                                :value="t('games.statusVoting')"
+                                severity="warn"
                             />
+                            <Badge
+                                v-else-if="game.status && game.status !== 'lobby'"
+                                severity="info"
+                            >
+                                <span class="inline-flex items-center gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                                    {{ game.current_round }}/{{ game.total_rounds }}
+                                </span>
+                            </Badge>
                             <Badge
                                 v-else
                                 :value="t('games.statusLobby')"
                                 severity="success"
                             />
-                            <Badge :value="`${game.player_count}/${game.max_players ?? 10}`" />
+                            <span class="inline-flex items-center gap-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                {{ game.player_count }}/{{ game.max_players ?? 10 }}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -89,32 +101,41 @@
                     v-for="game in openGames"
                     :key="game.code"
                     class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700 transition-colors cursor-pointer"
-                    @click="handleJoin(game.code)"
+                    @click="router.visit(`/spill/${game.code}/se`)"
                 >
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400 tracking-widest">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400 tracking-widest shrink-0">
                                 #{{ game.code }}
                             </span>
-                            <Badge v-if="game.has_password" :value="t('create.private')" severity="warn" />
-                            <span class="text-sm text-slate-500 dark:text-slate-400">
+                            <span class="text-sm text-slate-500 dark:text-slate-400 truncate">
                                 {{ game.host_nickname }}
                             </span>
                         </div>
-                        <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <Badge v-if="game.has_password" value="🔒" severity="warn" />
                             <Badge
-                                v-if="game.status && game.status !== 'lobby'"
-                                :value="game.status === 'voting' ? t('games.statusVoting') : `${t('game.round')} ${game.current_round}/${game.total_rounds}`"
-                                :severity="game.status === 'voting' ? 'warn' : 'info'"
+                                v-if="game.status === 'voting'"
+                                :value="t('games.statusVoting')"
+                                severity="warn"
                             />
+                            <Badge
+                                v-else-if="game.status && game.status !== 'lobby'"
+                                severity="info"
+                            >
+                                <span class="inline-flex items-center gap-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                                    {{ game.current_round }}/{{ game.total_rounds }}
+                                </span>
+                            </Badge>
                             <Badge
                                 v-else
                                 :value="t('games.statusLobby')"
                                 severity="success"
                             />
-                            <Badge :value="`${game.player_count}/${game.max_players ?? 10}`" />
-                            <span class="text-xs text-slate-400">
-                                {{ game.rounds ?? 8 }} {{ t('games.rounds') }}
+                            <span class="inline-flex items-center gap-0.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                {{ game.player_count }}/{{ game.max_players ?? 10 }}
                             </span>
                         </div>
                     </div>
@@ -133,11 +154,12 @@
             />
 
             <!-- Join by code -->
-            <form @submit.prevent="handleJoinByCode" class="flex gap-2 items-start">
+            <form @submit.prevent="handleJoinByCode" class="flex gap-2 items-center">
                 <InputText
                     v-model="joinCode"
                     :placeholder="t('games.code')"
                     maxlength="6"
+                    size="large"
                     class="flex-1 min-w-0 text-center uppercase tracking-[0.2em] font-mono"
                     @input="joinCode = joinCode.toUpperCase().replace(/[^A-Z0-9]/g, '')"
                 />
@@ -145,10 +167,10 @@
                     type="submit"
                     :label="t('games.join')"
                     severity="success"
+                    size="large"
                     :disabled="joinCode.length < 4"
                 />
             </form>
-            <small v-if="joinError" class="text-red-500 col-span-full">{{ joinError }}</small>
         </div>
     </div>
 </template>
@@ -160,32 +182,18 @@ import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import Skeleton from 'primevue/skeleton';
 import Badge from 'primevue/badge';
-import { api, getApiError } from '../services/api.js';
-import { useGameStore } from '../stores/gameStore.js';
+import { api } from '../services/api.js';
 import { useI18n } from '../composables/useI18n.js';
 
-const gameStore = useGameStore();
 const { t } = useI18n();
 
 const openGames = ref([]);
 const myGames = ref([]);
 const loading = ref(true);
 const joinCode = ref('');
-const joinError = ref('');
 const kickNotice = ref(null);
 const banReason = ref(null);
 const gameStartedNotice = ref(null);
-
-const apiErrorMap = {
-    'Game not found': 'common.gameNotFound',
-    'Player not found': 'common.playerNotFound',
-};
-
-function translateApiError(msg) {
-    if (!msg) return null;
-    const key = apiErrorMap[msg];
-    return key ? t(key) : msg;
-}
 
 async function loadGames() {
     try {
@@ -205,24 +213,9 @@ async function loadGames() {
     }
 }
 
-async function handleJoin(code) {
-    joinError.value = '';
-    try {
-        await gameStore.joinGame(code);
-    } catch (err) {
-        // "Player already in game" is fine — just navigate to the game
-        const msg = err.response?.data?.error || err.response?.data?.message || '';
-        if (!msg.toLowerCase().includes('already in game')) {
-            joinError.value = translateApiError(msg) || getApiError(err, t);
-            return;
-        }
-    }
-    router.visit(`/spill/${code}`);
-}
-
-async function handleJoinByCode() {
+function handleJoinByCode() {
     if (joinCode.value.length < 4) return;
-    await handleJoin(joinCode.value);
+    router.visit(`/spill/${joinCode.value}/se`);
 }
 
 let pollInterval = null;

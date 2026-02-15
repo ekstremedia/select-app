@@ -21,10 +21,20 @@
                 <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center text-2xl sm:text-3xl font-bold text-emerald-600 dark:text-emerald-400">
                     {{ profile.nickname?.charAt(0)?.toUpperCase() }}
                 </div>
-                <div>
-                    <h1 class="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-200">
-                        {{ profile.nickname }}
-                    </h1>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-3">
+                        <h1 class="text-2xl sm:text-3xl font-bold text-slate-800 dark:text-slate-200 truncate">
+                            {{ profile.nickname }}
+                        </h1>
+                        <Link
+                            v-if="isOwnProfile"
+                            href="/profil"
+                            class="shrink-0 p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            :title="t('nav.settings')"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        </Link>
+                    </div>
                     <div class="flex items-center gap-2 mt-1">
                         <span v-if="profile.is_bot" class="text-xs px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300">
                             {{ t('profile.botPlayer') }}
@@ -115,7 +125,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import Skeleton from 'primevue/skeleton';
 import Button from 'primevue/button';
@@ -123,10 +133,14 @@ import TabView from 'primevue/tabview';
 import TabPanel from 'primevue/tabpanel';
 import Badge from 'primevue/badge';
 import { api } from '../services/api.js';
+import { useAuthStore } from '../stores/authStore.js';
 import { useI18n } from '../composables/useI18n.js';
 
 const props = defineProps({ nickname: String });
+const authStore = useAuthStore();
 const { t } = useI18n();
+
+const isOwnProfile = computed(() => authStore.nickname === props.nickname);
 
 const profile = ref(null);
 const stats = ref(null);

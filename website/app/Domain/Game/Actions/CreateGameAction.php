@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 
 class CreateGameAction
 {
-    public function execute(Player $host, array $settings = [], bool $isPublic = false, ?string $password = null): Game
+    public function execute(Player $host, array $settings = [], bool $isPublic = false, ?string $password = null, bool $passwordIsHashed = false): Game
     {
         $game = new Game;
         $defaultSettings = $game->getDefaultSettings();
@@ -22,7 +22,7 @@ class CreateGameAction
             'settings' => $mergedSettings,
             'total_rounds' => $mergedSettings['rounds'] ?? 5,
             'is_public' => $isPublic,
-            'password' => $password ? Hash::make($password) : null,
+            'password' => $password ? ($passwordIsHashed ? $password : Hash::make($password)) : null,
         ]);
 
         // Add host as first player

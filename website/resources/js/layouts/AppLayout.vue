@@ -53,7 +53,13 @@
                             >
                                 {{ authNickname }}
                             </Link>
-                            <span v-else class="px-2 text-sm text-slate-500">{{ authNickname }}</span>
+                            <button
+                                v-else
+                                @click="openNicknameDialog"
+                                class="px-3 py-1 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline cursor-pointer"
+                            >
+                                {{ authNickname }}
+                            </button>
                         </template>
 
                         <!-- Menu toggle -->
@@ -111,22 +117,38 @@
                             <div class="border-t border-slate-200 dark:border-slate-800 my-1"></div>
                             <div class="flex items-center gap-2 px-3 py-1">
                                 <template v-if="isAuthenticated">
-                                    <Button
-                                        v-if="isGuest"
-                                        :label="t('nav.createAccount')"
-                                        size="small"
-                                        severity="success"
-                                        variant="outlined"
-                                        @click="navigateTo('/registrer'); menuOpen = false"
-                                    />
-                                    <Button
-                                        v-else
-                                        :label="t('nav.logout')"
-                                        size="small"
-                                        severity="secondary"
-                                        variant="text"
-                                        @click="handleLogout"
-                                    />
+                                    <template v-if="isGuest">
+                                        <Button
+                                            :label="t('guest.changeNickname')"
+                                            size="small"
+                                            severity="secondary"
+                                            variant="text"
+                                            @click="openNicknameDialog"
+                                        />
+                                        <Button
+                                            :label="t('nav.createAccount')"
+                                            size="small"
+                                            severity="success"
+                                            variant="outlined"
+                                            @click="navigateTo('/registrer'); menuOpen = false"
+                                        />
+                                    </template>
+                                    <template v-else>
+                                        <Button
+                                            :label="t('nav.settings')"
+                                            size="small"
+                                            severity="secondary"
+                                            variant="text"
+                                            @click="navigateTo('/profil'); menuOpen = false"
+                                        />
+                                        <Button
+                                            :label="t('nav.logout')"
+                                            size="small"
+                                            severity="secondary"
+                                            variant="text"
+                                            @click="handleLogout"
+                                        />
+                                    </template>
                                 </template>
                                 <template v-else>
                                     <Button
@@ -173,19 +195,49 @@
 
         <Toast />
         <ConfirmDialog />
+
+        <!-- Guest nickname change dialog -->
+        <Dialog
+            v-model:visible="showNicknameDialog"
+            :header="t('guest.changeNickname')"
+            modal
+            :style="{ width: '22rem' }"
+        >
+            <form @submit.prevent="submitNickname" class="space-y-4">
+                <div class="flex flex-col gap-2">
+                    <label class="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {{ t('guest.newNickname') }}
+                    </label>
+                    <InputText
+                        ref="nicknameInputRef"
+                        v-model="newNickname"
+                        class="w-full"
+                        @keydown.enter.prevent="submitNickname"
+                    />
+                    <small v-if="nicknameError" class="text-red-500">{{ nicknameError }}</small>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <Button :label="t('common.cancel')" severity="secondary" variant="text" @click="showNicknameDialog = false" />
+                    <Button type="submit" :label="t('common.save')" severity="success" :loading="nicknameLoading" />
+                </div>
+            </form>
+        </Dialog>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, nextTick, onMounted } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { storeToRefs } from 'pinia';
 import Button from 'primevue/button';
+import InputText from 'primevue/inputtext';
 import Toast from 'primevue/toast';
 import ConfirmDialog from 'primevue/confirmdialog';
+import Dialog from 'primevue/dialog';
 import { useAuthStore } from '../stores/authStore.js';
 import { useI18n } from '../composables/useI18n.js';
 import { useDarkMode } from '../composables/useDarkMode.js';
+import { api } from '../services/api.js';
 
 const authStore = useAuthStore();
 const { isAuthenticated, isGuest, isAdmin, nickname: authNickname } = storeToRefs(authStore);
@@ -193,6 +245,41 @@ const { t, toggleLocale } = useI18n();
 const { isDark, toggleDark } = useDarkMode();
 
 const menuOpen = ref(false);
+
+// Guest nickname change
+const showNicknameDialog = ref(false);
+const newNickname = ref('');
+const nicknameError = ref('');
+const nicknameLoading = ref(false);
+const nicknameInputRef = ref(null);
+
+function openNicknameDialog() {
+    newNickname.value = authStore.nickname || '';
+    nicknameError.value = '';
+    showNicknameDialog.value = true;
+    menuOpen.value = false;
+    nextTick(() => {
+        nicknameInputRef.value?.$el?.focus();
+    });
+}
+
+async function submitNickname() {
+    const trimmed = newNickname.value.trim();
+    if (!trimmed) return;
+
+    nicknameLoading.value = true;
+    nicknameError.value = '';
+
+    try {
+        const { data } = await api.profile.updateNickname(trimmed);
+        authStore.player = { ...authStore.player, nickname: data.player.nickname };
+        showNicknameDialog.value = false;
+    } catch (err) {
+        nicknameError.value = err.response?.data?.message || err.response?.data?.errors?.nickname?.[0] || t('common.error');
+    } finally {
+        nicknameLoading.value = false;
+    }
+}
 
 function isActive(path) {
     const url = usePage().url.split('?')[0];

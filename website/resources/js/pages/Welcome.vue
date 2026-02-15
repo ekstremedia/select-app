@@ -4,14 +4,14 @@
         <nav class="flex items-center justify-end gap-3 px-4 py-3 sm:px-6 flex-wrap">
             <button
                 @click="toggleLocale"
-                class="px-3 py-1.5 text-sm font-medium rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                class="w-9 h-9 inline-flex items-center justify-center text-sm font-medium rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 :title="isNorwegian ? 'Switch to English' : 'Bytt til norsk'"
             >
                 {{ t('nav.language') }}
             </button>
             <button
                 @click="toggleDark"
-                class="p-2 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                class="w-9 h-9 inline-flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 :title="isDark ? t('nav.lightMode') : t('nav.darkMode')"
             >
                 <svg v-if="isDark" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -33,9 +33,12 @@
 
         <!-- Hero section -->
         <section class="flex flex-col items-center px-4 pt-2 pb-16 sm:pt-20 sm:pb-24 text-center">
-            <h1 class="text-6xl sm:text-8xl font-bold tracking-[0.3em] text-emerald-600 dark:text-emerald-400 mb-4">
+            <h1 class="text-6xl sm:text-8xl font-bold tracking-[0.3em] text-emerald-600 dark:text-emerald-400 mb-2">
                 SELECT
             </h1>
+            <p class="text-sm text-slate-400 dark:text-slate-500 mb-8">
+                {{ t('hero.subtitle') }}
+            </p>
 
             <!-- Animated acronym demo -->
             <div class="flex gap-2 sm:gap-3 mb-6">
@@ -55,13 +58,6 @@
                 :style="{ opacity: showSentence ? 1 : 0 }"
             >
                 {{ currentSentence }}
-            </p>
-
-            <p class="text-base sm:text-lg text-slate-500 dark:text-slate-400 max-w-md">
-                {{ t('hero.subtitle') }}
-            </p>
-            <p class="text-sm text-slate-400 dark:text-slate-500 mt-2 max-w-sm">
-                {{ t('hero.description') }}
             </p>
         </section>
 
@@ -115,10 +111,7 @@
         </section>
 
         <!-- Footer -->
-        <footer class="px-4 py-8 text-center border-t border-slate-200 dark:border-slate-800">
-            <p class="text-sm text-slate-400 dark:text-slate-500">
-                {{ t('footer.tagline') }}
-            </p>
+        <footer class="px-4 py-8">
         </footer>
     </div>
 </template>
@@ -152,8 +145,11 @@ let cycleTimeout = null;
 
 function parseSentence(sentence) {
     const words = sentence.split(/\s+/).filter(w => w.length > 0);
+    const letters = words
+        .map(w => w.replace(/[^a-zA-ZæøåÆØÅ]/g, '').charAt(0).toUpperCase())
+        .filter(l => l.length > 0);
     return {
-        letters: words.map(w => w.replace(/[^a-zA-ZæøåÆØÅ]/g, '').charAt(0).toUpperCase()),
+        letters,
         text: words.join(' '),
     };
 }

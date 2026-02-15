@@ -37,7 +37,14 @@ class JoinGameAction
                 if ($existing->isBanned()) {
                     throw new \InvalidArgumentException('Du er utestengt fra dette spillet');
                 }
+
+                $maxPlayers = $game->settings['max_players'] ?? 10;
+                $currentCount = $game->gamePlayers()->where('is_active', true)->count();
+
                 if ($existing->isKicked()) {
+                    if ($currentCount >= $maxPlayers) {
+                        throw new \InvalidArgumentException('Game is full');
+                    }
                     // Kicked but not banned — allow rejoin, clear kicked_by
                     $existing->update(['is_active' => true, 'kicked_by' => null]);
 
@@ -45,6 +52,9 @@ class JoinGameAction
                 }
                 if ($existing->is_active) {
                     throw new \InvalidArgumentException('Player already in game');
+                }
+                if ($currentCount >= $maxPlayers) {
+                    throw new \InvalidArgumentException('Game is full');
                 }
                 // Rejoin
                 $existing->update(['is_active' => true]);

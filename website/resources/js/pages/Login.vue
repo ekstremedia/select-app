@@ -20,49 +20,42 @@
             </div>
         </div>
 
-        <!-- Quick join hint when coming from invite -->
-        <p v-if="gamePreview" class="text-center text-sm text-slate-500 dark:text-slate-400 mb-4">
-            {{ t('auth.quickJoin') }}
-        </p>
+        <!-- Guest play section (always on top) -->
+        <div class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 mb-6">
+            <h2 class="text-lg font-semibold mb-4 text-slate-800 dark:text-slate-200">
+                {{ t('auth.guest.title') }}
+            </h2>
+            <form @submit.prevent="handleGuest" class="space-y-4">
+                <div v-if="guestError" class="p-3 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-sm text-red-700 dark:text-red-300">
+                    {{ guestError }}
+                </div>
 
-        <!-- Guest play section (on top when coming from game invite) -->
-        <template v-if="gamePreview">
-            <div class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 mb-6">
-                <h2 class="text-lg font-semibold mb-4 text-slate-800 dark:text-slate-200">
-                    {{ t('auth.guest.title') }}
-                </h2>
-                <form @submit.prevent="handleGuest" class="space-y-4">
-                    <div v-if="guestError" class="p-3 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-sm text-red-700 dark:text-red-300">
-                        {{ guestError }}
-                    </div>
-
-                    <div class="flex flex-col gap-2">
-                        <label for="guestNickname" class="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            {{ t('auth.guest.nickname') }}
-                        </label>
-                        <InputText
-                            id="guestNickname"
-                            v-model="guestNickname"
-                            class="w-full"
-                        />
-                    </div>
-
-                    <Button
-                        type="submit"
-                        :label="t('auth.guest.submit')"
-                        severity="success"
-                        :loading="guestLoading"
+                <div class="flex flex-col gap-2">
+                    <label for="guestNickname" class="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {{ t('auth.guest.nickname') }}
+                    </label>
+                    <InputText
+                        id="guestNickname"
+                        v-model="guestNickname"
                         class="w-full"
                     />
-                </form>
-            </div>
+                </div>
 
-            <div class="flex items-center gap-4 mb-6">
-                <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
-                <span class="text-sm text-slate-400 dark:text-slate-500">{{ t('auth.or') }}</span>
-                <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
-            </div>
-        </template>
+                <Button
+                    type="submit"
+                    :label="t('auth.guest.submit')"
+                    severity="success"
+                    :loading="guestLoading"
+                    class="w-full"
+                />
+            </form>
+        </div>
+
+        <div class="flex items-center gap-4 mb-6">
+            <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
+            <span class="text-sm text-slate-400 dark:text-slate-500">{{ t('auth.or') }}</span>
+            <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
+        </div>
 
         <h1 class="text-3xl font-bold text-center mb-8 text-slate-800 dark:text-slate-200">
             {{ t('auth.login.title') }}
@@ -145,45 +138,6 @@
                 </Link>
             </p>
         </div>
-
-        <!-- Guest play section (bottom when not from invite) -->
-        <template v-if="!gamePreview">
-            <div class="flex items-center gap-4 my-8">
-                <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
-                <span class="text-sm text-slate-400 dark:text-slate-500">{{ t('auth.or') }}</span>
-                <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
-            </div>
-
-            <div class="p-6 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                <h2 class="text-lg font-semibold mb-4 text-slate-800 dark:text-slate-200">
-                    {{ t('auth.guest.title') }}
-                </h2>
-                <form @submit.prevent="handleGuest" class="space-y-4">
-                    <div v-if="guestError" class="p-3 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-sm text-red-700 dark:text-red-300">
-                        {{ guestError }}
-                    </div>
-
-                    <div class="flex flex-col gap-2">
-                        <label for="guestNickname2" class="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            {{ t('auth.guest.nickname') }}
-                        </label>
-                        <InputText
-                            id="guestNickname2"
-                            v-model="guestNickname"
-                            class="w-full"
-                        />
-                    </div>
-
-                    <Button
-                        type="submit"
-                        :label="t('auth.guest.submit')"
-                        severity="secondary"
-                        :loading="guestLoading"
-                        class="w-full"
-                    />
-                </form>
-            </div>
-        </template>
     </div>
 </template>
 

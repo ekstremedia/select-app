@@ -141,6 +141,11 @@ class GameProcessor
 
             try {
                 broadcast(new LobbyExpiringBroadcast($game, self::LOBBY_WARNING_SECONDS));
+            } catch (\Throwable $e) {
+                Log::error('Broadcast failed: lobby.expiring', ['game' => $game->code, 'error' => $e->getMessage()]);
+            }
+
+            try {
                 broadcast(new ChatMessageBroadcast(
                     $game,
                     'Delectus',
@@ -148,7 +153,7 @@ class GameProcessor
                     true
                 ));
             } catch (\Throwable $e) {
-                Log::error('Broadcast failed: lobby.expiring', ['game' => $game->code, 'error' => $e->getMessage()]);
+                Log::error('Broadcast failed: chat.lobby_warning', ['game' => $game->code, 'error' => $e->getMessage()]);
             }
         }
     }
@@ -377,7 +382,7 @@ class GameProcessor
         $minDelay = min(max(3, (int) ($answerTime * 0.2)), $maxDelay);
 
         foreach ($botPlayers as $bot) {
-            $delay = rand($minDelay, $maxDelay);
+            $delay = random_int($minDelay, $maxDelay);
             BotSubmitAnswerJob::dispatch($round->id, $bot->id)->delay(now()->addSeconds($delay));
         }
     }
@@ -394,7 +399,7 @@ class GameProcessor
         $maxDelay = max(5, (int) ($voteTime * 0.7));
 
         foreach ($botPlayers as $bot) {
-            $delay = rand($minDelay, $maxDelay);
+            $delay = random_int($minDelay, $maxDelay);
             BotSubmitVoteJob::dispatch($round->id, $bot->id)->delay(now()->addSeconds($delay));
         }
     }
