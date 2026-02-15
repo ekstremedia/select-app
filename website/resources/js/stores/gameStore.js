@@ -194,6 +194,10 @@ export const useGameStore = defineStore('game', () => {
                     .map(p => ({ player_id: p.id, nickname: p.nickname, score: p.score ?? 0 }))
                     .sort((a, b) => b.score - a.score);
             }
+            // Set a short countdown — Delectus will start the next round soon
+            const delay = data.game.settings?.time_between_rounds ?? 10;
+            deadline.value = new Date(Date.now() + delay * 1000);
+            _startCountdown();
         }
 
         return data;
@@ -293,6 +297,11 @@ export const useGameStore = defineStore('game', () => {
                 scores.value = data.scores || [];
                 _stopCountdown();
                 useSoundStore().play('vote-reveal');
+
+                // Start a between-rounds countdown
+                const delay = data.time_between_rounds ?? currentGame.value?.settings?.time_between_rounds ?? 10;
+                deadline.value = new Date(Date.now() + delay * 1000);
+                _startCountdown();
             })
             .listen('.game.finished', (data) => {
                 phase.value = 'finished';
@@ -392,8 +401,25 @@ export const useGameStore = defineStore('game', () => {
             if (timeRemaining.value <= 0) {
                 _stopCountdown();
                 useSoundStore().play('time-up');
+                // Poll game state as fallback in case we missed a WebSocket event
+                _pollAfterDeadline();
             }
         }, 1000);
+    }
+
+    let _pollTimer = null;
+    function _pollAfterDeadline() {
+        if (_pollTimer) clearTimeout(_pollTimer);
+        const code = currentGame.value?.code;
+        if (!code) return;
+        // Wait 3 seconds for the WebSocket event, then poll
+        _pollTimer = setTimeout(async () => {
+            try {
+                await fetchGameState(code);
+            } catch {
+                // ignore
+            }
+        }, 3000);
     }
 
     function _stopCountdown() {
@@ -415,6 +441,7 @@ export const useGameStore = defineStore('game', () => {
     function resetState() {
         disconnectWebSocket();
         _stopCountdown();
+        if (_pollTimer) { clearTimeout(_pollTimer); _pollTimer = null; }
         currentGame.value = null;
         players.value = [];
         currentRound.value = null;

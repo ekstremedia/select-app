@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Delectus;
 
 use App\Application\Broadcasting\Events\ChatMessageBroadcast;
+use App\Application\Broadcasting\Events\RoundStartedBroadcast;
 use App\Domain\Game\Actions\EndGameAction;
 use App\Domain\Round\Actions\CompleteRoundAction;
 use App\Domain\Round\Actions\StartRoundAction;
@@ -71,30 +72,61 @@ class GameProcessor
             // All rounds complete - end the game
             Log::info('Delectus: Ending game', ['game_code' => $game->code]);
             $this->endGameAction->execute($game);
-        } else {
+
+            return;
+        }
+
+        // Check if the last completed round had 0 answers — abandoned game
+        if ($completedRounds > 0) {
+            $lastCompleted = $game->rounds()
+                ->where('status', 'completed')
+                ->latest('round_number')
+                ->first();
+
+            if ($lastCompleted && $lastCompleted->answers()->count() === 0) {
+                Log::info('Delectus: Last round had no answers, ending game', [
+                    'game_code' => $game->code,
+                    'round' => $lastCompleted->round_number,
+                ]);
+                $this->endGameAction->execute($game);
+
+                return;
+            }
+
             // Check time_between_rounds delay
             $timeBetweenRounds = $game->settings['time_between_rounds'] ?? 5;
 
-            if ($completedRounds > 0 && $timeBetweenRounds > 0) {
-                $lastCompleted = $game->rounds()
-                    ->where('status', 'completed')
-                    ->latest('updated_at')
-                    ->first();
-
-                if ($lastCompleted && $lastCompleted->updated_at->diffInSeconds(now()) < $timeBetweenRounds) {
-                    return; // Still waiting between rounds
-                }
+            if ($timeBetweenRounds > 0 && $lastCompleted && (int) $lastCompleted->updated_at->diffInSeconds(now()) < $timeBetweenRounds) {
+                return; // Still waiting between rounds
             }
+        }
 
-            // Start new round
-            $roundNumber = $completedRounds + 1;
-            $game->update(['current_round' => $roundNumber]);
-
-            Log::info('Delectus: Starting round', [
+        // Check active players — end game if 0 or 1 left
+        $activePlayers = $game->gamePlayers()->where('is_active', true)->count();
+        if ($activePlayers <= 1) {
+            Log::info('Delectus: Not enough active players, ending game', [
                 'game_code' => $game->code,
-                'round' => $roundNumber,
+                'active_players' => $activePlayers,
             ]);
-            $this->startRoundAction->execute($game);
+            $this->endGameAction->execute($game);
+
+            return;
+        }
+
+        // Start new round
+        $roundNumber = $completedRounds + 1;
+        $game->update(['current_round' => $roundNumber]);
+
+        Log::info('Delectus: Starting round', [
+            'game_code' => $game->code,
+            'round' => $roundNumber,
+        ]);
+        $round = $this->startRoundAction->execute($game);
+
+        try {
+            broadcast(new RoundStartedBroadcast($game, $round));
+        } catch (\Throwable $e) {
+            Log::error('Broadcast failed: round.started', ['game' => $game->code, 'error' => $e->getMessage()]);
         }
     }
 

@@ -45,6 +45,7 @@ class RoundCompletedBroadcast implements ShouldBroadcastNow
         return [
             'results' => $this->results,
             'scores' => $scores,
+            'time_between_rounds' => $this->game->settings['time_between_rounds'] ?? 10,
         ];
     }
 }

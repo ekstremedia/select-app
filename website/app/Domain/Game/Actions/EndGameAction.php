@@ -35,21 +35,26 @@ class EndGameAction
         $this->scoringService->updatePlayerStats($game);
 
         // Calculate final standings
-        $finalScores = $game->gamePlayers()
+        $gamePlayers = $game->gamePlayers()
             ->with('player')
             ->orderByDesc('score')
-            ->get()
-            ->map(function ($gp, $index) {
+            ->get();
+
+        $topScore = $gamePlayers->first()?->score ?? 0;
+        $tiedAtTop = $gamePlayers->where('score', $topScore)->count() > 1;
+
+        $finalScores = $gamePlayers
+            ->map(function ($gp, $index) use ($tiedAtTop) {
                 return [
                     'player_id' => $gp->player_id,
                     'player_name' => $gp->player->nickname,
                     'score' => $gp->score,
-                    'is_winner' => $index === 0,
+                    'is_winner' => $index === 0 && ! $tiedAtTop,
                 ];
             })
             ->toArray();
 
-        $winner = $finalScores[0] ?? null;
+        $winner = (! $tiedAtTop && ! empty($finalScores)) ? $finalScores[0] : null;
 
         // Save game result (denormalized summary)
         GameResult::create([

@@ -291,7 +291,7 @@
                                 v-for="(result, i) in gameStore.roundResults"
                                 :key="result.player_id || i"
                                 class="p-4 rounded-xl border border-slate-200 dark:border-slate-800"
-                                :class="i === 0 ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-900' : 'bg-slate-50 dark:bg-slate-900'"
+                                :class="isRoundWinner(result, i) ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-900' : 'bg-slate-50 dark:bg-slate-900'"
                             >
                                 <div class="flex items-start justify-between gap-3">
                                     <div>
@@ -303,7 +303,8 @@
                                         <p class="text-xs text-slate-400 mt-1">{{ result.votes ?? result.votes_count ?? 0 }} {{ t('game.votes') }}</p>
                                     </div>
                                 </div>
-                                <Badge v-if="i === 0" :value="t('game.winner')" severity="success" class="mt-2" />
+                                <Badge v-if="isRoundWinner(result, i) && !roundHasTie" :value="t('game.winner')" severity="success" class="mt-2" />
+                                <Badge v-else-if="isRoundWinner(result, i) && roundHasTie" :value="t('game.tie')" severity="warn" class="mt-2" />
                             </div>
                         </div>
 
@@ -323,7 +324,9 @@
                         </div>
 
                         <p class="text-center text-sm text-slate-400 mt-4">
-                            {{ t('game.nextRound') }}...
+                            {{ t('game.nextRound') }}
+                            <span v-if="gameStore.timeRemaining > 0" class="font-mono font-bold">{{ gameStore.timeRemaining }}s</span>
+                            <span v-else>...</span>
                         </p>
                     </div>
                 </div>
@@ -349,6 +352,12 @@
                             <p class="text-lg font-bold text-yellow-600 dark:text-yellow-400 mt-1">
                                 {{ gameStore.currentGame.winner.score }} {{ t('game.points') }}
                             </p>
+                        </div>
+
+                        <!-- Tie -->
+                        <div v-else class="my-6 p-6 rounded-2xl bg-gradient-to-br from-amber-50 to-slate-50 dark:from-amber-950/30 dark:to-slate-950/50 border-2 border-amber-300 dark:border-amber-700 animate-winner-reveal">
+                            <p class="text-4xl mb-2">&#129309;</p>
+                            <p class="text-2xl font-bold text-amber-600 dark:text-amber-400">{{ t('game.tie') }}!</p>
                         </div>
 
                         <!-- Final scores -->
@@ -505,19 +514,40 @@ const editsRemaining = computed(() => Math.max(0, MAX_SUBMISSIONS - submitCount.
 
 const totalRounds = computed(() => gameStore.currentGame?.settings?.rounds ?? 5);
 
+const roundHasTie = computed(() => {
+    const results = gameStore.roundResults;
+    if (!results || results.length < 2) return false;
+    const topVotes = results[0]?.votes ?? results[0]?.votes_count ?? 0;
+    const secondVotes = results[1]?.votes ?? results[1]?.votes_count ?? 0;
+    return topVotes === secondVotes && topVotes > 0;
+});
+
+function isRoundWinner(result, index) {
+    const results = gameStore.roundResults;
+    if (!results?.length) return false;
+    const topVotes = results[0]?.votes ?? results[0]?.votes_count ?? 0;
+    const myVotes = result.votes ?? result.votes_count ?? 0;
+    return myVotes > 0 && myVotes === topVotes;
+}
+
 const acronymLetters = computed(() => {
     return gameStore.acronym ? gameStore.acronym.split('') : [];
 });
 
 const showTimer = computed(() => {
-    return phase.value === 'playing' || phase.value === 'voting';
+    return phase.value === 'playing' || phase.value === 'voting' || phase.value === 'results';
 });
 
 const timerPercent = computed(() => {
     if (!gameStore.deadline) return 100;
-    const total = phase.value === 'voting'
-        ? (gameStore.currentGame?.settings?.vote_time ?? 30)
-        : (gameStore.currentGame?.settings?.answer_time ?? 60);
+    let total;
+    if (phase.value === 'results') {
+        total = gameStore.currentGame?.settings?.time_between_rounds ?? 10;
+    } else if (phase.value === 'voting') {
+        total = gameStore.currentGame?.settings?.vote_time ?? 30;
+    } else {
+        total = gameStore.currentGame?.settings?.answer_time ?? 60;
+    }
     return Math.max(0, (gameStore.timeRemaining / total) * 100);
 });
 
