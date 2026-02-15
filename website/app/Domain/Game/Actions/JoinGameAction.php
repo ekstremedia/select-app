@@ -5,6 +5,7 @@ namespace App\Domain\Game\Actions;
 use App\Infrastructure\Models\Game;
 use App\Infrastructure\Models\GamePlayer;
 use App\Infrastructure\Models\Player;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class JoinGameAction
@@ -20,30 +21,35 @@ class JoinGameAction
             throw new \InvalidArgumentException('Incorrect game password');
         }
 
-        $maxPlayers = $game->settings['max_players'] ?? 8;
-        $currentCount = $game->activePlayers()->count();
+        return DB::transaction(function () use ($game, $player) {
+            // Lock the game row to prevent race conditions on player count
+            $game = Game::lockForUpdate()->find($game->id);
 
-        if ($currentCount >= $maxPlayers) {
-            throw new \InvalidArgumentException('Game is full');
-        }
+            $existing = GamePlayer::where('game_id', $game->id)
+                ->where('player_id', $player->id)
+                ->first();
 
-        $existing = GamePlayer::where('game_id', $game->id)
-            ->where('player_id', $player->id)
-            ->first();
+            if ($existing) {
+                if ($existing->is_active) {
+                    throw new \InvalidArgumentException('Player already in game');
+                }
+                // Rejoin
+                $existing->update(['is_active' => true]);
 
-        if ($existing) {
-            if ($existing->is_active) {
-                throw new \InvalidArgumentException('Player already in game');
+                return $existing;
             }
-            // Rejoin
-            $existing->update(['is_active' => true]);
 
-            return $existing;
-        }
+            $maxPlayers = $game->settings['max_players'] ?? 8;
+            $currentCount = $game->gamePlayers()->where('is_active', true)->count();
 
-        return $game->gamePlayers()->create([
-            'player_id' => $player->id,
-            'joined_at' => now(),
-        ]);
+            if ($currentCount >= $maxPlayers) {
+                throw new \InvalidArgumentException('Game is full');
+            }
+
+            return $game->gamePlayers()->create([
+                'player_id' => $player->id,
+                'joined_at' => now(),
+            ]);
+        });
     }
 }

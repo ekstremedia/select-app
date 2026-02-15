@@ -79,6 +79,9 @@ class EndGameAction
             'final_scores' => $finalScores,
         ]);
 
+        // Clear archive cache so fresh data is served
+        \Illuminate\Support\Facades\Cache::forget("archive:{$game->code}");
+
         try {
             broadcast(new GameFinishedBroadcast($game, $finalScores));
         } catch (\Throwable $e) {
@@ -108,8 +111,8 @@ class EndGameAction
                     'round_number' => $round->round_number,
                     'acronym' => $round->acronym,
                     'sentence' => $answer->text,
-                    'author_nickname' => $answer->author_nickname ?? $answer->player->nickname,
-                    'author_user_id' => $answer->player->user_id,
+                    'author_nickname' => $answer->author_nickname ?? $answer->player?->nickname ?? 'Unknown',
+                    'author_user_id' => $answer->player?->user_id,
                     'votes_count' => $answer->votes_count,
                     'voter_nicknames' => $voterNicknames,
                     'is_round_winner' => $roundWinner && $roundWinner->id === $answer->id,
@@ -123,7 +126,7 @@ class EndGameAction
         $rounds = $game->rounds()->with(['answers.votes'])->get();
 
         foreach ($game->gamePlayers()->with('player.user')->get() as $gp) {
-            $user = $gp->player->user;
+            $user = $gp->player?->user;
             if (! $user) {
                 continue;
             }

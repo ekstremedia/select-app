@@ -4,8 +4,8 @@ namespace App\Application\Http\Controllers\Api\V1;
 
 use App\Application\Broadcasting\Events\ChatMessageBroadcast;
 use App\Application\Broadcasting\Events\CoHostChangedBroadcast;
-use App\Application\Broadcasting\Events\GameSettingsChangedBroadcast;
 use App\Application\Broadcasting\Events\GameRematchBroadcast;
+use App\Application\Broadcasting\Events\GameSettingsChangedBroadcast;
 use App\Application\Broadcasting\Events\GameStartedBroadcast;
 use App\Application\Broadcasting\Events\PlayerJoinedBroadcast;
 use App\Application\Broadcasting\Events\PlayerLeftBroadcast;
@@ -442,7 +442,7 @@ class GameController extends Controller
             'is_co_host' => (bool) $p->pivot->is_co_host,
         ]);
 
-        return [
+        $result = [
             'id' => $game->id,
             'code' => $game->code,
             'status' => $game->status,
@@ -454,5 +454,16 @@ class GameController extends Controller
             'has_password' => ! is_null($game->password),
             'players' => $players,
         ];
+
+        // Include winner info for finished games
+        if ($game->isFinished()) {
+            $gameResult = $game->gameResult;
+            if ($gameResult) {
+                $winner = collect($gameResult->final_scores)->firstWhere('is_winner', true);
+                $result['winner'] = $winner;
+            }
+        }
+
+        return $result;
     }
 }

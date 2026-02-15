@@ -158,7 +158,22 @@ async function loadGame() {
 
     try {
         const { data } = await api.archive.get(props.code);
-        game.value = data.game ?? data;
+        game.value = {
+            ...(data.game || {}),
+            standings: data.players || [],
+            rounds: (data.rounds || []).map(r => ({
+                ...r,
+                answers: (r.answers || []).map(a => ({
+                    ...a,
+                    player_nickname: a.player_name,
+                    voted_by: a.voters || [],
+                })),
+            })),
+        };
+        // Auto-expand all rounds
+        if (game.value.rounds?.length) {
+            expandedRounds.value = game.value.rounds.map(r => r.round_number);
+        }
     } catch (err) {
         if (err.response?.status === 404) {
             error.value = t('common.notFound');

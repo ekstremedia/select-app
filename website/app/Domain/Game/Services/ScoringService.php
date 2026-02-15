@@ -27,13 +27,13 @@ class ScoringService
 
             $results[] = [
                 'player_id' => $answer->player_id,
-                'player_name' => $answer->player->nickname,
+                'player_name' => $answer->author_nickname ?? $answer->player?->nickname ?? 'Unknown',
                 'answer' => $answer->text,
                 'votes' => $answer->votes_count,
                 'points_earned' => $points,
                 'voters' => $answer->votes->map(fn ($v) => [
                     'id' => $v->voter_id,
-                    'name' => $v->voter->nickname,
+                    'name' => $v->voter_nickname ?? $v->voter?->nickname ?? 'Unknown',
                 ])->toArray(),
             ];
         }
@@ -54,13 +54,16 @@ class ScoringService
         $scores = [];
         $rank = 1;
 
+        $topScore = $gamePlayers->first()?->score ?? 0;
+        $tiedAtTop = $gamePlayers->where('score', $topScore)->count() > 1;
+
         foreach ($gamePlayers as $gp) {
             $scores[] = [
                 'rank' => $rank,
                 'player_id' => $gp->player_id,
-                'player_name' => $gp->player->nickname,
+                'player_name' => $gp->player?->nickname ?? 'Unknown',
                 'score' => $gp->score,
-                'is_winner' => $rank === 1,
+                'is_winner' => $rank === 1 && ! $tiedAtTop,
             ];
             $rank++;
         }
@@ -76,6 +79,9 @@ class ScoringService
 
         foreach ($game->gamePlayers as $gp) {
             $player = $gp->player;
+            if (! $player) {
+                continue;
+            }
             $player->increment('games_played');
             $player->increment('total_score', $gp->score);
 

@@ -368,12 +368,12 @@
                                     v-for="(score, i) in gameStore.scores"
                                     :key="score.player_id"
                                     class="flex items-center justify-between p-2 rounded transition-all"
-                                    :class="i === 0 ? 'bg-emerald-50 dark:bg-emerald-950/50 ring-1 ring-emerald-200 dark:ring-emerald-800' : ''"
+                                    :class="gameStore.currentGame?.winner && i === 0 ? 'bg-emerald-50 dark:bg-emerald-950/50 ring-1 ring-emerald-200 dark:ring-emerald-800' : ''"
                                     :style="{ animationDelay: `${i * 100}ms` }"
                                 >
                                     <div class="flex items-center gap-2">
-                                        <span class="text-sm font-bold w-5" :class="i === 0 ? 'text-yellow-500' : i === 1 ? 'text-slate-400' : i === 2 ? 'text-amber-700' : 'text-slate-400'">
-                                            {{ i === 0 ? '\uD83E\uDD47' : i === 1 ? '\uD83E\uDD48' : i === 2 ? '\uD83E\uDD49' : `${i + 1}.` }}
+                                        <span class="text-sm font-bold w-5" :class="getFinalRankClass(i)">
+                                            {{ getFinalRankLabel(i) }}
                                         </span>
                                         <span class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ score.player_name || score.nickname }}</span>
                                     </div>
@@ -528,6 +528,34 @@ function isRoundWinner(result, index) {
     const topVotes = results[0]?.votes ?? results[0]?.votes_count ?? 0;
     const myVotes = result.votes ?? result.votes_count ?? 0;
     return myVotes > 0 && myVotes === topVotes;
+}
+
+function getFinalRank(index) {
+    const allScores = gameStore.scores;
+    if (!allScores?.length) return index + 1;
+    const myScore = allScores[index]?.score ?? 0;
+    // Find the first player with this score to determine the rank
+    const firstWithScore = allScores.findIndex(s => (s.score ?? 0) === myScore);
+    return firstWithScore;
+}
+
+function getFinalRankLabel(index) {
+    const rank = getFinalRank(index);
+    const medals = ['\uD83E\uDD47', '\uD83E\uDD48', '\uD83E\uDD49'];
+    // Only show gold medal if there's a clear winner (no tie at top)
+    if (rank === 0 && !gameStore.currentGame?.winner) {
+        return `${index + 1}.`;
+    }
+    return rank < 3 ? medals[rank] : `${rank + 1}.`;
+}
+
+function getFinalRankClass(index) {
+    const rank = getFinalRank(index);
+    if (rank === 0 && !gameStore.currentGame?.winner) return 'text-slate-400';
+    if (rank === 0) return 'text-yellow-500';
+    if (rank === 1) return 'text-slate-400';
+    if (rank === 2) return 'text-amber-700';
+    return 'text-slate-400';
 }
 
 const acronymLetters = computed(() => {
@@ -708,11 +736,6 @@ async function handleSendChat() {
                 }
                 return;
             case '/away':
-                gameStore.chatMessages.push({
-                    nickname: myNickname,
-                    message: rest || 'is away',
-                    action: true,
-                });
                 try {
                     await gameStore.sendChatMessage(props.code, rest || 'is away', true);
                 } catch { /* ignore */ }
@@ -854,14 +877,19 @@ watch(chatOpen, (open) => {
 });
 
 // Reset state when phase changes
-watch(phase, (newPhase) => {
+watch(phase, (newPhase, oldPhase) => {
     if (newPhase === 'playing') {
         answerText.value = '';
         isEditing.value = false;
         submitCount.value = 0;
     }
-    if (newPhase === 'finished') {
-        celebrateWinner();
+    if (newPhase === 'finished' && oldPhase !== 'finished') {
+        // Only celebrate if there's a clear winner (not a tie)
+        nextTick(() => {
+            if (gameStore.currentGame?.winner) {
+                celebrateWinner();
+            }
+        });
     }
 });
 

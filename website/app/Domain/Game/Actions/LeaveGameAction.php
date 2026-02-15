@@ -19,18 +19,22 @@ class LeaveGameAction
             throw new \InvalidArgumentException('Player is not in this game');
         }
 
-        // If host leaves during lobby, transfer host or end game
-        if ($game->host_player_id === $player->id && $game->isInLobby()) {
-            $newHost = $game->activePlayers()
-                ->where('players.id', '!=', $player->id)
+        // If host leaves, transfer host to a co-host or another player
+        if ($game->host_player_id === $player->id) {
+            // Prefer co-hosts first, then any active player
+            $newHost = $game->gamePlayers()
+                ->where('player_id', '!=', $player->id)
+                ->where('is_active', true)
+                ->orderByDesc('is_co_host')
                 ->first();
 
             if ($newHost) {
-                $game->update(['host_player_id' => $newHost->id]);
-            } else {
-                // No other players, end the game
+                $game->update(['host_player_id' => $newHost->player_id]);
+            } elseif ($game->isInLobby()) {
+                // No other players in lobby, end the game
                 $game->update(['status' => Game::STATUS_FINISHED]);
             }
+            // Mid-game with no other players: Delectus will detect <= 1 active and end it
         }
 
         $gamePlayer->update(['is_active' => false]);

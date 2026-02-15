@@ -69,7 +69,17 @@ class GameProcessor
         $totalRounds = $game->settings['rounds'] ?? 5;
 
         if ($completedRounds >= $totalRounds) {
-            // All rounds complete - end the game
+            // All rounds complete — wait for time_between_rounds before ending
+            $timeBetweenRounds = $game->settings['time_between_rounds'] ?? 5;
+            $lastCompleted = $game->rounds()
+                ->where('status', 'completed')
+                ->latest('updated_at')
+                ->first();
+
+            if ($lastCompleted && (int) $lastCompleted->updated_at->diffInSeconds(now()) < $timeBetweenRounds) {
+                return; // Still showing results
+            }
+
             Log::info('Delectus: Ending game', ['game_code' => $game->code]);
             $this->endGameAction->execute($game);
 
@@ -191,6 +201,29 @@ class GameProcessor
             $round->update(['status' => Round::STATUS_COMPLETED]);
 
             $this->endGameAction->execute($game);
+
+            return;
+        }
+
+        // With only 1 answer, voting is impossible (can't vote for own answer).
+        // Skip voting and auto-complete the round with 0 votes.
+        if ($answersCount === 1) {
+            Log::info('Delectus: Only 1 answer, skipping voting', [
+                'game_code' => $game->code,
+                'round' => $round->round_number,
+            ]);
+
+            $round->update(['status' => Round::STATUS_COMPLETED]);
+            $game->update(['status' => Game::STATUS_PLAYING]);
+
+            try {
+                broadcast(new \App\Application\Broadcasting\Events\RoundCompletedBroadcast(
+                    $game,
+                    $this->completeRoundAction->getScoresWithoutVoting($round)
+                ));
+            } catch (\Throwable $e) {
+                Log::error('Broadcast failed: round.completed', ['game' => $game->code, 'error' => $e->getMessage()]);
+            }
 
             return;
         }

@@ -59,4 +59,20 @@ class CompleteRoundAction
             'game_finished' => false,
         ];
     }
+
+    /**
+     * Build results for a round that skipped voting (e.g. only 1 answer).
+     * Returns the same format as ScoringService::calculateRoundScores().
+     */
+    public function getScoresWithoutVoting(Round $round): array
+    {
+        return $round->answers()->with('player')->get()->map(fn ($answer) => [
+            'player_id' => $answer->player_id,
+            'player_name' => $answer->author_nickname ?? $answer->player?->nickname ?? 'Unknown',
+            'answer' => $answer->text,
+            'votes' => 0,
+            'points_earned' => 0,
+            'voters' => [],
+        ])->toArray();
+    }
 }

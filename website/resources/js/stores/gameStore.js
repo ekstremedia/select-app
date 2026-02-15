@@ -200,6 +200,19 @@ export const useGameStore = defineStore('game', () => {
             _startCountdown();
         }
 
+        // Recover finished game state
+        if (phase.value === 'finished') {
+            if (data.game.winner !== undefined) {
+                currentGame.value.winner = data.game.winner;
+            }
+            // Build scores from players if not already set
+            if (!scores.value.length) {
+                scores.value = (data.game.players || [])
+                    .map(p => ({ player_id: p.id, player_name: p.nickname, score: p.score ?? 0 }))
+                    .sort((a, b) => b.score - a.score);
+            }
+        }
+
         return data;
     }
 

@@ -38,7 +38,7 @@ class RoundCompletedBroadcast implements ShouldBroadcastNow
             ->get()
             ->map(fn ($gp) => [
                 'player_id' => $gp->player_id,
-                'player_name' => $gp->player->nickname,
+                'player_name' => $gp->player?->nickname ?? 'Unknown',
                 'score' => $gp->score,
             ]);
 
