@@ -40,6 +40,17 @@ echo ""
 echo "==> Running database migrations..."
 php artisan migrate --force
 
+# Import gullkorn legacy data if tables are empty or missing
+GULLKORN_COUNT=$(php artisan tinker --execute="try { echo \DB::table('gullkorn_clean')->count(); } catch (\Exception \$e) { echo '0'; }" 2>/dev/null | tail -1)
+if [ "$GULLKORN_COUNT" = "0" ] || [ -z "$GULLKORN_COUNT" ]; then
+    echo ""
+    echo "==> Importing gullkorn legacy data..."
+    php artisan gullkorn:import
+else
+    echo ""
+    echo "==> Gullkorn data already imported ($GULLKORN_COUNT rows)"
+fi
+
 echo ""
 echo "========================================"
 echo "  Setup complete!"
