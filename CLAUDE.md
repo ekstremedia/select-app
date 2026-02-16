@@ -75,7 +75,7 @@ select-app/
 ## Tech Stack
 
 - **Backend**: Laravel 12, PostgreSQL, Laravel Reverb (WebSockets)
-- **Frontend**: Vue 3, PrimeVue v4 (Aura theme), Tailwind CSS v4
+- **Frontend**: Vue 3, PrimeVue v4 (Aura theme), Tailwind CSS v4, Inertia.js v2
 - **Mobile**: React Native (Expo), TypeScript, Zustand
 - **Architecture**: DDD (Domain-Driven Design) for backend
 
@@ -83,6 +83,7 @@ select-app/
 
 ### Player Domain
 - `CreateGuestPlayerAction` - Creates guest with unique token
+- `CreateBotPlayerAction` - Creates bot player with Norwegian name
 - `GetPlayerByTokenAction` - Auth via guest token
 - `ConvertGuestToUserAction` - Convert guest to registered user
 
@@ -98,6 +99,7 @@ select-app/
 - `AcronymValidator` - Validates answer matches acronym
 - `StartRoundAction` - Creates round with acronym
 - `SubmitAnswerAction` - Validates and stores answer
+- `MarkReadyAction` - Toggle "satisfied" state, auto-advance to voting
 - `StartVotingAction` - Transitions to voting phase
 - `SubmitVoteAction` - Records vote, prevents self-voting
 - `CompleteRoundAction` - Calculates scores, broadcasts results
@@ -121,12 +123,20 @@ GET    /api/v1/auth/me             Get current player
 
 POST   /api/v1/games               Create game
 GET    /api/v1/games/{code}        Get game details
+GET    /api/v1/games/{code}/state  Full game state (reconnect)
 POST   /api/v1/games/{code}/join   Join game
 POST   /api/v1/games/{code}/leave  Leave game
 POST   /api/v1/games/{code}/start  Start game (host only)
+POST   /api/v1/games/{code}/chat   Send chat message
+POST   /api/v1/games/{code}/add-bot     Add bot (admin)
+DELETE /api/v1/games/{code}/remove-bot/{id}  Remove bot (admin)
+POST   /api/v1/games/{code}/kick   Kick player (host/co-host)
+POST   /api/v1/games/{code}/ban    Ban player (host)
+POST   /api/v1/games/{code}/invite Invite player
 GET    /api/v1/games/{code}/rounds/current  Get current round
 
 POST   /api/v1/rounds/{id}/answer  Submit answer
+POST   /api/v1/rounds/{id}/ready   Mark satisfied (auto-advance)
 POST   /api/v1/rounds/{id}/vote    Submit vote
 POST   /api/v1/rounds/{id}/voting  Start voting (host)
 POST   /api/v1/rounds/{id}/complete Complete round (host)
@@ -150,20 +160,25 @@ Features:
 - `game.started`
 - `round.started` - { acronym, deadline }
 - `answer.submitted` - { answers_count, total_players }
+- `player.ready` - { ready_count, total_players }
 - `voting.started` - { answers[], deadline }
 - `vote.submitted` - { votes_count, total_voters }
 - `round.completed` - { results[], scores[] }
 - `game.finished` - { winner, final_scores }
+- `chat.message` - { player, message }
 
 ## Database Schema
 
 **Game tables:**
-- **players** - id (UUID), user_id?, guest_token?, display_name, stats
-- **games** - id, code (6-char), host_player_id, status, settings (JSON)
-- **game_players** - game_id, player_id, score, is_active
+- **players** - id (UUID), user_id?, guest_token?, nickname, is_guest, is_bot, stats
+- **games** - id, code (6-char), host_player_id, status, settings (JSON), is_public, password
+- **game_players** - game_id, player_id, score, is_active, is_co_host
 - **rounds** - id, game_id, round_number, acronym, status, deadlines
-- **answers** - id, round_id, player_id, text, votes_count
-- **votes** - id, answer_id, voter_id
+- **answers** - id, round_id, player_id, text, author_nickname, votes_count, is_ready, edit_count
+- **votes** - id, answer_id, voter_id, voter_nickname, change_count
+- **game_results** - Denormalized finished game results
+- **hall_of_fame** - Winning sentences archive
+- **player_stats** - Per-user materialized stats
 
 **Legacy data (imported from original IRC game):**
 - **gullkorn** - id, nick, setning, stemmer, tid, hvemstemte (original sentences from #select)
@@ -399,7 +414,10 @@ base64 -i select-release.keystore | pbcopy
   "answer_time": 60,
   "vote_time": 30,
   "acronym_length_min": 3,
-  "acronym_length_max": 6
+  "acronym_length_max": 6,
+  "max_edits": 0,
+  "max_vote_changes": 0,
+  "allow_ready_check": true
 }
 ```
 
