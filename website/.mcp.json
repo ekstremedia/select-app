@@ -1,8 +1,0 @@
-{
-    "mcpServers": {
-        "laravel-boost": {
-            "command": "/Users/terjenesthus/projects/select-app/website/boost-mcp.sh",
-            "args": []
-        }
-    }
-}
